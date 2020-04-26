@@ -1,0 +1,14 @@
+{
+    "Lua.diagnostics.globals": [
+        "CFrame",
+        "game",
+        "Enum",
+        "Instance",
+        "script",
+        "Vector3",
+        "Ray",
+        "wait",
+        "Region3"
+    ],
+    "Lua.runtime.version": "Lua 5.1"
+}

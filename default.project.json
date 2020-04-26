@@ -5,27 +5,23 @@
 
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
+      "$path": "game/ReplicatedStorage",
 
-      "Common": {
-        "$path": "game/shared"
-      },
       "Lovecraft": {
-        "$path": "engine"
+        "$path": "engine",
+
       }
     },
 
     "ServerScriptService": {
       "$className": "ServerScriptService",
+      "$path": "game/ServerScriptService"
 
-      "Server": {
-        "$path": "game/server"
-      }
     },
 
     "ReplicatedFirst": {
       "$className": "ReplicatedFirst",
-
-      "$path": "game/clientload"
+      "$path": "game/ReplicatedFirst"
     },
     
     "StarterPlayer": {
@@ -34,9 +30,12 @@
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
 
-        "Client": {
-          "$path": "game/client"
-        }
+        "$path": "game/StarterPlayer/StarterPlayerScripts"
+      },
+      "StarterCharacterScripts": {
+        "$className": "StarterCharacterScripts",
+
+        "$path": "game/StarterPlayer/StarterCharacterScripts"
       }
     },
 
