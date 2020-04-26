@@ -55,6 +55,7 @@ local function CreateSoftWeld(master_part, follower_part)
 	--master_attachment.Visible = true
 	
 	local follower_attachment = Instance.new("Attachment")
+	follower_attachment.Position = follower_part["attachmentOffset"].Value
 	follower_attachment.Parent = follower_part
 	--follower_attachment.Visible = true
 	follower_attachment.Name = "FollowerAttachment"
@@ -69,7 +70,6 @@ local function CreateSoftWeld(master_part, follower_part)
 			pos_constraint.MaxForce             = pos_max_force
 			pos_constraint.MaxVelocity          = pos_max_velocity
 		end
-		
 		pos_constraint.Attachment0 = follower_attachment
 		pos_constraint.Attachment1 = master_attachment
 		
@@ -334,8 +334,8 @@ function VRHand:release()
 			end
 		end
 		
-		-- trying this?
-		self.holdingObject.PrimaryPart.Velocity =
+		--[[ trying this?
+		self.holdingObject.PrimaryPart.Velocity =]]
 		
 		self.holdingObject = nil
 	end
@@ -372,7 +372,7 @@ function VRHand:update(dt)
 	
 	if self.holdingObject ~= nil then
 		
-		print("holding: ".. tostring(self.holdingObject.PrimaryPart.Velocity))
+		--print("holding: ".. tostring(self.holdingObject.PrimaryPart.Velocity))
 		-- refactored instead of creating a spawn() thread
 		-- event-based scripting is much nicer :DD
 		--self.holdingObject:SetPrimaryPartCFrame(reported_pos)
