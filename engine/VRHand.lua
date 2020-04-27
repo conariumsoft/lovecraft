@@ -7,7 +7,7 @@ local ReplicatedFirst   = game:GetService("ReplicatedFirst")
 local Workspace			= game:GetService("Workspace")
 local VRService         = game:GetService("VRService")
 local PhysicsService    = game:GetService("PhysicsService")
-
+--wassgoooddddd
 local camera = workspace.CurrentCamera
 local BaseObject 				= require(ReplicatedStorage.BaseObject)
 local r3handler  				= require(ReplicatedStorage.RotatedRegion3)
