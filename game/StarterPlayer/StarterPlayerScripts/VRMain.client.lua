@@ -159,18 +159,18 @@ end)
 
 UserInputService.InputBegan:Connect(function(inp, _)
 	if inp.KeyCode == Enum.KeyCode.ButtonL1 then
-		my_left_hand:grab()
+		my_left_hand:Grab()
 	end
 	if inp.KeyCode == Enum.KeyCode.ButtonR1 then
-		my_right_hand:grab()
+		my_right_hand:Grab()
 	end
 end)
 
-UserInputService.InputEnded:Connect(function(inp, _)
-	if inp.KeyCode == Enum.KeyCode.ButtonL1 then
-		my_left_hand:release()
-	end
-	if inp.KeyCode == Enum.KeyCode.ButtonR1 then
-		my_right_hand:release()
-	end
+UserInputService.InputChanged:Connect(function(inp, _)
+    if inp.KeyCode == Enum.KeyCode.ButtonL1 and inp.Position.Z < .95 then
+        my_left_hand:Release()
+    end
+    if inp.KeyCode == Enum.KeyCode.ButtonR1 and inp.Position.Z < .95 then
+        my_right_hand:Release()
+    end
 end)
