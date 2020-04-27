@@ -8,7 +8,12 @@
         "Vector3",
         "Ray",
         "wait",
-        "Region3"
+        "Region3",
+        "UserInputService",
+        "StarterGui",
+        "VRHand",
+        "VRService",
+        "RunService"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

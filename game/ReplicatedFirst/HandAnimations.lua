@@ -1,13 +1,23 @@
-local this = script
+local function LoadAnimFile(id)
+	local anim = Instance.new(id)
+	anim.Parent = script
+	return anim
+end
+
+local idx_left   = LoadAnimFile("rbxassetid://4921338211")
+local idx_right  = LoadAnimFile("rbxassetid://4921265382")
+local grip_left  = LoadAnimFile("rbxassetid://4921113867")
+local grip_right = LoadAnimFile("rbxassetid://4921074129")
+
 
 local HandAnimations = {
 	["IndexFingerCurl"] = {
-		["Left"]  = this.CloseIndexLeft,
-		["Right"] = this.CloseIndexRight,
+		["Left"]  = idx_left,
+		["Right"] = idx_right,
 	},
 	["PalmCurl"] = {
-		["Left"]  = this.CloseGripLeft,
-		["Right"] = this.CloseGripRight,
+		["Left"]  = grip_left,
+		["Right"] = grip_right,
 	},
 	--[[["GenericGripPen"] = {
 		["Left"]  = this.MarkerRight,

@@ -1,18 +1,16 @@
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
+local uis = game:GetService("UserInputService")
 -- TODO: put in separate module
 
 local marker_grip_animation
 local skorpion_grip_animation
 local default_grip_animation = ...
 local R2Down = false
-
-UserInputService.InputBegan:Connect(function(inp,gpe)
+uis.InputBegan:Connect(function(inp,gpe)
 	if inp.KeyCode == Enum.KeyCode.ButtonR2 and not gpe then
 		R2Down = true
 	end
 end)
-UserInputService.InputEnded:Connect(function(inp,gpe)
+uis.InputEnded:Connect(function(inp,gpe)
 	if inp.KeyCode == Enum.KeyCode.ButtonR2 and not gpe then
 		R2Down = false
 	end
@@ -35,13 +33,21 @@ local wb_grid_size = 0.05 -- not really an actual grid...
 local wb_marker_detection_distance = 0.1
 local eraser_aggression = 0.05
 
+local function renderstep()
+	game:GetService("RunService").RenderStepped:Wait()
+end
+
+-- epic way:
+local Debris = game:GetService("Debris")
+
 local function Scorpion(player, hand, scorpion, delta)
 		print("Scorpion fired!")
-		local newVelocityModifier = Instance.new("BodyVelocity")
-		newVelocityModifier.Velocity = hand.Thumb.TE.CFrame.UpVector*75
-		newVelocityModifier.Parent = hand.PrimaryPart
-		game:GetService("RunService").RenderStepped:Wait()
-		newVelocityModifier:Destroy()
+		local muzzle_flip = Instance.new("BodyVelocity") do
+			muzzle_flip.Velocity = scorpion.rifling.CFrame.UpVector*20
+			muzzle_flip.Parent = scorpion.rifling
+			Debris:AddItem(muzzle_flip, 1/20)
+		end
+		--newVelocityModifier:Destroy()
 end
 
 local function CreateGridMark(MarkColor)
@@ -78,12 +84,12 @@ local InteractiveObjectMetadata = {
 	        	model.Tip.Position, 
 	        	model.Tip.CFrame.LookVector * wb_marker_detection_distance
 		   	 )
-		    local part, hit_position = Workspace:FindPartOnRayWithWhitelist(ray,{Workspace.Whiteboard})
+		    local part, hit_position = game.Workspace:FindPartOnRayWithWhitelist(ray,{workspace.Whiteboard})
 	
 		    if (part and part.Name == "Whiteboard") then
 		        local new_mark = CreateGridMark(model.Tip.Color)
 		        new_mark.Position = hit_position
-		        new_mark.Parent = Workspace.Grid
+		        new_mark.Parent = workspace.Grid
 		    end
 		end ,
 	},

@@ -8,8 +8,7 @@
       "$path": "game/ReplicatedStorage",
 
       "Lovecraft": {
-        "$path": "engine",
-
+        "$path": "engine"
       }
     },
 

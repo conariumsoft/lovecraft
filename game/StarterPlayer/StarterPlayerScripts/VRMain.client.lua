@@ -77,6 +77,43 @@ local my_right_hand = RightHand:new(local_player)
 
 local InteractiveObjectMetadata = require(game.ReplicatedStorage.ItemData)
 
+--[[	
+local ClosePMRLeft = testHands[1].Humanoid:LoadAnimation(testHands[1].closepmr)
+local ClosePMR = testHands[2].Humanoid:LoadAnimation(testHands[2].closepmr)
+local CloseIndex = testHands[2].Humanoid:LoadAnimation(testHands[2].closeindex)
+local CloseIndexLeft = testHands[1].Humanoid:LoadAnimation(testHands[1].closeindex)
+local penGrip = testHands[2].Humanoid:LoadAnimation(testHands[2].gMarker)
+local gunGrip = testHands[2].Humanoid:LoadAnimation(testHands[2].gunGrip)
+
+function playAnimsRight()
+	right = false
+	ClosePMR:Play()
+	--ClosePMRLeft:Play()
+	CloseIndex:Play()
+	--CloseIndexLeft:Play()
+	ClosePMR:AdjustSpeed(0)
+	CloseIndex:AdjustSpeed(0)
+	
+end
+function playAnimsLeft()
+	left = false
+	ClosePMRLeft:Play()
+	CloseIndexLeft:Play()
+	CloseIndexLeft:AdjustSpeed(0)
+	ClosePMRLeft:AdjustSpeed(0)
+end
+playAnimsRight()
+playAnimsLeft()
+function stopAnims()
+	right = true
+	ClosePMR:AdjustSpeed(5)
+	CloseIndex:AdjustSpeed(5)
+end
+function stopAnimsLeft()
+	left = true
+	CloseIndexLeft:AdjustSpeed(5)
+	ClosePMRLeft:AdjustSpeed(5)
+end]]
 	
 RunService.RenderStepped:Connect(function(delta)
 	
