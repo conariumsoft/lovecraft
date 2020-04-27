@@ -2,6 +2,7 @@
 	VRHand class
 	- last edit josh 4/24/20 7:00pm
 ]]--
+--[[
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst   = game:GetService("ReplicatedFirst")
 local Workspace			= game:GetService("Workspace")
@@ -13,24 +14,20 @@ local BaseObject 				= require(ReplicatedStorage.BaseObject)
 local r3handler  				= require(ReplicatedStorage.RotatedRegion3)
 local InteractiveObjectMetadata = require(ReplicatedStorage.ItemData)
 local HandAnimations			= require(ReplicatedFirst.HandAnimations)
+]]
 
+using "RBX.ReplicatedStorage"
+using "RBX.ReplicatedFirst"
+using "RBX.Workspace"
+using "RBX.VRService"
+using "RBX.PhysicsService"
+using "Lovecraft.BaseObject"
+using "Lovecraft.SoftWeld"
+using "Lovecraft.Lib.RotatedRegion3"
+using "Game.Data.InteractiveObjectMetadata"
+using "Game.Data.HandAnimations"
 
-local function FindGrabbableObjectInHandRegion(region)
-	-- TODO: collisiongroups instead of a folder?
-	
-	local parts = region:FindPartsInRegion3WithWhiteList(workspace.physics:GetDescendants(), 1000)
-	
-	-- possible optimisation candidate
-	-- if we ever start having huge numbers of pickup items
-	for _, v in pairs(parts) do
-		print(v)
-		if v:FindFirstChild("pickup") then
-			return v.Parent
-		end
-	end
-	return nil
-end
-
+--[[
 -- owen, pls define these :)
 local dbg_using_default = false
 
@@ -115,105 +112,68 @@ end
 local function BreakHardWeld(master_part, follower_part)
 	master_part.GrabConstraint:Destroy()
 end
-
+]]
 
 --- VR Hand Base class. 
 -- @class VRHand
 -- @description G
-local VRHand = BaseObject:subclass("VRHand")
+local VRHand = BaseClass:subclass("VRHand")
 
-function VRHand:__ctor(player)
-	self.player = player
-	
-	self.holdingObject = nil
-	
-	self.handModel = nil
-	
-	self.userCFrame = nil--Enum.UserCFrame.Head
-	self.handedness = nil -- ("Left", "Right")
-	
-	--self.palmCurlAnim = nil
-	--self.indexCurlAnim = nil
-	
-	self.anims = {}
-    self.currentAnim = nil
-    self.isRunning = false
+function VRHand:__ctor(player, vr_head, handedness, hand_model)
 
-	local lockPart = Instance.new("Part")
-	lockPart.Size = Vector3.new(1,1,1)
-	lockPart.Anchored = true
-	lockPart.CanCollide = false
-	lockPart.Transparency = 1
-	lockPart.Name = "HandLockPart"
-	lockPart.Parent = game.Workspace
+	self.IndexFingerPressure = 0
+	self.GripPressure = 0
+	self.Anims = {}
+    self.CurrentAnim = nil
+	self.IsRunning = false
+	self.HandPosition = Vector3.new(0, 0, 0)
+	self.LastHandPosition = Vector3.new(0, 0, 0)
 	
-	self.lockPart = lockPart
 	
-	self.handPosition = nil
-	self.lastHandPosition = nil
 
-end
+	self.Head = vr_head
+	self.Player = player
+	self.Handedness = handedness
 
-function VRHand:connectModels()
-	CreateSoftWeld(self.lockPart, self.handModel.PrimaryPart)
-	
-	for _, obj in pairs(self.handModel:GetDescendants()) do
-		if obj:IsA("BasePart") then
-			PhysicsService:SetPartCollisionGroup(obj, "HandModels")
+	if (self.Handedness == "Left") then
+		self.UserCFrame = Enum.UserCFrame.LeftHand
+	else
+		self.UserCFrame = Enum.UserCFrame.RightHand
+	end
+
+	self.HandModel = hand_model
+	self.HandModel.Parent = Workspace.LocalVRModels
+	do
+		local collision_group = self.Handedness.."HandModels"
+		for _, obj in pairs(self.HandModel:GetDescendants()) do 
+			if obj:IsA("BasePart") then
+				PhysicsService:SetPartCollisionGroup(obj, collision_group)
+			end 
 		end
 	end
 	
-	local reported_pos = camera.CFrame * VRService:GetUserCFrame(self.userCFrame)
-	-- DO THIS to get hands in proper region (initially)
-	self.handModel:SetPrimaryPartCFrame(reported_pos)
+	local lock_pt = Instance.new("Part") do 
+		-- reference position for VRHand reported position
+		lock_pt.Size = Vector3.new(1,1,1)
+		lock_pt.Anchored = true
+		lock_pt.CanCollide = false
+		lock_pt.Transparency = 1
+		lock_pt.Name = "HandLockPart"
+		lock_pt.Parent = game.Workspace
+	end
+	self.LockPart = lock_pt
+
+	self.HoldingObject = nil -- if grabbed something
+	self.ObjectContactPoint = nil
+	self._HandModelSoftWeld = SoftWeld:new(self.LockPart, self.HandModel.PrimaryPart)
+	self._GrabbedObjectWeld = nil
 	
+	self:InitializeAnimations()
 end
 
-do -- animation methods
-	function VRHand:addAnim(name, animation)
-		
-		local anim_track = self.animator:LoadAnimation(animation)
-		
-		anim_track:Play()
-		anim_track:AdjustSpeed(0)
-		self.anims[name] = anim_track
-	end
-	function VRHand:hasAnim(name)
-		for key, val in pairs(self.anims) do
-			if key == name then
-				return val
-			end
-		end
-	end
-	function VRHand:getAnim(name)
-		return self.anims[name]
-	end
-	function VRHand:getCurrentAnim()
-		return self.currentAnim
-	end
-	function VRHand:setCurrentAnim(anim_track)
-	    self.currentAnim = anim_track
-	    
-	end
-	
-	function VRHand:playAnim(anim_track, fade_time, weight, speed)
-	
-		local anim = self.anims[anim_track]
-		anim:Play(fade_time, weight, speed)
-	
-	end
-
-	function VRHand:getAnimTimeSeconds()end
-	function VRHand:setAnimTimeScale()      end
-	function VRHand:setAnimPlaybackScale()  end
-	function VRHand:setAnimOverridable()    end
-	function VRHand:getAnimOverridable()   end
-	function VRHand:lerpAnimSet() end
-end
-
-function VRHand:initializeAnimations()
-	self.animator = Instance.new("AnimationController")
-	self.animator.Parent = self.handModel	
+function VRHand:InitializeAnimations()
+	self.Animator = Instance.new("AnimationController")
+	self.Animator.Parent = self.HandModel	
 	-- assuming object subclass ctor has been called
 	-- meaning these properties should be defined
 
@@ -221,32 +181,78 @@ function VRHand:initializeAnimations()
 		assert(val, name.." anim is nil?")
 		
 		if (type(val) == "userdata" and val:IsA("Animation")) then
-			self:addAnim(name, val)	
+			self:AddAnim(name, val)	
 		elseif (type(val) == "table") then
-			self:addAnim(name, val[self.handedness])
+			self:AddAnim(name, val[self.Handedness])
 		else
 			error("test fail condition: animation was unable to load: "..name)
 		end
 	end
 end
 
-function VRHand:setIndexFingerCurl(grip_strength)
-	local anim = self:getAnim("IndexFingerCurl")
+do -- animation methods
+	function VRHand:AddAnim(name, animation)
+		
+		local anim_track = self.Animator:LoadAnimation(animation)
+		
+		anim_track:Play()
+		anim_track:AdjustSpeed(0)
+		self.Anims[name] = anim_track
+	end
+	function VRHand:HasAnim(name)
+		for key, val in pairs(self.Anims) do
+			if key == name then
+				return val
+			end
+		end
+	end
+	function VRHand:GetAnim(name)
+		return self.Anims[name]
+	end
+	function VRHand:GetCurrentAnim()
+		return self.CurrentAnim
+	end
+	function VRHand:SetCurrentAnim(anim_track)
+	    self.CurrentAnim = anim_track
+	    
+	end
+	
+	function VRHand:PlayAnim(anim_track, fade_time, weight, speed)
+	
+		local anim = self.Anims[anim_track]
+		anim:Play(fade_time, weight, speed)
+	
+	end
+
+	function VRHand:GetAnimTimeSeconds()end
+	function VRHand:SetAnimTimeScale()      end
+	function VRHand:SetAnimPlaybackScale()  end
+	function VRHand:SetAnimOverridable()    end
+	function VRHand:GetAnimOverridable()   end
+	function VRHand:LerpAnimSet() end
+end
+
+
+
+function VRHand:SetIndexFingerCurl(grip_strength)
+	self.IndexFingerPressure = grip_strength
+	local anim = self:GetAnim("IndexFingerCurl")
 	anim.TimePosition = anim.Length * grip_strength
 end
 
-function VRHand:setGripCurl(grip_strength)
-	local anim = self:getAnim("PalmCurl")
+function VRHand:SetGripCurl(grip_strength)
+	self.GripPressure = grip_strength
+	local anim = self:GetAnim("PalmCurl")
 	anim.TimePosition = anim.Length * grip_strength
 end
 
 local DEBUG_SHOW_HAND_CFRAME = true
 
-function VRHand:grab()
+function VRHand:Grab()
 
-	local reported_pos = camera.CFrame * VRService:GetUserCFrame(self.userCFrame)
+	local reported_pos = self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame)
 	
-	local region = r3handler.new(
+	local region = RotatedRegion3.new(
 		reported_pos,
 		Vector3.new(.5,.5,.5) -- region radius
 	)
@@ -263,10 +269,65 @@ function VRHand:grab()
 		end
 	end
 	
-	local parts = region:FindPartsInRegion3WithWhiteList(workspace.physics:GetDescendants())
+	--[[
+		OBJECT GRABBING SCENARIOS:
+		these are not final decisions on objects, or even objects that'll be in game
+		i'm trying to cover the bases of interacting with objects in VR
+		
+		- marker
+			* one handed
+			* single grab
+			* custom anim
+			* special grip
+		- .44 Magnum Revolver
+			* one or two handed
+			* first hand to grab controls trigger
+			* grabs at cylinder/cylinder release (swings open)
+			* secondary trigger = cock the hammer
+		- M1911 pistol
+			* grip can be one or two handed
+			* secondary trigger = magazine release
+			* slide grip point
+			* custom anim, special grip
+		- vz62 Skorpion
+			* magazine grip point
+			* secondary trigger = magazine release
+			* one hand on handle
+		- box
+			* grip is held at the point of grabbing (no custom alignment)
+			* can grab with inf hands
+		- AkM
+			* grip points
+				charging handle
+				barrel
+				magazine
+				handle (one hand at a time)
+			* secondary trigger = magazine release
+			* custom anim & grip alignment for primary hand
+
+	]]
+
+	local parts = region:FindPartsInRegion3WithWhiteList(Workspace.physics:GetDescendants())
 	local object = nil
 	for _, v in pairs(parts) do
 		print(v.Name)
+
+		-- a gun's handle for example
+		if v:FindFirstChild("PrimaryGripPoint") then
+			if v.Value == false then -- item hasn't been grabbed yet, so this hand will grab
+				-- this hand is now primary grip
+
+
+
+			end
+		end
+
+		if v:FindFirstChild("GripPoint") then
+			if v.Value == false then -- hasn't been grabbed yet
+
+			end
+		end
+
 		if v:FindFirstChild("pickup") then
 			object = v.Parent
 			print("found obj")
@@ -275,31 +336,42 @@ function VRHand:grab()
 	end
 	
 	if (object == nil) then return end
-	self.holdingObject = object
+	self.HoldingObject = object
 	
-	for _, obj in pairs(self.holdingObject:GetDescendants()) do
+	for _, obj in pairs(self.HoldingObject:GetDescendants()) do
 		if obj:IsA("BasePart") then
 			PhysicsService:SetPartCollisionGroup(obj, "Grabbed")
 		end
 	end
 	
 	print("Ho, hosssssss!")
-	self.holdingObject.PrimaryPart.pickup.Value = true
+	self.HoldingObject.PrimaryPart.pickup.Value = true
 	
 	-- master and follower part, respectively
-	self.holdingObject:SetPrimaryPartCFrame(reported_pos)
+	self.HoldingObject:SetPrimaryPartCFrame(reported_pos)
 	
-	CreateSoftWeld(self.handModel.PrimaryPart, self.holdingObject.PrimaryPart)
+	self.GrabbedObjectWeld = SoftWeld:new(self.HandModel.PrimaryPart, self.HoldingObject.PrimaryPart)
 
 	-- TODO: create sanity checks for indexing metadata list
-	local grip_data = InteractiveObjectMetadata[self.holdingObject.Name]
+	local object_meta = InteractiveObjectMetadata[self.HoldingObject.Name]
+
+	--object_meta
 	
+	-- pretend code:
+	do
+		--local weapon_metadata_inst = blah
+
+
+
+	--	if weapon_metadata_inst
+	end
+
 	-- possible issue::
 	-- this is initial CFrame set, but we also are
 	-- setting CFrame inside VRHand:update()
 	
 	-- does model need custom grip alignment?
-	print("Heee,heee!")
+	--[[print("Heee,heee!")
 	if grip_data.grip_type == "Default" then
 						
 	elseif grip_data.grip_type == "Custom" then
@@ -309,35 +381,32 @@ function VRHand:grab()
 			--grip_data.grip_orientation.rotation
 
 		--)
-	end
+	--[[end
 	
     if grip_data.on_grab_begin then --    
-  		grip_data.on_grab_begin(self.player, self.handModel, self.holdingObject)
+  		grip_data.on_grab_begin(self.Player, self.HandModel, self.HoldingObject)
 	end
 	
+	-- NOTE: maybe control custom anims from inside item...?
 	if grip_data.grip_anim then -- Animate
-        if self:hasAnim(grip_data.grip_anim) then
-            self:setRunningAnim(self:getAnim(grip_data.grip_anim), true)
+        if self:HasAnim(grip_data.grip_anim) then
+            self:SetRunningAnim(self:GetAnim(grip_data.grip_anim), true)
         end
-	end
+	end]]
 end
-function VRHand:release() 
+function VRHand:Release() 
 	-- TODO: play anim?
-	if self.holdingObject ~= nil then
+	if self.HoldingObject ~= nil then
 		
-		BreakSoftWeld(self.handModel.PrimaryPart, self.holdingObject.PrimaryPart)
+		self.GrabbedObjectWeld:Break()
 
-		
-		for _, obj in pairs(self.holdingObject:GetDescendants()) do
+		for _, obj in pairs(self.HoldingObject:GetDescendants()) do
 			if obj:IsA("BasePart") then
 				PhysicsService:SetPartCollisionGroup(obj, "Interactives")
 			end
 		end
 		
-		--[[ trying this?
-		self.holdingObject.PrimaryPart.Velocity =]]
-		
-		self.holdingObject = nil
+		self.HoldingObject = nil
 	end
 end
 
@@ -352,36 +421,36 @@ end
 
 function VRHand:update(dt)
 
-	local reported_cframe = camera.CFrame * VRService:GetUserCFrame(self.userCFrame)
+	local reported_cframe = self.Head.CFrame * VRService:GetUserCFrame(self.userCFrame)
 	
+	self.LastHandPosition = self.HandPosition
+	self.HandPosition = reported_cframe
 	
-	self.lastHandPosition = self.handPosition
-	self.handPosition = reported_cframe
-	
-	
-	self.lockPart.CFrame = reported_cframe
+	self.LockPart.CFrame = reported_cframe
 	
 	--self.handModel:SetPrimaryPartCFrame(reported_cframe)
 	
 	-- TODO: optimize
-	if (self.lockPart.Position - self.handModel.PrimaryPart.Position).magnitude > 5 then
+	if (self.LockPart.Position - self.HandModel.PrimaryPart.Position).magnitude > 5 then
 		--SetCollisions(self.handModel, false)
 	else
 		--SetCollisions(self.handModel, true)
 	end
 	
-	if self.holdingObject ~= nil then
+	if self.HoldingObject ~= nil then
 		
 		--print("holding: ".. tostring(self.holdingObject.PrimaryPart.Velocity))
 		-- refactored instead of creating a spawn() thread
 		-- event-based scripting is much nicer :DD
 		--self.holdingObject:SetPrimaryPartCFrame(reported_pos)
 
-		local mdata = InteractiveObjectMetadata[self.holdingObject.Name]
+		local object_meta = InteractiveObjectMetadata[self.HoldingObject.Name]
 		
-		if mdata.on_grab_step then
+		object_meta:OnContactPointStep(self, self.HoldingObject, dt)
+
+		--[[if mdata.on_grab_step then
 			mdata.on_grab_step(self.player, self.handModel, self.holdingObject, dt)
-		end
+		end]]
 	end
 end
 
