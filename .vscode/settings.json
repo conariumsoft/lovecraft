@@ -16,7 +16,13 @@
         "RunService",
         "BaseClass",
         "Workspace",
-        "BaseObject"
+        "BaseObject",
+        "SoftWeld",
+        "PhysicsService",
+        "HandAnimations",
+        "RotatedRegion3",
+        "InteractiveObjectMetadata",
+        "VRHead"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

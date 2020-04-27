@@ -141,8 +141,6 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 		self.UserCFrame = Enum.UserCFrame.RightHand
 	end
 
-	
-
 	self.HandModel = hand_model
 	self.HandModel.Parent = Workspace.LocalVRModels
 	do
@@ -252,7 +250,7 @@ local DEBUG_SHOW_HAND_CFRAME = true
 
 function VRHand:Grab()
 
-	local reported_pos = camera.CFrame * VRService:GetUserCFrame(self.UserCFrame)
+	local reported_pos = self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame)
 	
 	local region = RotatedRegion3.new(
 		reported_pos,
@@ -355,7 +353,9 @@ function VRHand:Grab()
 	self.GrabbedObjectWeld = SoftWeld:new(self.HandModel.PrimaryPart, self.HoldingObject.PrimaryPart)
 
 	-- TODO: create sanity checks for indexing metadata list
-	local grip_data = InteractiveObjectMetadata[self.HoldingObject.Name]
+	local object_meta = InteractiveObjectMetadata[self.HoldingObject.Name]
+
+	--object_meta
 	
 	-- pretend code:
 	do
@@ -371,7 +371,7 @@ function VRHand:Grab()
 	-- setting CFrame inside VRHand:update()
 	
 	-- does model need custom grip alignment?
-	print("Heee,heee!")
+	--[[print("Heee,heee!")
 	if grip_data.grip_type == "Default" then
 						
 	elseif grip_data.grip_type == "Custom" then
@@ -381,7 +381,7 @@ function VRHand:Grab()
 			--grip_data.grip_orientation.rotation
 
 		--)
-	end
+	--[[end
 	
     if grip_data.on_grab_begin then --    
   		grip_data.on_grab_begin(self.Player, self.HandModel, self.HoldingObject)
@@ -392,7 +392,7 @@ function VRHand:Grab()
         if self:HasAnim(grip_data.grip_anim) then
             self:SetRunningAnim(self:GetAnim(grip_data.grip_anim), true)
         end
-	end
+	end]]
 end
 function VRHand:Release() 
 	-- TODO: play anim?
@@ -421,11 +421,10 @@ end
 
 function VRHand:update(dt)
 
-	local reported_cframe = camera.CFrame * VRService:GetUserCFrame(self.userCFrame)
+	local reported_cframe = self.Head.CFrame * VRService:GetUserCFrame(self.userCFrame)
 	
 	self.LastHandPosition = self.HandPosition
 	self.HandPosition = reported_cframe
-	
 	
 	self.LockPart.CFrame = reported_cframe
 	
@@ -449,9 +448,9 @@ function VRHand:update(dt)
 		
 		object_meta:OnContactPointStep(self, self.HoldingObject, dt)
 
-		if mdata.on_grab_step then
+		--[[if mdata.on_grab_step then
 			mdata.on_grab_step(self.player, self.handModel, self.holdingObject, dt)
-		end
+		end]]
 	end
 end
 

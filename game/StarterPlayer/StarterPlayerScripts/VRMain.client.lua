@@ -1,4 +1,4 @@
-require(game.ReplicatedStorage.Lovecraft.Initialize)
+require(game.ReplicatedStorage.Lovecraft.Lovecraft)
 -- above must be required once per machine...
 
 using "RBX.UserInputService"
@@ -37,15 +37,6 @@ local character = local_player.CharacterAdded:Wait()
 
 local left_hand_model = game.ReplicatedStorage.LHand
 local right_hand_model = game.ReplicatedStorage.RHand
-
--- starting point object & camera focus
-local vr_base = game.Workspace.cameraPos
-
-local local_camera = game.Workspace.CurrentCamera do
-	local_camera.CameraSubject = vr_base
-	local_camera.CameraType = Enum.CameraType.Scriptable
-	local_camera.CFrame = CFrame.new(vr_base.Position)
-end
 
 -- container for vr hand models
 local local_world_folder = Instance.new("Folder") do
@@ -91,7 +82,7 @@ local my_right_hand = VRHand:new(local_player, my_camera_head, "Right", right_ha
 RunService.RenderStepped:Connect(function(delta)
 	
 	-- TODO: align relative to Enum.UserCFrame.Head?
-	local_camera.CFrame = CFrame.new(vr_base.Position)
+	--local_camera.CFrame = CFrame.new(vr_base.Position)
 	
 	my_camera_head:Update(delta)
 	my_left_hand:Update(delta)

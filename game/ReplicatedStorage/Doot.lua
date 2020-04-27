@@ -115,9 +115,7 @@ function skorp:OnPrimaryContactStep(player, hand, skorp_model, grip_point, step)
     end
 end
 
-
-
 function skorp:OnPlayerStep(player, skorp_model, delta)
-    
+
 end
 
