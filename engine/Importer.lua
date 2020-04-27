@@ -15,68 +15,61 @@ local module_database = {
         identifier = "BaseClass",
         reference = engine_root.BaseClass,
     },
-    ["Namespace.Namespace.Class"] = {
-        identifier = "LocalVariableName",
-        reference  = game.ReplicatedStorage.SomeModule,
+    ["Lovecraft.SoftWeld"] = {
+        identifier = "SoftWeld",
+        reference = engine_root.SoftWeld,
     },
-    ["RBX.RunService"] = {
-        identifier = "RunService",
+    ["Game.Data.InteractiveObjectMetadata"] = {
+        identifier = "InteractiveObjectMetadata",
+        reference = game.ReplicatedFirst.HandAnimations,
     },
-    ["RBX.VRService"] = {
-
-    },
-    ["RBX.ReplicatedStorage"] = {
-
+    ["Game.Data.HandAnimations"] = {
+        identifier = "HandAnimations",
+        reference = game.ReplicatedStorage.HandAnimations
     },
 }
 
 ----------------------------------------------------------------
-
---[[ examples:
-using "Lovecraft.VRHand"
- <is equivalent to>
-local VRHand = require(blah.blah.blah.VRHand)
-
---
-
-using "RBX.RunService" -- is equivalent to
- <is equivalent to>
-local RunService = game:GetService("RunService")
-
-]]
-
 _G.using = function(md_signature, recache)
     
     assert(md_signature, "")
     assert(type(md_signature) == "string", "")
 
-    local md_metadata = module_database[md_signature]
-
-    assert(md_metadata, "")
-
-    local caller_env = getfenv(2)
-
-    local md_identifier = md_metadata.identifier
-    local md_reference = md_metadata.reference
     local md_instance
 
+    if (md_signature:sub(1, 3) == "RBX") then -- is a service
+        md_instance = game:GetService(md_signature:sub(5))
+
+
+        local caller_env = getfenv(2)
+        caller_env[md_signature:sub(5)] = md_instance
+        setfenv(2, caller_env)
+
+        return
+    end -- otherwise, it's a module.
+
+    local md_metadata = module_database[md_signature]
+    local md_identifier = md_metadata.identifier
+    local md_reference = md_metadata.reference
+
+    assert(md_identifier, "")
+    assert(md_reference, "")
+    assert(md_metadata, "")
+    
     if (md_reference:IsA("ModuleScript")) then
         if recache then -- do we need to discard old cache?
             md_instance = require(md_reference:Clone())
         else
             md_instance = require(md_reference)
         end
-    else -- assume attempting to import a service?
-        md_instance = game:GetService(md_metadata.identifier)
+    else
+        error("") -- shouldn't be anything else, eh?
     end
 
-
-    --return md_instance
-
-    
-
-    caller_env[md_metadata.identifier] = md_instance
+    local caller_env = getfenv(2)
+    caller_env[md_identifier.identifier] = md_instance
     setfenv(2, caller_env)
+    return
 end
 
 local Importer = {}

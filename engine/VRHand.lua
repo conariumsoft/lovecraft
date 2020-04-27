@@ -2,6 +2,7 @@
 	VRHand class
 	- last edit josh 4/24/20 7:00pm
 ]]--
+--[[
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst   = game:GetService("ReplicatedFirst")
 local Workspace			= game:GetService("Workspace")
@@ -13,12 +14,24 @@ local BaseObject 				= require(ReplicatedStorage.BaseObject)
 local r3handler  				= require(ReplicatedStorage.RotatedRegion3)
 local InteractiveObjectMetadata = require(ReplicatedStorage.ItemData)
 local HandAnimations			= require(ReplicatedFirst.HandAnimations)
+]]
+
+using "RBX.ReplicatedStorage"
+using "RBX.ReplicatedFirst"
+using "RBX.Workspace"
+using "RBX.VRService"
+using "RBX.PhysicsService"
+using "Lovecraft.BaseObject"
+using "Lovecraft.SoftWeld"
+using "Game.Data.InteractiveObjectMetadata"
+using "Game.Data.HandAnimations"
+
 
 
 local function FindGrabbableObjectInHandRegion(region)
 	-- TODO: collisiongroups instead of a folder?
 	
-	local parts = region:FindPartsInRegion3WithWhiteList(workspace.physics:GetDescendants(), 1000)
+	local parts = region:FindPartsInRegion3WithWhiteList(Workspace.physics:GetDescendants(), 1000)
 	
 	-- possible optimisation candidate
 	-- if we ever start having huge numbers of pickup items
@@ -31,6 +44,7 @@ local function FindGrabbableObjectInHandRegion(region)
 	return nil
 end
 
+--[[
 -- owen, pls define these :)
 local dbg_using_default = false
 
@@ -115,6 +129,7 @@ end
 local function BreakHardWeld(master_part, follower_part)
 	master_part.GrabConstraint:Destroy()
 end
+]]
 
 
 --- VR Hand Base class. 
@@ -122,30 +137,34 @@ end
 -- @description G
 local VRHand = BaseObject:subclass("VRHand")
 
-function VRHand:__ctor(player)
-	self.player = player
+function VRHand:__ctor(player, handedness, hand_model)
+	self.Player = player
 	
-	self.holdingObject = nil
+	self.Handedness = handedness
+
+	if (self.Handedness == "Left") then
+		self.UserCFrame = Enum.UserCFrame.LeftHand
+	else
+		self.UserCFrame = Enum.UserCFrame.RightHand
+	end
+
+	self.HoldingObject = nil -- if grabbed something
 	
-	self.handModel = nil
-	
-	self.userCFrame = nil--Enum.UserCFrame.Head
-	self.handedness = nil -- ("Left", "Right")
-	
-	--self.palmCurlAnim = nil
-	--self.indexCurlAnim = nil
+	self.HandModel = hand_model
 	
 	self.anims = {}
     self.currentAnim = nil
     self.isRunning = false
 
-	local lockPart = Instance.new("Part")
-	lockPart.Size = Vector3.new(1,1,1)
-	lockPart.Anchored = true
-	lockPart.CanCollide = false
-	lockPart.Transparency = 1
-	lockPart.Name = "HandLockPart"
-	lockPart.Parent = game.Workspace
+	local lockPart = Instance.new("Part") do 
+		-- reference position for VRHand reported position
+		lockPart.Size = Vector3.new(1,1,1)
+		lockPart.Anchored = true
+		lockPart.CanCollide = false
+		lockPart.Transparency = 1
+		lockPart.Name = "HandLockPart"
+		lockPart.Parent = game.Workspace
+	end
 	
 	self.lockPart = lockPart
 	

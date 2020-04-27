@@ -1,3 +1,52 @@
+require(game.ReplicatedStorage.Lovecraft.Initialize)
+-- above must be required once per machine...
+
+using "RBX.UserInputService"
+using "RBX.RunService"
+using "RBX.VRService"
+using "RBX.StarterGui"
+using "RBX.ReplicatedStorage"
+using "Lovecraft.VRHand"
+using "Game.Data.InteractiveObjectMetadata"
+
+
+--[[
+	btw: coding convention is as follows
+	stick to it as best as possible, it'll help keep confusion low
+
+	
+	-- locals to be snake_case
+	local some_thing = 3
+	-- constants to be capital SNAKE_CASE
+	local SOME_PHYSICS_CONSTANT = 42069
+
+	-- local functions snake_case
+	local function perform_operation(arg_one, arg_two)
+	-- arguments as well
+
+	-- Non-Class modules (in&out of module)
+	local Singleton = ...
+	Singleton.RunSomeCode()
+
+	-- CapCase for class definitions
+		local ClassObject = ...
+	
+		function ClassObject:Method()
+		end
+
+		ClassObject:Method()
+	-- use _CapCase if method should be internally used
+		ClassObject:_PrivateMethod()
+	-- ditto for properties
+		ClassObject.Property = 5
+		ClassObject._PrivateProperty = 420
+
+		local class_inst = ClassObject:new()
+
+
+]]
+
+--[[
 -- Services
 ------------------------------------------------------
 local UserInputService = game:GetService("UserInputService")
@@ -9,6 +58,7 @@ local ReplicatedStorage= game:GetService("ReplicatedStorage")
 -- Modules
 local VRHand  = require(ReplicatedStorage.VRHand_class)
 ------------------------------------------------------
+]]
 -- initialization of local models, camera stuff, blah blah
 if (UserInputService.VREnabled == false) then error("This game is VR only dummy!") end
 do -- Setup core GUI bull
@@ -26,10 +76,10 @@ local right_hand_model = game.ReplicatedStorage.RHand
 -- starting point object & camera focus
 local vr_base = game.Workspace.cameraPos
 
-
 local local_camera = game.Workspace.CurrentCamera do
 	local_camera.CameraSubject = vr_base
 	local_camera.CameraType = Enum.CameraType.Scriptable
+	local_camera.CFrame = CFrame.new(vr_base.Position)
 end
 
 -- container for vr hand models
@@ -38,83 +88,37 @@ local local_world_folder = Instance.new("Folder") do
 	local_world_folder.Parent = game.workspace
 end
 
-local LeftHand = VRHand:subclass("LeftHand")
--- TODO: check if can define class properties... (may not correctly inherit?)
---LeftHand.handModel = left_hand_model
-
-function LeftHand:__ctor(player)
-	-- TODO: make self.super:__ctor() work?
-	-- it may already work, I can't remember
-	VRHand.__ctor(self, player)
-	self.userCFrame = Enum.UserCFrame.LeftHand
-	self.handedness = "Left"
-	self.handModel = left_hand_model:Clone()
-	self.handModel.Parent = local_world_folder
-	
-	self:initializeAnimations()
-	self:connectModels()
+local LeftHand = VRHand:subclass("LeftHand") do
+	function LeftHand:__ctor(player)
+		-- TODO: make self.super:__ctor() work?
+		VRHand.__ctor(self, player)
+		self.userCFrame = Enum.UserCFrame.LeftHand
+		self.handedness = "Left"
+		self.handModel = left_hand_model:Clone()
+		self.handModel.Parent = local_world_folder
+		
+		self:initializeAnimations()
+		self:connectModels()
+	end
 end
 
-local RightHand = VRHand:subclass("RightHand")
-
-function RightHand:__ctor(player)
-	VRHand.__ctor(self, player)
-	self.handedness = "Right"
-	self.userCFrame = Enum.UserCFrame.RightHand
-	self.handModel = right_hand_model:Clone()
-	self.handModel.Parent = local_world_folder
-	
-	self:initializeAnimations()
-	self:connectModels()
+local RightHand = VRHand:subclass("RightHand") do
+	function RightHand:__ctor(player)
+		VRHand.__ctor(self, player)
+		self.handedness = "Right"
+		self.userCFrame = Enum.UserCFrame.RightHand
+		self.handModel = right_hand_model:Clone()
+		self.handModel.Parent = local_world_folder
+		
+		self:initializeAnimations()
+		self:connectModels()
+	end
 end
 
-local_camera.CFrame = CFrame.new(vr_base.Position)
-
+-- TODO: replicate hands to server?
 local my_left_hand = LeftHand:new(local_player)
 local my_right_hand = RightHand:new(local_player)
 
---------
-
-local InteractiveObjectMetadata = require(game.ReplicatedStorage.ItemData)
-
---[[	
-local ClosePMRLeft = testHands[1].Humanoid:LoadAnimation(testHands[1].closepmr)
-local ClosePMR = testHands[2].Humanoid:LoadAnimation(testHands[2].closepmr)
-local CloseIndex = testHands[2].Humanoid:LoadAnimation(testHands[2].closeindex)
-local CloseIndexLeft = testHands[1].Humanoid:LoadAnimation(testHands[1].closeindex)
-local penGrip = testHands[2].Humanoid:LoadAnimation(testHands[2].gMarker)
-local gunGrip = testHands[2].Humanoid:LoadAnimation(testHands[2].gunGrip)
-
-function playAnimsRight()
-	right = false
-	ClosePMR:Play()
-	--ClosePMRLeft:Play()
-	CloseIndex:Play()
-	--CloseIndexLeft:Play()
-	ClosePMR:AdjustSpeed(0)
-	CloseIndex:AdjustSpeed(0)
-	
-end
-function playAnimsLeft()
-	left = false
-	ClosePMRLeft:Play()
-	CloseIndexLeft:Play()
-	CloseIndexLeft:AdjustSpeed(0)
-	ClosePMRLeft:AdjustSpeed(0)
-end
-playAnimsRight()
-playAnimsLeft()
-function stopAnims()
-	right = true
-	ClosePMR:AdjustSpeed(5)
-	CloseIndex:AdjustSpeed(5)
-end
-function stopAnimsLeft()
-	left = true
-	CloseIndexLeft:AdjustSpeed(5)
-	ClosePMRLeft:AdjustSpeed(5)
-end]]
-	
 RunService.RenderStepped:Connect(function(delta)
 	
 	-- TODO: align relative to Enum.UserCFrame.Head?

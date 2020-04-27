@@ -13,7 +13,10 @@
         "StarterGui",
         "VRHand",
         "VRService",
-        "RunService"
+        "RunService",
+        "BaseClass",
+        "Workspace",
+        "BaseObject"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }
