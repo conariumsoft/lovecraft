@@ -23,6 +23,10 @@ local module_database = {
         identifier = "SoftWeld",
         reference = engine_root.SoftWeld,
     },
+    ["Lovecraft.ItemManager"] = {
+        identifier = "ItemManager",
+        reference = engine_root.ItemManager,
+    },
     ["Lovecraft.Lib.RotatedRegion3"] = {
         identifier = "RotatedRegion3",
         reference = engine_root.Lib.RotatedRegion3,

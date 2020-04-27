@@ -1,21 +1,3 @@
---[[
-	VRHand class
-	- last edit josh 4/24/20 7:00pm
-]]--
---[[
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ReplicatedFirst   = game:GetService("ReplicatedFirst")
-local Workspace			= game:GetService("Workspace")
-local VRService         = game:GetService("VRService")
-local PhysicsService    = game:GetService("PhysicsService")
---wassgoooddddd
-local camera = workspace.CurrentCamera
-local BaseObject 				= require(ReplicatedStorage.BaseObject)
-local r3handler  				= require(ReplicatedStorage.RotatedRegion3)
-local InteractiveObjectMetadata = require(ReplicatedStorage.ItemData)
-local HandAnimations			= require(ReplicatedFirst.HandAnimations)
-]]
-
 using "RBX.ReplicatedStorage"
 using "RBX.ReplicatedFirst"
 using "RBX.Workspace"
@@ -24,95 +6,9 @@ using "RBX.PhysicsService"
 using "Lovecraft.BaseObject"
 using "Lovecraft.SoftWeld"
 using "Lovecraft.Lib.RotatedRegion3"
-using "Game.Data.InteractiveObjectMetadata"
+using "Lovecraft.ItemManager"
+using "Game.Data.ItemMetadata"
 using "Game.Data.HandAnimations"
-
---[[
--- owen, pls define these :)
-local dbg_using_default = false
-
-local pos_is_rigid = false
-local pos_is_reactive = false
-local pos_responsiveness = 200
-local pos_max_force = 30000
-local pos_max_velocity = math.huge
-local rot_is_rigid = false
-local rot_is_reactive = false
-local rot_responsiveness = 25
-local rot_max_angular_vel = math.huge
-local rot_max_torque = 10000
-local rot_primary_axis_only = false
-
--- TODO: create a SoftWeld class module
-local function CreateSoftWeld(master_part, follower_part)
-
-	local master_attachment = Instance.new("Attachment")
-	master_attachment.Parent = master_part
-	master_attachment.Name = "MasterAttachment"
-	--master_attachment.Visible = true
-	
-	local follower_attachment = Instance.new("Attachment")
-	follower_attachment.Position = follower_part["attachmentOffset"].Value
-	follower_attachment.Parent = follower_part
-	--follower_attachment.Visible = true
-	follower_attachment.Name = "FollowerAttachment"
-	
-	local pos_constraint = Instance.new("AlignPosition") do	
-		pos_constraint.Name = "PositionConstraint"
-		pos_constraint.Visible = true
-		if (not dbg_using_default) then
-			pos_constraint.RigidityEnabled      = pos_is_rigid
-			pos_constraint.ReactionForceEnabled = pos_is_reactive
-			pos_constraint.Responsiveness       = pos_responsiveness
-			pos_constraint.MaxForce             = pos_max_force
-			pos_constraint.MaxVelocity          = pos_max_velocity
-		end
-		pos_constraint.Attachment0 = follower_attachment
-		pos_constraint.Attachment1 = master_attachment
-		
-		pos_constraint.Parent = master_part
-	end
-	
-	local rot_constraint = Instance.new("AlignOrientation") do
-		rot_constraint.Name = "RotationConstraint"
-		rot_constraint.Visible = true
-		if (not dbg_using_default) then
-			rot_constraint.MaxAngularVelocity    = rot_max_angular_vel
-			rot_constraint.MaxTorque             = rot_max_torque
-			rot_constraint.PrimaryAxisOnly       = rot_primary_axis_only
-			rot_constraint.ReactionTorqueEnabled = rot_is_reactive
-			rot_constraint.Responsiveness        = rot_responsiveness
-			rot_constraint.RigidityEnabled       = rot_is_rigid
-		end
-		
-		rot_constraint.Attachment0 = follower_attachment
-		rot_constraint.Attachment1 = master_attachment
-		
-		rot_constraint.Parent = master_part
-	end
-end
-
-local function BreakSoftWeld(master_part, follower_part)
-	master_part.MasterAttachment:Destroy()
-	follower_part.FollowerAttachment:Destroy()
-	master_part.PositionConstraint:Destroy()
-	master_part.RotationConstraint:Destroy()
-end
-
-local function CreateHardWeld(master_part, follower_part)
-	local weld = Instance.new("WeldConstraint")
-	
-	weld.Part0 = master_part
-	weld.Part1 = follower_part
-	weld.Parent = master_part
-	weld.Enabled = true
-	weld.Name = "GrabConstraint"
-end
-
-local function BreakHardWeld(master_part, follower_part)
-	master_part.GrabConstraint:Destroy()
-end
-]]
 
 --- VR Hand Base class. 
 -- @class VRHand
@@ -129,8 +25,6 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self.HandPosition = Vector3.new(0, 0, 0)
 	self.LastHandPosition = Vector3.new(0, 0, 0)
 	
-	
-
 	self.Head = vr_head
 	self.Player = player
 	self.Handedness = handedness
@@ -232,8 +126,6 @@ do -- animation methods
 	function VRHand:LerpAnimSet() end
 end
 
-
-
 function VRHand:SetIndexFingerCurl(grip_strength)
 	self.IndexFingerPressure = grip_strength
 	local anim = self:GetAnim("IndexFingerCurl")
@@ -247,6 +139,18 @@ function VRHand:SetGripCurl(grip_strength)
 end
 
 local DEBUG_SHOW_HAND_CFRAME = true
+
+function VRHand:_GrabObjectPrimaryGripPoint(object, primary_grip_point)
+
+end
+
+function VRHand:_GrabObjectGripPoint(object, grip_point)
+
+end
+
+function VRHand:_GrabObject(object)
+
+end
 
 function VRHand:Grab()
 
@@ -269,44 +173,7 @@ function VRHand:Grab()
 		end
 	end
 	
-	--[[
-		OBJECT GRABBING SCENARIOS:
-		these are not final decisions on objects, or even objects that'll be in game
-		i'm trying to cover the bases of interacting with objects in VR
-		
-		- marker
-			* one handed
-			* single grab
-			* custom anim
-			* special grip
-		- .44 Magnum Revolver
-			* one or two handed
-			* first hand to grab controls trigger
-			* grabs at cylinder/cylinder release (swings open)
-			* secondary trigger = cock the hammer
-		- M1911 pistol
-			* grip can be one or two handed
-			* secondary trigger = magazine release
-			* slide grip point
-			* custom anim, special grip
-		- vz62 Skorpion
-			* magazine grip point
-			* secondary trigger = magazine release
-			* one hand on handle
-		- box
-			* grip is held at the point of grabbing (no custom alignment)
-			* can grab with inf hands
-		- AkM
-			* grip points
-				charging handle
-				barrel
-				magazine
-				handle (one hand at a time)
-			* secondary trigger = magazine release
-			* custom anim & grip alignment for primary hand
-
-	]]
-
+	
 	local parts = region:FindPartsInRegion3WithWhiteList(Workspace.physics:GetDescendants())
 	local object = nil
 	for _, v in pairs(parts) do
@@ -314,24 +181,26 @@ function VRHand:Grab()
 
 		-- a gun's handle for example
 		if v:FindFirstChild("PrimaryGripPoint") then
-			if v.Value == false then -- item hasn't been grabbed yet, so this hand will grab
+			if v.PrimaryGripPoint.Value == false then -- item hasn't been grabbed yet, so this hand will grab
 				-- this hand is now primary grip
-
-
-
+				v.Value = true
+				self:_GrabObjectPrimaryGripPoint(v.Parent, v.PrimaryGripPoint)
+				return
 			end
 		end
 
 		if v:FindFirstChild("GripPoint") then
-			if v.Value == false then -- hasn't been grabbed yet
-
+			if v.GripPoint.Value == false then -- hasn't been grabbed yet
+				self:_GrabObjectGripPoint(v.Parent, v.GripPoint)
+				return
 			end
 		end
 
-		if v:FindFirstChild("pickup") then
-			object = v.Parent
-			print("found obj")
-			break
+		if v:FindFirstChild("Pickup") then
+			if v.Pickup.Value == false then
+				self:_GrabObject(v.Parent)
+				return
+			end
 		end
 	end
 	
@@ -354,17 +223,6 @@ function VRHand:Grab()
 
 	-- TODO: create sanity checks for indexing metadata list
 	local object_meta = InteractiveObjectMetadata[self.HoldingObject.Name]
-
-	--object_meta
-	
-	-- pretend code:
-	do
-		--local weapon_metadata_inst = blah
-
-
-
-	--	if weapon_metadata_inst
-	end
 
 	-- possible issue::
 	-- this is initial CFrame set, but we also are
@@ -398,7 +256,7 @@ function VRHand:Release()
 	-- TODO: play anim?
 	if self.HoldingObject ~= nil then
 		
-		self.GrabbedObjectWeld:Break()
+		self._GrabbedObjectWeld:Break()
 
 		for _, obj in pairs(self.HoldingObject:GetDescendants()) do
 			if obj:IsA("BasePart") then
@@ -407,6 +265,7 @@ function VRHand:Release()
 		end
 		
 		self.HoldingObject = nil
+		self.ObjectContactPoint = nil
 	end
 end
 

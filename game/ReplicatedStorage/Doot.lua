@@ -16,20 +16,21 @@ local BaseWeapon = InteractiveObj:subclass("BaseWeapon")
 
 local BaseFirearm = BaseWeapon:subclass("BaseFirearm")
 
-local BasePistol = BaseFirearm:subclass("BasePistol") do
+local BaseMagFedFirearm = BaseFirearm:subclass("BaseMagFedFirearm")
+
+local BasePistol = BaseMagFedFirearm:subclass("BasePistol") do
     BasePistol.GripPoints = {
-        ["Handle"] = GripPoint:new()
+        ["Handle"] = GripPoint:new(gunHandle, true, true),
+
     }
    -- BasePistol.
-
 end
 
+local BaseRevolver = BaseFirearm:subclass("BaseRevolver")
 
-local m1911 = BaseFirearm:new("M1911")
+local BasePDW = BaseMagFedFirearm:subclass("BasePDW")
 
-function m1911:OnHandGrabContact(player, hand, skorp_model, grip_point)
-
-end
+local Skorpion = BasePDW:subclass("Skorpion")
 
 
 local skorp = BaseFirearm:new("Skorpion")
