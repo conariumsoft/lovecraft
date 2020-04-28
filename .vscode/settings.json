@@ -22,7 +22,8 @@
         "HandAnimations",
         "RotatedRegion3",
         "InteractiveObjectMetadata",
-        "VRHead"
+        "VRHead",
+        "Debris"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

@@ -33,10 +33,6 @@ local wb_grid_size = 0.05 -- not really an actual grid...
 local wb_marker_detection_distance = 0.1
 local eraser_aggression = 0.05
 
-local function renderstep()
-	game:GetService("RunService").RenderStepped:Wait()
-end
-
 -- epic way:
 local Debris = game:GetService("Debris")
 
@@ -95,8 +91,8 @@ local InteractiveObjectMetadata = {
 	},
 	["Eraser"] = {
 		name = "Eraser",
-		grip_type = "Default",
-		grip_anim = "AnimName",--default_grip_animation,
+		grip_type = "Default", --"Anywhere", "GripPoint", "PrimaryGripPoint"
+		grip_anim = "AnimName", 
 		on_grab_step = function(player, hand, model, step)
 			local possible_objects = model.Base:GetTouchingParts()
 			for _, part in pairs(possible_objects) do
@@ -111,8 +107,17 @@ local InteractiveObjectMetadata = {
 	},
 	["Skorpion"] = {
 		name = "Skorpion",
-		grip_type = "Custom",
-		grip_anim = skorpion_grip_animation,
+		grip_type = "GripPoint",
+		grip_anims = {	
+			Handle = skorpion_grip_animation,
+		},
+		class = sk,
+		on_grab_step = sk.OnHeldStep,
+		on_hand_grab = sk.OnHandGrab,
+		on_hand_release = sk.OnHandRelease,
+		
+		--function(class, hand, model, dt, grip_point)
+
 		on_grab_step = function(player, hand, model, step)
 			if R2Down then
 				if skorpion_deb == false then

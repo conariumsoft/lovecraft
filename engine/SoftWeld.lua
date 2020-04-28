@@ -2,6 +2,11 @@ using("Lovecraft.BaseClass")
 
 local SoftWeld = BaseClass:subclass("SoftWeld")
 
+---
+-- @name ctor Softweld:new
+--
+--
+--
 function SoftWeld:__ctor(master_part, follower_part, props, visible)
     local pos_is_rigid = props.pos_is_rigid or false
     local pos_is_reactive = props.pos_is_reactive or false
@@ -63,6 +68,8 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     self.position_constraint = pos_constraint
     self.rotation_constraint = rot_constraint
 end
+
+---
 
 function SoftWeld:Destroy()
     self.master_attachment:Destroy()
