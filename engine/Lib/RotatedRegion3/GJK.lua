@@ -1,3 +1,4 @@
+--- RotatedRegion3 class
 local MAX_TRIES = 20
 local ZERO3 = Vector3.new(0, 0, 0)
 

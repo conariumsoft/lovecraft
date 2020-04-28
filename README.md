@@ -1,4 +1,4 @@
 # lovecraft-VR
-Virtual Reality Engine & Toolkit for ROBLOX.
+Virtual reality framework and toolkit for ROBLOX.
 
-engine folder gets loaded to `ReplicatedStorage.Lovecraft`
+The API Documentation can be found at: https://scientiist.github.io/lovecraft/

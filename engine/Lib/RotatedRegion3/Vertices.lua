@@ -1,3 +1,6 @@
+--- RotatedRegion3 class
+
+
 -- CONSTANTS
 
 local PI2 = math.pi*2

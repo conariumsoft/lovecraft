@@ -1,6 +1,11 @@
+--- Importer system, adds _G.using to global namespace.
+-- @copyright Conarium Software
+
+
 --[[
     NOTE: this script needs to simply be required once (1x) by the main control script of the platform.
 --]]
+
 
 local engine_root = game.ReplicatedStorage.Lovecraft
 
@@ -42,6 +47,15 @@ local module_database = {
 }
 
 ----------------------------------------------------------------
+
+
+--- UNIX-style module init. Allows imporation of modules and ROBLOX services.
+-- Intended to reduce ugly overhead of requiring modules, as well as having to keep track of module file paths.
+-- @name _G.using
+-- @class function
+-- @param md_signature string - module or service to import
+-- @param recache bool - should a new copy of the module be imported (ROBLOX module cache)
+-- @usage _G.using "RBX.RunService" -- adds RunService to environment without need for local variable
 _G.using = function(md_signature, recache)
     
     assert(md_signature, "")

@@ -1,3 +1,4 @@
+--- RotatedRegion3 class
 local ZERO = Vector3.new(0, 0, 0)
 local RIGHT = Vector3.new(1, 0, 0)
 
