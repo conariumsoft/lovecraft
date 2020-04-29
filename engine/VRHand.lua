@@ -191,7 +191,7 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 	end
 
 	-- master and follower part, respectively
-	self.HoldingObject:SetPrimaryPartCFrame(self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame))	
+	--self.HoldingObject:SetPrimaryPartCFrame(self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame))	
 	self._GrabbedObjectWeld = SoftWeld:new(self.HandModel.PrimaryPart, grip_point, {
 		-- TODO: custom props?
 		cframe_offset = grip_cf_offset,
@@ -266,7 +266,9 @@ function VRHand:Release()
 
 			CollisionGroupReset(obj)
 	--	end)
-		
+		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 4
+
+
 		self.HoldingObject = nil
 		self.GripPoint = nil
 	end
@@ -274,9 +276,19 @@ end
 ---
 function VRHand:Update(dt)
 
-	local reported_cframe = Workspace.CurrentCamera.CFrame * VRService:GetUserCFrame(self.UserCFrame)
+	if self.HoldingObject ~= nil then
 	
+		local object_meta = ItemMetadata[self.HoldingObject.Name]
+		if object_meta and object_meta.class then
+			object_meta.class:OnHeldStep(self, self.HoldingObject, dt, self.GripPoint)
+		end
+	end
 	self.LastHandPosition = self.HandPosition
+
+
+	if _G.VR_DEBUG then return end
+	local reported_cframe = Workspace.CurrentCamera.CFrame * VRService:GetUserCFrame(self.UserCFrame)
+
 	self.HandPosition = reported_cframe
 	
 	self.LockPart.CFrame = reported_cframe
@@ -288,13 +300,6 @@ function VRHand:Update(dt)
 		--SetCollisions(self.handModel, true)
 	end
 	
-	if self.HoldingObject ~= nil then
-	
-		local object_meta = ItemMetadata[self.HoldingObject.Name]
-		if object_meta and object_meta.class then
-			object_meta.class:OnHeldStep(self, self.HoldingObject, dt, self.GripPoint)
-		end
-	end
 end
 
 return VRHand

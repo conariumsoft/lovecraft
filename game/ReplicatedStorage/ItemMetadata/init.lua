@@ -1,15 +1,9 @@
-<<<<<<< HEAD:game/ReplicatedStorage/ItemMetadata/init.lua
 _G.using "RBX.UserInputService"
 _G.using "RBX.Workspace"
 _G.using "RBX.Debris"
 
 local Skorpion = require(script.Skorpion)
 
-=======
-using "RBX.UserInputService"
-using "RBX.Debris"
-using "RBX.Workspace"
->>>>>>> 8b82de3d4111119d8f213c7f4a52b499da9cd976:game/ReplicatedStorage/ItemData/init.lua
 local marker_grip_animation
 local skorpion_grip_animation
 local default_grip_animation = ...
@@ -119,11 +113,7 @@ local ItemMetadata = {
 		grip_anims = {
 			Handle = skorpion_grip_animation,
 		},
-<<<<<<< HEAD:game/ReplicatedStorage/ItemMetadata/init.lua
 		class = Skorpion,
-=======
-		class = require(script.Skorpion),
->>>>>>> 8b82de3d4111119d8f213c7f4a52b499da9cd976:game/ReplicatedStorage/ItemData/init.lua
 	}
 }
 

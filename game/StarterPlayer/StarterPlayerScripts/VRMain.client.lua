@@ -12,11 +12,16 @@ _G.using "Lovecraft.VRHand"
 _G.using "Lovecraft.VRHead"
 _G.using "Game.Data.ItemMetadata"
 
--- initialization of local models, camera stuff, blah blah
-if (UserInputService.VREnabled == false) then error("This game is VR only dummy!") end
-do -- Setup core GUI bull
+local vr_enabled = UserInputService.VREnabled
+
+if vr_enabled then
 	StarterGui:SetCore("VRLaserPointerMode", 0)
 	StarterGui:SetCore("VREnableControllerModels", false)
+
+else
+	_G.VR_DEBUG = true
+	--error("This game is VR only dummy!") 
+	_G.log("VR is not enabled, assuming Keyboard mode...")
 end
 
 -- local object references
@@ -42,6 +47,56 @@ RunService.RenderStepped:Connect(function(delta)
 	my_camera_head:Update(delta)
 	my_left_hand:Update(delta)
 	my_right_hand:Update(delta)
+
+	--bryh
+	if _G.VR_DEBUG then
+		-- can move each hand in 3 degrees, and rotate in 3 degrees
+		local l_mv_up       = UserInputService:IsKeyDown(Enum.KeyCode.Q)
+		local l_mv_down     = UserInputService:IsKeyDown(Enum.KeyCode.A)
+		local l_mv_left     = UserInputService:IsKeyDown(Enum.KeyCode.W)
+		local l_mv_right    = UserInputService:IsKeyDown(Enum.KeyCode.S)
+		local l_mv_back     = UserInputService:IsKeyDown(Enum.KeyCode.E)
+		local l_mv_forward  = UserInputService:IsKeyDown(Enum.KeyCode.D)
+		local l_roll_left   = UserInputService:IsKeyDown(Enum.KeyCode.R)
+		local l_roll_right  = UserInputService:IsKeyDown(Enum.KeyCode.F)
+		local l_pitch_left  = UserInputService:IsKeyDown(Enum.KeyCode.Z)
+		local l_pitch_right = UserInputService:IsKeyDown(Enum.KeyCode.X)
+		local l_yaw_left    = UserInputService:IsKeyDown(Enum.KeyCode.C)
+		local l_yaw_right   = UserInputService:IsKeyDown(Enum.KeyCode.V)
+
+		local r_mv_up       = UserInputService:IsKeyDown(Enum.KeyCode.Y)
+		local r_mv_left     = UserInputService:IsKeyDown(Enum.KeyCode.H)
+		local r_mv_down     = UserInputService:IsKeyDown(Enum.KeyCode.U)
+		local r_mv_right    = UserInputService:IsKeyDown(Enum.KeyCode.J)
+		local r_mv_forward  = UserInputService:IsKeyDown(Enum.KeyCode.I)
+		local r_mv_back     = UserInputService:IsKeyDown(Enum.KeyCode.K)
+		local r_roll_left   = UserInputService:IsKeyDown(Enum.KeyCode.O)
+		local r_roll_right  = UserInputService:IsKeyDown(Enum.KeyCode.L)
+		local r_pitch_left  = UserInputService:IsKeyDown(Enum.KeyCode.N)
+		local r_pitch_right = UserInputService:IsKeyDown(Enum.KeyCode.M)
+		local r_yaw_left    = UserInputService:IsKeyDown(Enum.KeyCode.Comma)
+		local r_yaw_right   = UserInputService:IsKeyDown(Enum.KeyCode.Period)
+
+		local dt = 1/60
+
+		local lx = (l_mv_left and dt or 0) - (l_mv_right and dt or 0)
+		local ly = (l_mv_up and dt or 0) - (l_mv_down and dt or 0)
+		local lz = (l_mv_forward and dt or 0) - (l_mv_back and dt or 0)
+		local lp = (l_pitch_left and dt or 0) - (l_pitch_right and dt or 0)
+		local lyw= (l_yaw_left and dt or 0) - (l_yaw_right and dt or 0)
+		local lr = (l_roll_left and dt or 0) - (l_roll_right and dt or 0)
+		
+		local rx = (r_mv_left and dt or 0) - (r_mv_right and dt or 0)
+		local ry = (r_mv_up and dt or 0) - (r_mv_down and dt or 0)
+		local rz = (r_mv_forward and dt or 0) - (r_mv_back and dt or 0)
+		local rp = (r_pitch_left and dt or 0) - (r_pitch_right and dt or 0)
+		local ryw= (r_yaw_left and dt or 0) - (r_yaw_right and dt or 0)
+		local rr = (r_roll_left and dt or 0) - (r_roll_right and dt or 0)
+
+		my_left_hand.LockPart.CFrame = my_left_hand.LockPart.CFrame * CFrame.new(lx, ly, lz, lp, lyw, lr)
+		my_right_hand.LockPart.CFrame = my_right_hand.LockPart.CFrame * CFrame.new(rx, ry, rz, rp, ryw, rr)
+	
+	end
 end)
 
 local sensor_grip_right  = Enum.KeyCode.ButtonR1
