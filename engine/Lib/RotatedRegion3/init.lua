@@ -1,3 +1,4 @@
+--- RotatedRegion3 class
 --[[
 
 This is a Rotated Region3 Class that behaves much the same as the standard Region3 class expect that it allows

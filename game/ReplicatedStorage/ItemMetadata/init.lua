@@ -1,9 +1,15 @@
+<<<<<<< HEAD:game/ReplicatedStorage/ItemMetadata/init.lua
 _G.using "RBX.UserInputService"
 _G.using "RBX.Workspace"
 _G.using "RBX.Debris"
 
 local Skorpion = require(script.Skorpion)
 
+=======
+using "RBX.UserInputService"
+using "RBX.Debris"
+using "RBX.Workspace"
+>>>>>>> 8b82de3d4111119d8f213c7f4a52b499da9cd976:game/ReplicatedStorage/ItemData/init.lua
 local marker_grip_animation
 local skorpion_grip_animation
 local default_grip_animation = ...
@@ -36,8 +42,6 @@ local wb_grid_size = 0.05 -- not really an actual grid...
 local wb_marker_detection_distance = 0.1
 local eraser_aggression = 0.05
 
--- epic way:
-local Debris = game:GetService("Debris")
 
 local function Scorpion(player, hand, scorpion, delta)
 		print("Scorpion fired!")
@@ -83,12 +87,12 @@ local ItemMetadata = {
 	        	model.Tip.Position, 
 	        	model.Tip.CFrame.LookVector * wb_marker_detection_distance
 		   	 )
-		    local part, hit_position = game.Workspace:FindPartOnRayWithWhitelist(ray,{workspace.Whiteboard})
+		    local part, hit_position = game.Workspace:FindPartOnRayWithWhitelist(ray,{Workspace.Whiteboard})
 	
 		    if (part and part.Name == "Whiteboard") then
 		        local new_mark = CreateGridMark(model.Tip.Color)
 		        new_mark.Position = hit_position
-		        new_mark.Parent = workspace.Grid
+		        new_mark.Parent = Workspace.Grid
 		    end
 		end ,
 	},
@@ -115,7 +119,11 @@ local ItemMetadata = {
 		grip_anims = {
 			Handle = skorpion_grip_animation,
 		},
+<<<<<<< HEAD:game/ReplicatedStorage/ItemMetadata/init.lua
 		class = Skorpion,
+=======
+		class = require(script.Skorpion),
+>>>>>>> 8b82de3d4111119d8f213c7f4a52b499da9cd976:game/ReplicatedStorage/ItemData/init.lua
 	}
 }
 
