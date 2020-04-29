@@ -1,5 +1,5 @@
-using "Lovecraft.BaseClass"
-using "RBX.VRService"
+_G.using "Lovecraft.BaseClass"
+_G.using "RBX.VRService"
 
 local VRHead = BaseClass:subclass("VRHead")
 
@@ -14,13 +14,12 @@ end
 function VRHead:__ctor(player)
 
     self.Camera = local_camera
-    self.CFrame = VRService:GetUserCFrame(Enum.UserCFrame.Head)
 
     self.Player = player
 end
 
 function VRHead:Update(delta)
-    self.CFrame = VRService:GetUserCFrame(Enum.UserCFrame.Head)
+    self.CFrame = Workspace.CurrentCamera.CFrame
 end
 
 

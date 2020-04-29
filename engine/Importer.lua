@@ -23,35 +23,38 @@ local module_database = {
         identifier = "SoftWeld",
         reference = engine_root.SoftWeld,
     },
-    ["Lovecraft.ItemManager"] = {
-        identifier = "ItemManager",
-        reference = engine_root.ItemManager,
-    },
     ["Lovecraft.Lib.RotatedRegion3"] = {
         identifier = "RotatedRegion3",
         reference = engine_root.Lib.RotatedRegion3,
     },
-    ["Game.Data.InteractiveObjectMetadata"] = {
-        identifier = "InteractiveObjectMetadata",
-        reference = game.ReplicatedFirst.HandAnimations,
+    ["Game.Data.ItemMetadata"] = {
+        identifier = "ItemMetadata",
+        reference = game.ReplicatedStorage.ItemMetadata,
     },
     ["Game.Data.HandAnimations"] = {
         identifier = "HandAnimations",
-        reference = game.ReplicatedStorage.HandAnimations
+        reference = game.ReplicatedFirst.HandAnimations
     },
 }
+
+local function confirm(eval, message)
+    if not eval then
+        error("LovecraftVR: "..message, 2)
+    end
+end
+
 
 ----------------------------------------------------------------
 _G.using = function(md_signature, recache)
     
-    assert(md_signature, "")
-    assert(type(md_signature) == "string", "")
+    -- Errare humanum est.
+    confirm(md_signature, "modulename cannot be nil")
+    confirm(type(md_signature) == "string", "modulesignature must be type string")
 
     local md_instance
-
+    
     if (md_signature:sub(1, 3) == "RBX") then -- is a service
         md_instance = game:GetService(md_signature:sub(5))
-
 
         local caller_env = getfenv(2)
         caller_env[md_signature:sub(5)] = md_instance
@@ -61,13 +64,16 @@ _G.using = function(md_signature, recache)
     end -- otherwise, it's a module.
 
     local md_metadata = module_database[md_signature]
+
+    confirm(md_metadata,   "Import database nonexistent for "..md_signature)
+
     local md_identifier = md_metadata.identifier
     local md_reference = md_metadata.reference
 
-    assert(md_identifier, "")
-    assert(md_reference, "")
-    assert(md_metadata, "")
+    confirm(md_identifier, "Import database missing identifier for "..md_signature)
+    confirm(md_reference,  "Import database missing moduleref for "..md_signature)
     
+    --hello
     if (md_reference:IsA("ModuleScript")) then
         if recache then -- do we need to discard old cache?
             md_instance = require(md_reference:Clone())
@@ -75,17 +81,16 @@ _G.using = function(md_signature, recache)
             md_instance = require(md_reference)
         end
     else
-        error("") -- shouldn't be anything else, eh?
+        confirm(false, "Module reference linked to non-modulescript object! Cannot import "..md_signature) 
     end
+    confirm(md_instance, "Could not find source file for "..md_signature.." , ModuleScript most likely does not exist in the datamodel!")
 
     local caller_env = getfenv(2)
-    caller_env[md_identifier.identifier] = md_instance
+    caller_env[md_identifier] = md_instance
     setfenv(2, caller_env)
     return
 end
 
 local Importer = {}
-
-
 
 return Importer

@@ -1,5 +1,6 @@
 local function LoadAnimFile(id)
-	local anim = Instance.new(id)
+	local anim = Instance.new("Animation")
+	anim.AnimationId = id
 	anim.Parent = script
 	return anim
 end

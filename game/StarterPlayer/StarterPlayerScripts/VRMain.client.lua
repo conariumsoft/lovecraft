@@ -1,14 +1,16 @@
 require(game.ReplicatedStorage.Lovecraft.Lovecraft)
 -- above must be required once per machine...
 
-using "RBX.UserInputService"
-using "RBX.RunService"
-using "RBX.VRService"
-using "RBX.StarterGui"
-using "RBX.ReplicatedStorage"
-using "Lovecraft.VRHand"
-using "Lovecraft.VRHead"
-using "Game.Data.InteractiveObjectMetadata"
+_G.log("Initializing VR client.")
+
+_G.using "RBX.UserInputService"
+_G.using "RBX.RunService"
+_G.using "RBX.VRService"
+_G.using "RBX.StarterGui"
+_G.using "RBX.ReplicatedStorage"
+_G.using "Lovecraft.VRHand"
+_G.using "Lovecraft.VRHead"
+_G.using "Game.Data.ItemMetadata"
 
 -- initialization of local models, camera stuff, blah blah
 if (UserInputService.VREnabled == false) then error("This game is VR only dummy!") end

@@ -1,4 +1,4 @@
-using "Lovecraft.BaseClass"
+_G.using "Lovecraft.BaseClass"
 
 local BaseInteractive = BaseClass:subclass("InteractiveObject")
 

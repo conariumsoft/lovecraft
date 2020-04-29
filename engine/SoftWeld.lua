@@ -1,4 +1,4 @@
-using("Lovecraft.BaseClass")
+_G.using("Lovecraft.BaseClass")
 
 local SoftWeld = BaseClass:subclass("SoftWeld")
 
@@ -8,6 +8,7 @@ local SoftWeld = BaseClass:subclass("SoftWeld")
 --
 --
 function SoftWeld:__ctor(master_part, follower_part, props, visible)
+    props = props or {}
     local pos_is_rigid = props.pos_is_rigid or false
     local pos_is_reactive = props.pos_is_reactive or false
     local pos_responsiveness = props.pos_responsiveness or 200
@@ -21,6 +22,8 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     local rot_primary_axis_only = props.rot_primary_axis_only or false
     local visible = props.visible or false
 
+    local cframe_offset = props.cframe_offset
+
     local master_att = Instance.new("Attachment")
     master_att.Parent = master_part
     master_att.Name = "SoftWeldMasterAttachment"
@@ -28,6 +31,11 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     local follower_att = Instance.new("Attachment")
     follower_att.Parent = follower_part
     follower_att.Name = "SoftWeldFollowerAttachment"
+
+    if cframe_offset then
+        master_att.CFrame = cframe_offset
+    end
+
 
     local pos_constraint = Instance.new("AlignPosition") do
         pos_constraint.Name = "SoftWeldPositionConstraint"
@@ -76,14 +84,6 @@ function SoftWeld:Destroy()
     self.follower_attachment:Destroy()
     self.position_constraint:Destroy()
     self.rotation_constraint:Destroy()
-end
-
-function SoftWeld:Enable()
-
-end
-
-function SoftWeld:Disable()
-
 end
 
 

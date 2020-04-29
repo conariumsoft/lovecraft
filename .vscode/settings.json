@@ -23,7 +23,8 @@
         "RotatedRegion3",
         "InteractiveObjectMetadata",
         "VRHead",
-        "Debris"
+        "Debris",
+        "ItemMetadata"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

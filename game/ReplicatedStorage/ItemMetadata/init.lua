@@ -1,16 +1,19 @@
-local uis = game:GetService("UserInputService")
--- TODO: put in separate module
+_G.using "RBX.UserInputService"
+_G.using "RBX.Workspace"
+_G.using "RBX.Debris"
+
+local Skorpion = require(script.Skorpion)
 
 local marker_grip_animation
 local skorpion_grip_animation
 local default_grip_animation = ...
 local R2Down = false
-uis.InputBegan:Connect(function(inp,gpe)
+UserInputService.InputBegan:Connect(function(inp,gpe)
 	if inp.KeyCode == Enum.KeyCode.ButtonR2 and not gpe then
 		R2Down = true
 	end
 end)
-uis.InputEnded:Connect(function(inp,gpe)
+UserInputService.InputEnded:Connect(function(inp,gpe)
 	if inp.KeyCode == Enum.KeyCode.ButtonR2 and not gpe then
 		R2Down = false
 	end
@@ -60,7 +63,7 @@ end
 local skorpion_deb = false
 
 -- setup code finished. --
-local InteractiveObjectMetadata = {
+local ItemMetadata = {
 	["Marker"] = {
 		name = "Marker",
 		grip_type = "Custom",
@@ -105,33 +108,17 @@ local InteractiveObjectMetadata = {
 			end
 		end
 	},
+
 	["Skorpion"] = {
 		name = "Skorpion",
 		grip_type = "GripPoint",
-		grip_anims = {	
+		grip_anims = {
 			Handle = skorpion_grip_animation,
 		},
-		class = sk,
-		on_grab_step = sk.OnHeldStep,
-		on_hand_grab = sk.OnHandGrab,
-		on_hand_release = sk.OnHandRelease,
-		
-		--function(class, hand, model, dt, grip_point)
-
-		on_grab_step = function(player, hand, model, step)
-			if R2Down then
-				if skorpion_deb == false then
-					skorpion_deb = true
-					print("Made it here")
-					Scorpion(player, hand, model, step)
-				end
-			else
-				skorpion_deb = false
-			end
-		end
+		class = Skorpion,
 	}
 }
 
 
 	
-return InteractiveObjectMetadata
+return ItemMetadata

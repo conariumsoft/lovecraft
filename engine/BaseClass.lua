@@ -31,7 +31,7 @@ end
 local obj = {}
 
 obj.__index = obj
-obj.types = {"BaseObject"}
+obj.types = {"BaseClass"}
 
 
 --- Instance creation callback, User defines class:init(...) and jutils calls it when class:new(...) is called.
