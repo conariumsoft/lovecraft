@@ -31,27 +31,12 @@ local function table_contains(t, val)
 	return false
 end
 
-<<<<<<< HEAD
-local obj = {}
-
-obj.__index = obj
-obj.types = {"BaseClass"}
-
-
---- Instance creation callback, User defines class:init(...) and jutils calls it when class:new(...) is called.
--- @usage function myClass:init(arg) self.property = arg end
--- @name jutils.object:init
--- @see jutils.object:new
--- @see jutils.object:subclass
-function obj:__ctor(...)
-=======
 --- Instance creation callback, User defines class:__ctor(...) (AKA Class constructor) 
 -- @usage function myClass:__ctor(arg) self.property = arg end
 -- @name Constructor
 -- @see BaseClass:new
 -- @see BaseClass:subclass
 function BaseClass:__ctor(...)
->>>>>>> 8b82de3d4111119d8f213c7f4a52b499da9cd976
 
 end
 
