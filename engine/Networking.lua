@@ -1,5 +1,5 @@
-using "RBX.ReplicatedStorage"
-using "RBX.RunService"
+_G.using "RBX.ReplicatedStorage"
+_G.using "RBX.RunService"
 
 local Networking = {}
 

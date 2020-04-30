@@ -44,10 +44,7 @@ local module_database = {
         identifier = "ItemMetadata",
         reference = game.ReplicatedStorage.ItemMetadata,
     },
-    ["Game.Data.HandAnimations"] = {
-        identifier = "HandAnimations",
-        reference = game.ReplicatedFirst.HandAnimations
-    },
+
 }
 
 local function confirm(eval, message)
@@ -95,7 +92,6 @@ _G.using = function(md_signature, recache)
     confirm(md_identifier, "Import database missing identifier for "..md_signature)
     confirm(md_reference,  "Import database missing moduleref for "..md_signature)
     
-    --hello
     if (md_reference:IsA("ModuleScript")) then
         if recache then -- do we need to discard old cache?
             md_instance = require(md_reference:Clone())

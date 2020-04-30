@@ -8,6 +8,7 @@ local marker_grip_animation
 local skorpion_grip_animation
 local default_grip_animation = ...
 local R2Down = false
+--?
 UserInputService.InputBegan:Connect(function(inp,gpe)
 	if inp.KeyCode == Enum.KeyCode.ButtonR2 and not gpe then
 		R2Down = true

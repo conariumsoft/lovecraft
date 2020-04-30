@@ -19,7 +19,6 @@
         "BaseObject",
         "SoftWeld",
         "PhysicsService",
-        "HandAnimations",
         "RotatedRegion3",
         "InteractiveObjectMetadata",
         "VRHead",
@@ -27,7 +26,9 @@
         "ItemMetadata",
         "ReplicatedStorage",
         "Networking",
-        "CollisionMasking"
+        "CollisionMasking",
+        "HapticService",
+        "Color3"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

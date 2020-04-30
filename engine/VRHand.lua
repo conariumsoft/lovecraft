@@ -2,26 +2,27 @@ _G.using "RBX.ReplicatedStorage"
 _G.using "RBX.ReplicatedFirst"
 _G.using "RBX.Workspace"
 _G.using "RBX.VRService"
+_G.using "RBX.HapticService"
 _G.using "RBX.PhysicsService"
 _G.using "Lovecraft.BaseClass"
 _G.using "Lovecraft.SoftWeld"
 _G.using "Lovecraft.Lib.RotatedRegion3"
 _G.using "Game.Data.ItemMetadata"
-_G.using "Game.Data.HandAnimations"
+
 
 --- VR Hand Base class. 
 local VRHand = BaseClass:subclass("VRHand")
 
--- TODO: developer mode
+-- TODO: developer modefff
 -- telekensis
 -- work on multiplayer
 -- make the mechanicsms of the system more transparent (less guessing about what's going on!)
-
 
 ---
 -- @name VRHand:new()
 function VRHand:__ctor(player, vr_head, handedness, hand_model)
 
+	self.Haptics = {}
 	self.IsGripped = true
 	self.IndexFingerPressure = 0
 	self.GripPressure = 0
@@ -35,57 +36,67 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self.Player = player
 	self.Handedness = handedness
 
+	local has_vibration = HapticService:IsVibrationSupported(Enum.UserInputType.Gamepad1)
+
 	if (self.Handedness == "Left") then
 		self.UserCFrame = Enum.UserCFrame.LeftHand
+		if has_vibration then
+			self.Haptics = {
+				Enum.VibrationMotor.LeftTrigger,
+				Enum.VibrationMotor.LeftHand
+			}
+		end
 	else
 		self.UserCFrame = Enum.UserCFrame.RightHand
+		if has_vibration then
+			self.Haptics = {
+				Enum.VibrationMotor.RightTrigger,
+				Enum.VibrationMotor.RightHand
+			}
+		end
 	end
 
 	self.HandModel = hand_model
 	--self.HandModel.Parent = Workspace.LocalVRModels
 	
-	local lock_pt = Instance.new("Part") do 
+	local virtual_hand = Instance.new("Part") do 
 		-- reference position for VRHand reported position
-		lock_pt.Size = Vector3.new(0.2,0.2,0.2)
-		lock_pt.Anchored = true
-		lock_pt.CanCollide = false
-		lock_pt.Transparency = 0.5
-		lock_pt.Color = Color3.new(0.5, 0.5, 1)
-		lock_pt.Name = "HandLockPart"
-		lock_pt.Parent = game.Workspace
+		virtual_hand.Size = Vector3.new(0.2,0.2,0.2)
+		virtual_hand.Anchored = true
+		virtual_hand.CanCollide = false
+		virtual_hand.Transparency = 0.5
+		virtual_hand.Color = Color3.new(0.5, 0.5, 1)
+		virtual_hand.Name = "VirtualHand"
+		virtual_hand.Parent = game.Workspace
 	end
-	self.LockPart = lock_pt
+	self.VirtualHand = virtual_hand
 
 	self.HoldingObject = nil -- if grabbed something
 	self.GripPoint = nil
 	-- weld properties here
-	self._HandModelSoftWeld = SoftWeld:new(self.LockPart, self.HandModel.PrimaryPart, {
+	self._HandModelSoftWeld = SoftWeld:new(self.VirtualHand, self.HandModel.PrimaryPart, {
 		pos_responsiveness = 75,
 		rot_responsiveness = 50,
 	})
 	self._GrabbedObjectWeld = nil
 	
-	self.Animator = self.Player.Character[self.Handedness.."HandAnim"]
-	for name, val in pairs(HandAnimations) do
-		assert(val, name.." anim is nil?")
-		
-		if (type(val) == "userdata" and val:IsA("Animation")) then
-			self:AddAnim(name, val)	
-		elseif (type(val) == "table") then
-			self:AddAnim(name, val[self.Handedness])
-		else
-			error("test fail condition: animation was unable to load: "..name)
-		end
+	self.Animator = self.HandModel.Animator
+	for _, anim in pairs(ReplicatedStorage.Animations[self.Handedness]:GetChildren()) do
+		local track = self.Animator:LoadAnimation(anim)
+		--track.Parent = self.Animator
+		track:Play()
+		track:AdjustSpeed(0)
+		self.Anims[anim.Name] = track
+	end
+end
+
+function VRHand:SetRumble(rumble_scale)
+	for _, motor in pairs(self.Haptics) do
+		HapticService:SetMotor(Enum.UserInputType.Gamepad1, motor, rumble_scale)
 	end
 end
 
 do -- animation methods
-	function VRHand:AddAnim(name, animation)
-		local anim_track = self.Animator:LoadAnimation(animation)
-		anim_track:Play()
-		anim_track:AdjustSpeed(0)
-		self.Anims[name] = anim_track
-	end
 	function VRHand:HasAnim(name)
 		for key, val in pairs(self.Anims) do
 			if key == name then
@@ -103,14 +114,10 @@ do -- animation methods
 	    self.CurrentAnim = anim_track
 	    
 	end
-	
-	function VRHand:PlayAnim(anim_track, fade_time, weight, speed)
-	
+	function VRHand:PlayAnim(anim_track, fade_time, weight, speed)-->
 		local anim = self.Anims[anim_track]
 		anim:Play(fade_time, weight, speed)
-	
 	end
-
 	function VRHand:GetAnimTimeSeconds()end
 	function VRHand:SetAnimTimeScale()      end
 	function VRHand:SetAnimPlaybackScale()  end
@@ -122,14 +129,14 @@ end
 ---
 function VRHand:SetIndexFingerCurl(grip_strength)
 	self.IndexFingerPressure = grip_strength
-	local anim = self:GetAnim("IndexFingerCurl")
+	local anim = self:GetAnim("Index")
 	anim.TimePosition = anim.Length * grip_strength
 end
 
 ---
 function VRHand:SetGripCurl(grip_strength)
 	self.GripPressure = grip_strength
-	local anim = self:GetAnim("PalmCurl")
+	local anim = self:GetAnim("Grip")
 	anim.TimePosition = anim.Length * grip_strength
 end
 
@@ -242,17 +249,16 @@ function VRHand:Release()
 			object_meta.class:OnHandRelease(self, self.HoldingObject, self.GripPoint)
 		end
 
-		self._GrabbedObjectWeld:Destroy()
-	--	delay(1, function()
-			local obj = self.HoldingObject
-
+		local obj = self.HoldingObject
+		delay(1, function()
 			CollisionGroupReset(obj)
-	--	end)
-		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 4
+		end)
+		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 8
 
-
+		
 		self.HoldingObject = nil
 		self.GripPoint = nil
+		self._GrabbedObjectWeld:Destroy()
 	end
 end
 ---
@@ -273,12 +279,15 @@ function VRHand:Update(dt)
 
 	self.HandPosition = reported_cframe
 	
-	self.LockPart.CFrame = reported_cframe
+	self.VirtualHand.CFrame = reported_cframe
 	
 	-- TODO: optimize
-	if (self.LockPart.Position - self.HandModel.PrimaryPart.Position).magnitude > 5 then
+	local hand_from_virtual_distance = (self.VirtualHand.Position - self.HandModel.PrimaryPart.Position).magnitude
+	if hand_from_virtual_distance > 0.5 then
+		self:SetRumble(hand_from_virtual_distance/4) -- play with this value.?
 		--SetCollisions(self.handModel, false)
 	else
+		self:SetRumble(0)
 		--SetCollisions(self.handModel, true)
 	end
 	

@@ -1,3 +1,5 @@
+_G.using "RBX.PhysicsService"
+
 local CollisionMasking = {}
 
 
