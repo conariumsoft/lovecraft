@@ -22,6 +22,7 @@ local VRHand = BaseClass:subclass("VRHand")
 -- @name VRHand:new()
 function VRHand:__ctor(player, vr_head, handedness, hand_model)
 
+	self.IsGripped = true
 	self.IndexFingerPressure = 0
 	self.GripPressure = 0
 	self.Anims = {}
@@ -41,15 +42,7 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	end
 
 	self.HandModel = hand_model
-	self.HandModel.Parent = Workspace.LocalVRModels
-	do
-		local collision_group = self.Handedness.."Hand"
-		for _, obj in pairs(self.HandModel:GetDescendants()) do 
-			if obj:IsA("BasePart") then
-				PhysicsService:SetPartCollisionGroup(obj, collision_group)
-			end 
-		end
-	end
+	--self.HandModel.Parent = Workspace.LocalVRModels
 	
 	local lock_pt = Instance.new("Part") do 
 		-- reference position for VRHand reported position
@@ -67,21 +60,12 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self.GripPoint = nil
 	-- weld properties here
 	self._HandModelSoftWeld = SoftWeld:new(self.LockPart, self.HandModel.PrimaryPart, {
-		pos_responsiveness = 75, 
+		pos_responsiveness = 75,
 		rot_responsiveness = 50,
 	})
 	self._GrabbedObjectWeld = nil
 	
-	self:InitializeAnimations()
-end
-
----
-function VRHand:InitializeAnimations()
-	self.Animator = Instance.new("AnimationController")
-	self.Animator.Parent = self.HandModel	
-	-- assuming object subclass ctor has been called
-	-- meaning these properties should be defined
-
+	self.Animator = self.Player.Character[self.Handedness.."HandAnim"]
 	for name, val in pairs(HandAnimations) do
 		assert(val, name.." anim is nil?")
 		
@@ -97,9 +81,7 @@ end
 
 do -- animation methods
 	function VRHand:AddAnim(name, animation)
-		
 		local anim_track = self.Animator:LoadAnimation(animation)
-		
 		anim_track:Play()
 		anim_track:AdjustSpeed(0)
 		self.Anims[name] = anim_track

@@ -16,6 +16,14 @@ local module_database = {
         identifier = "VRHand",
         reference = engine_root.VRHand,
     },
+    ["Lovecraft.Networking"] = {
+        identifier = "Networking",
+        reference = engine_root.Networking,
+    },
+    ["Lovecraft.CollisionMasking"] = {
+        identifier = "CollisionMasking",
+        reference = engine_root.CollisionMasking
+    },
     ["Lovecraft.VRHead"] = {
         identifier = "VRHead",
         reference = engine_root.VRHead,

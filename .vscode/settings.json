@@ -24,7 +24,10 @@
         "InteractiveObjectMetadata",
         "VRHead",
         "Debris",
-        "ItemMetadata"
+        "ItemMetadata",
+        "ReplicatedStorage",
+        "Networking",
+        "CollisionMasking"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }
