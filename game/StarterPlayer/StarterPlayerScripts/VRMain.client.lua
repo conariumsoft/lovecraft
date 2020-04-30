@@ -75,8 +75,11 @@ RunService.RenderStepped:Connect(function(delta)
 		local r_yaw_left    = UserInputService:IsKeyDown(Enum.KeyCode.Comma)
 		local r_yaw_right   = UserInputService:IsKeyDown(Enum.KeyCode.Period)
 
+<<<<<<< HEAD
 		-- TODO: implement grabbing
 
+=======
+>>>>>>> origin/master
 		local dt = 1/60
 
 		local lx = (l_mv_left and dt or 0) - (l_mv_right and dt or 0)
