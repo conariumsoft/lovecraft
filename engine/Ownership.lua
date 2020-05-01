@@ -11,4 +11,5 @@ function Ownership.SetModelNetworkOwner(model, network_owner)
     end
 end
 
+
 return Ownership

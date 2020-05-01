@@ -1,8 +1,6 @@
 
 while true do
-
     wait(1/1)
-
     for _, part in pairs(game.Workspace.physics:GetDescendants()) do
         if part:IsA("BasePart") then
             if part:GetNetworkOwner() ~= nil then

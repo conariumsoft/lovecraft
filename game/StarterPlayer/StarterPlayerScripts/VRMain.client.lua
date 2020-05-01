@@ -57,29 +57,27 @@ RunService.RenderStepped:Connect(function(delta)
 	my_left_hand:Update(delta)
 	my_right_hand:Update(delta)
 
-	my_camera_head.BaseStation.CFrame = my_camera_head.BaseStation.CFrame * CFrame.new(joystick_left.X, 0, joystick_left.Y)
+	my_camera_head.BaseStation.CFrame = my_camera_head.BaseStation.CFrame * CFrame.new(joystick_right.X/10, 0, joystick_right.Y/10)
 
 	if _G.VR_DEBUG then
 		DebugBoard.RenderStep(my_camera_head, my_left_hand, my_right_hand)
 	end
 end)
 
-
 local function round(number, decimals)
 	local power = 10^decimals
     return math.floor(number * power) / power
 end
 
-
 UserInputService.InputChanged:Connect(function(inp, _)
 	if inp.UserInputType == Enum.UserInputType.Gamepad1 then
-		if inp.KeyCode == Enum.KeyCode.Thumbstick1 then -- left joystick
+		if inp.KeyCode == Enum.KeyCode.Thumbstick2 then -- left joystick
 			-- TODO: implement body of some sort
-			joystick_left = inp.Position
-		end
-		if inp.KeyCode == Enum.KeyCode.Thumbstick2 then -- right joystick
 			joystick_right = inp.Position
-			if round(joystick_right.X, 1) == 0 then -- rounding trick. if between -0.1 and 0.1...
+		end
+		if inp.KeyCode == Enum.KeyCode.Thumbstick1 then -- right joystick
+			joystick_left = inp.Position
+			if round(joystick_left.X, 1) == 0 then -- rounding trick. if between -0.1 and 0.1...
 				local base = my_camera_head.BaseStation
 				if l_joystick_flick then
 					l_joystick_flick = false
@@ -90,8 +88,8 @@ UserInputService.InputChanged:Connect(function(inp, _)
 					base.CFrame = base.CFrame * CFrame.Angles(0, math.rad(90), 0)
 				end
 			end
-			if joystick_right.X > 0.9 then r_joystick_flick = true end
-			if joystick_right.X < -0.9 then l_joystick_flick = true end
+			if joystick_left.X > 0.9 then  r_joystick_flick = true end
+			if joystick_left.X < -0.9 then l_joystick_flick = true end
 		end
 	end
 

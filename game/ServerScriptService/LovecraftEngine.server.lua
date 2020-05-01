@@ -88,8 +88,11 @@ local function OnClientReleaseObject(player, object, grabbed)
                 grabbed.GripPoint.Value = false
 
                 local obj_ref = object
+                local grabbed_ref = grabbed
                 delay(2, function()
-                    Ownership.SetModelNetworkOwner(obj_ref, nil)
+                    if grabbed_ref.GripPoint.Value == false then
+                        Ownership.SetModelNetworkOwner(obj_ref, nil)
+                    end
                 end)
             end
         end

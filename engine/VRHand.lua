@@ -78,6 +78,8 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self._HandModelSoftWeld = SoftWeld:new(self.VirtualHand, self.HandModel.PrimaryPart, {
 		pos_responsiveness = 75,
 		rot_responsiveness = 50,
+		pos_max_force = 150000,
+
 	})
 	self._GrabbedObjectWeld = nil
 	
@@ -165,7 +167,9 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 
 	local object_meta = ItemMetadata[object]
 
-	local grip_cf_offset, grip_ps_reactive, grip_ps_force
+	local grip_cf_offset
+	local grip_ps_reactive
+	local grip_ps_force
 
 	if object_meta then
 		print("object metadata found!")
@@ -188,7 +192,7 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 			object_meta.class:OnHandGrab(self, self.HoldingObject, self.GripPoint)
 		end
 	else
-		grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
+		--grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
 	end
 	-- if no object meta, assume "Anywhere"
 
@@ -212,12 +216,11 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 
 	-- master and follower part, respectively
 	--self.HoldingObject:SetPrimaryPartCFrame(self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame))	
-	self._GrabbedObjectWeld = SoftWeld:new(self.HandModel.PrimaryPart, grip_point, {
+	self._GrabbedObjectWeld = SoftWeld:new(self.VirtualHand, grip_point, {
 		-- TODO: custom props?
 		cframe_offset = grip_cf_offset,
 		pos_is_reactive = grip_ps_reactive,
-		pos_max_force = grip_ps_force
-
+		pos_max_force = grip_ps_force,
 	})
 	-- TODO: create sanity checks for indexing metadata list	
 end
@@ -227,7 +230,7 @@ function VRHand:Grab()
 	
 	local region = RotatedRegion3.new(
 		reported_pos,
-		Vector3.new(1,1,1) -- region radius
+		Vector3.new(0.25,0.25,0.25) -- region radius
 	)
 	
 	if DEBUG_SHOW_HAND_CFRAME then
@@ -281,12 +284,12 @@ function VRHand:Release()
 		end
 
 		local obj = self.HoldingObject
-		delay(1, function()
+	--	delay(1, function()
 			CollisionGroupReset(obj)
-		end)
+		--end)
 		self._GrabbedObjectWeld:Destroy()
 		self._GrabbedObjectWeld = nil
-		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 2
+		--self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 2.5
 
 		local crelease = Networking.GetNetHook("ClientRelease")
 		crelease:FireServer(self.HoldingObject, self.GripPoint)

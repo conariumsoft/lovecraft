@@ -84,6 +84,7 @@ _G.using = function(md_signature, recache)
         md_instance = game:GetService(md_signature:sub(5))
 
         local caller_env = getfenv(2)
+
         caller_env[md_signature:sub(5)] = md_instance
         setfenv(2, caller_env)
 
