@@ -30,7 +30,8 @@
         "HapticService",
         "Color3",
         "Vector2",
-        "DebugBoard"
+        "DebugBoard",
+        "Ownership"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

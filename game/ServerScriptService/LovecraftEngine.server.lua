@@ -4,9 +4,21 @@ _G.log("Initializing server...")
 
 _G.using "Lovecraft.Networking"
 _G.using "Lovecraft.CollisionMasking"
+_G.using "Lovecraft.Ownership"
 _G.using "RBX.ReplicatedStorage"
+_G.using "RBX.Workspace"
+_G.using "RBX.PhysicsService"
 -- TODO: generate remotes..?
 
+-- init physical objects
+for _, child in pairs(Workspace.physics:GetDescendants()) do
+    if child:IsA("BasePart") then
+        child:SetNetworkOwner(nil)
+        PhysicsService:SetPartCollisionGroup(child, "Interactives")
+    end
+end
+
+-- etc
 Networking.ServerSetup()
 
 local anims_folder = Instance.new("Folder") do
@@ -52,25 +64,33 @@ local left_hand_model = game.ReplicatedStorage.LHand
 local right_hand_model = game.ReplicatedStorage.RHand
 
 
-local function OnClientGrabObject(player, object)
+local function OnClientGrabObject(player, object, grabbed)
     print("client grab", object.Name)
-    if object:FindFirstChild("GripPoint") then
-        if object.GripPoint.Value == false then
-            if object.Anchored == false then
-                object:SetNetworkOwner(player)
-                object.GripPoint.Value = true
+    if grabbed:FindFirstChild("GripPoint") then
+        print("Found Grip")
+        if grabbed.GripPoint.Value == false then
+            print("Can Grip")
+            if grabbed.Anchored == false then
+                print("Can Pull")
+                Ownership.SetModelNetworkOwner(object, player)
+                grabbed.GripPoint.Value = true
             end
         end
     end
 end
 
-local function OnClientReleaseObject(player, object)
+local function OnClientReleaseObject(player, object, grabbed)
     print("client release", object.Name)
-    if object:FindFirstChild("GripPoint") then
-        if object.GripPoint.Value == true then
-            if object.Anchored == false then
-                object:SetNetworkOwner(nil)
-                object.GripPoint.Value = false
+    if grabbed:FindFirstChild("GripPoint") then
+        if grabbed.GripPoint.Value == true then
+            if grabbed.Anchored == false then
+                print("jreh")
+                grabbed.GripPoint.Value = false
+
+                local obj_ref = object
+                delay(2, function()
+                    Ownership.SetModelNetworkOwner(obj_ref, nil)
+                end)
             end
         end
     end

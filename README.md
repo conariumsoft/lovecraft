@@ -5,9 +5,12 @@ The API Documentation can be found at: https://scientiist.github.io/lovecraft/
 
 
 TODO LIST:
-- Make base station work.
-- Confirm multiplayer works well
 
+https://developer.roblox.com/en-us/api-reference/class/Stats
+https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
+
+- Make base station work.
+- Wrist Flick throwing (Angular Velocity)
 - Rumble when slapping things with hand
     - Also add sound system that matches the slapped material
 - Can use the force in debugging mode *
@@ -15,6 +18,8 @@ TODO LIST:
 - Movement system. (Favor joysticks over teleport) (SnapTurn) *
 - Climbing *
 - Make body & camera physics based (Can push yourself around?)
+
+- Object Weight Solver (For Grips N Shiet)
 
 - Ballistics Module
     - Determines properties such as the damage of a punch or slap.

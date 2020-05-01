@@ -80,6 +80,7 @@ end
 ---
 
 function SoftWeld:Destroy()
+    print("DIE!")
     self.master_attachment:Destroy()
     self.follower_attachment:Destroy()
     self.position_constraint:Destroy()

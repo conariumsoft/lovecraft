@@ -65,6 +65,12 @@ RunService.RenderStepped:Connect(function(delta)
 end)
 
 
+local function round(number, decimals)
+	local power = 10^decimals
+    return math.floor(number * power) / power
+end
+
+
 UserInputService.InputChanged:Connect(function(inp, _)
 	if inp.UserInputType == Enum.UserInputType.Gamepad1 then
 		if inp.KeyCode == Enum.KeyCode.Thumbstick1 then -- left joystick
@@ -73,7 +79,7 @@ UserInputService.InputChanged:Connect(function(inp, _)
 		end
 		if inp.KeyCode == Enum.KeyCode.Thumbstick2 then -- right joystick
 			joystick_right = inp.Position
-			if math.floor(joystick_right.X*10)/10 == 0 then -- rounding trick. if between -0.1 and 0.1...
+			if round(joystick_right.X, 1) == 0 then -- rounding trick. if between -0.1 and 0.1...
 				local base = my_camera_head.BaseStation
 				if l_joystick_flick then
 					l_joystick_flick = false

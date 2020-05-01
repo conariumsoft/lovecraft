@@ -158,6 +158,8 @@ local DEBUG_SHOW_HAND_CFRAME = true
 
 function VRHand:_HandleObjectPickup(object, grip_point)
 
+	-- Parse item metadata to apply correct offset, grip type, and animations etc.
+
 	self.HoldingObject = object
 	self.GripPoint = grip_point
 
@@ -166,17 +168,27 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 	local grip_cf_offset, grip_ps_reactive, grip_ps_force
 
 	if object_meta then
+		print("object metadata found!")
 		if object_meta.grip_type == "Anywhere" then
 			-- preserve orientation of hand relative to object at time of grab
 			grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
 		end
 	
 		if object_meta.grip_type == "GripPoint" then
-			-- apply custom rotation etc
+			-- object_meta.grip_data should exist
+
+			if not object_meta.grip_data then
+				error("Object Metadata must contain a grip_data table if object grip_type is set to 'GripPoint' :" .. object_meta.Name)
+			end
+			if object_meta.grip_data[grip_point.Name] then
+				grip_cf_offset = object_meta.grip_data[grip_point.Name].offset
+			end
 		end
 		if object_meta.class then
 			object_meta.class:OnHandGrab(self, self.HoldingObject, self.GripPoint)
 		end
+	else
+		grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
 	end
 	-- if no object meta, assume "Anywhere"
 
@@ -186,7 +198,7 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 		end
 	end
 
-	grip_point.GripPoint.Value = true
+	--grip_point.GripPoint.Value = true
 	
 	if grip_point.Anchored == true then
 		grip_ps_reactive = true
@@ -211,7 +223,6 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 end
 ---
 function VRHand:Grab()
-	print("uhhh???")
 	local reported_pos = self.VirtualHand.CFrame
 	
 	local region = RotatedRegion3.new(
@@ -262,7 +273,7 @@ end
 function VRHand:Release() 
 	-- TODO: play anim?
 	if self.HoldingObject ~= nil then
-		self.GripPoint.GripPoint.Value = false
+		--self.GripPoint.GripPoint.Value = false
 		local object_meta = ItemMetadata[self.HoldingObject.Name]
 
 		if object_meta and object_meta.class then
@@ -273,13 +284,15 @@ function VRHand:Release()
 		delay(1, function()
 			CollisionGroupReset(obj)
 		end)
-		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 4
+		self._GrabbedObjectWeld:Destroy()
+		self._GrabbedObjectWeld = nil
+		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 2
 
 		local crelease = Networking.GetNetHook("ClientRelease")
-		crelease:FireServer(self.GripPoint)
+		crelease:FireServer(self.HoldingObject, self.GripPoint)
 		self.HoldingObject = nil
 		self.GripPoint = nil
-		self._GrabbedObjectWeld:Destroy()
+		
 	end
 end
 ---

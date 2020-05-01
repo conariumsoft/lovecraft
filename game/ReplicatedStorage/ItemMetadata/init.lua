@@ -111,8 +111,12 @@ local ItemMetadata = {
 	["Skorpion"] = {
 		name = "Skorpion",
 		grip_type = "GripPoint",
-		grip_anims = {
-			Handle = skorpion_grip_animation,
+		grip_data = {
+			Handle = {
+				animation = skorpion_grip_animation,
+				offset = CFrame.new(0, 2, 0) * CFrame.Angles(0, 0, 0),
+				--has_weight = false,
+			}
 		},
 		class = Skorpion,
 	}
