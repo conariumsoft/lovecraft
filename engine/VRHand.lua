@@ -7,6 +7,7 @@ _G.using "RBX.PhysicsService"
 _G.using "Lovecraft.BaseClass"
 _G.using "Lovecraft.SoftWeld"
 _G.using "Lovecraft.Lib.RotatedRegion3"
+_G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
 
 
@@ -31,7 +32,8 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self.IsRunning = false
 	self.HandPosition = Vector3.new(0, 0, 0)
 	self.LastHandPosition = Vector3.new(0, 0, 0)
-	
+	self.VRControllerPosition = CFrame.new(0, 0, 0)
+
 	self.Head = vr_head
 	self.Player = player
 	self.Handedness = handedness
@@ -73,7 +75,6 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 
 	self.HoldingObject = nil -- if grabbed something
 	self.GripPoint = nil
-	-- weld properties here
 	self._HandModelSoftWeld = SoftWeld:new(self.VirtualHand, self.HandModel.PrimaryPart, {
 		pos_responsiveness = 75,
 		rot_responsiveness = 50,
@@ -81,6 +82,10 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self._GrabbedObjectWeld = nil
 	
 	self.Animator = self.HandModel.Animator
+	self:_LoadAnimationTracks()
+end
+
+function VRHand:_LoadAnimationTracks()
 	for _, anim in pairs(ReplicatedStorage.Animations[self.Handedness]:GetChildren()) do
 		local track = self.Animator:LoadAnimation(anim)
 		--track.Parent = self.Animator
@@ -88,6 +93,11 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 		track:AdjustSpeed(0)
 		self.Anims[anim.Name] = track
 	end
+end
+
+function VRHand:Teleport(coord)
+	self.VirtualHand.CFrame = coord
+	self.HandModel:SetPrimaryPartCFrame(coord)
 end
 
 function VRHand:SetRumble(rumble_scale)
@@ -130,14 +140,18 @@ end
 function VRHand:SetIndexFingerCurl(grip_strength)
 	self.IndexFingerPressure = grip_strength
 	local anim = self:GetAnim("Index")
-	anim.TimePosition = anim.Length * grip_strength
+	if anim then
+		anim.TimePosition = anim.Length * math.min(grip_strength, .99)
+	end
 end
 
 ---
 function VRHand:SetGripCurl(grip_strength)
 	self.GripPressure = grip_strength
 	local anim = self:GetAnim("Grip")
-	anim.TimePosition = anim.Length * grip_strength
+	if anim then
+		anim.TimePosition = anim.Length * math.min(grip_strength, .99)
+	end
 end
 
 local DEBUG_SHOW_HAND_CFRAME = true
@@ -174,6 +188,11 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 
 	grip_point.GripPoint.Value = true
 	
+	if grip_point.Anchored == true then
+		grip_ps_reactive = true
+		grip_ps_force = 1000000
+	end
+
 	if object.Name == "Environment" then
 		grip_ps_reactive = true
 		grip_ps_force = 1000000
@@ -192,12 +211,12 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 end
 ---
 function VRHand:Grab()
-
-	local reported_pos = self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame)
+	print("uhhh???")
+	local reported_pos = self.VirtualHand.CFrame
 	
 	local region = RotatedRegion3.new(
 		reported_pos,
-		Vector3.new(.5,.5,.5) -- region radius
+		Vector3.new(1,1,1) -- region radius
 	)
 	
 	if DEBUG_SHOW_HAND_CFRAME then
@@ -222,7 +241,8 @@ function VRHand:Grab()
 			if v.GripPoint.Value == false then -- item hasn't been grabbed yet, so this hand will grab
 				print("cangrip: "..v.Name)
 				-- this hand is now primary grip
-				v.GripPoint.Value = true
+				local cgrab = Networking.GetNetHook("ClientGrab")
+				cgrab:FireServer(v.Parent, v)
 				self:_HandleObjectPickup(v.Parent, v)
 				return
 			end
@@ -253,9 +273,10 @@ function VRHand:Release()
 		delay(1, function()
 			CollisionGroupReset(obj)
 		end)
-		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 8
+		self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 4
 
-		
+		local crelease = Networking.GetNetHook("ClientRelease")
+		crelease:FireServer(self.GripPoint)
 		self.HoldingObject = nil
 		self.GripPoint = nil
 		self._GrabbedObjectWeld:Destroy()
@@ -273,24 +294,22 @@ function VRHand:Update(dt)
 	end
 	self.LastHandPosition = self.HandPosition
 
-
-	if _G.VR_DEBUG then return end
-	local reported_cframe = Workspace.CurrentCamera.CFrame * VRService:GetUserCFrame(self.UserCFrame)
-
-	self.HandPosition = reported_cframe
-	
+	local reported_cframe = self.Head.PhysicalHead.CFrame * self.VRControllerPosition
+	self.HandPosition = reported_cframe	
 	self.VirtualHand.CFrame = reported_cframe
-	
+
 	-- TODO: optimize
 	local hand_from_virtual_distance = (self.VirtualHand.Position - self.HandModel.PrimaryPart.Position).magnitude
-	if hand_from_virtual_distance > 0.5 then
-		self:SetRumble(hand_from_virtual_distance/4) -- play with this value.?
+	if hand_from_virtual_distance > 0.25 then
+		self:SetRumble(hand_from_virtual_distance/8) -- play with this value.?
 		--SetCollisions(self.handModel, false)
 	else
 		self:SetRumble(0)
 		--SetCollisions(self.handModel, true)
 	end
-	
+
+	if _G.VR_DEBUG then return end
+	self.VRControllerPosition = VRService:GetUserCFrame(self.UserCFrame)
 end
 
 return VRHand

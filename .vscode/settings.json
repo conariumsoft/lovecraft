@@ -28,7 +28,9 @@
         "Networking",
         "CollisionMasking",
         "HapticService",
-        "Color3"
+        "Color3",
+        "Vector2",
+        "DebugBoard"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

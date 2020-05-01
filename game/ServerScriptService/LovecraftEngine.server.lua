@@ -8,18 +8,19 @@ _G.using "RBX.ReplicatedStorage"
 -- TODO: generate remotes..?
 
 Networking.ServerSetup()
---co
-local anims_folder = Instance.new("Folder")
-anims_folder.Name = "Animations"
-anims_folder.Parent = ReplicatedStorage
 
-local lf = Instance.new("Folder")
-lf.Name = "Left"
-lf.Parent = anims_folder
-
-local rf = Instance.new("Folder")
-rf.Name = "Right"
-rf.Parent = anims_folder
+local anims_folder = Instance.new("Folder") do
+    anims_folder.Name = "Animations"
+    anims_folder.Parent = ReplicatedStorage
+end
+local lf = Instance.new("Folder") do
+    lf.Name = "Left"
+    lf.Parent = anims_folder
+end
+local rf = Instance.new("Folder") do
+    rf.Name = "Right"
+    rf.Parent = anims_folder
+end
 
 local function LoadAnimation(folder, name, id)
 	local anim = Instance.new("Animation")
@@ -51,42 +52,52 @@ local left_hand_model = game.ReplicatedStorage.LHand
 local right_hand_model = game.ReplicatedStorage.RHand
 
 
--- when client is ready for init, create nessecary models & replicate
-
-local function get_anim_controller(hand)
-    local anim_controller = Instance.new("AnimationController")
-    anim_controller.Parent = hand
-    anim_controller.Name = "Animator"
-    return anim_controller
+local function OnClientGrabObject(player, object)
+    print("client grab", object.Name)
+    if object:FindFirstChild("GripPoint") then
+        if object.GripPoint.Value == false then
+            if object.Anchored == false then
+                object:SetNetworkOwner(player)
+                object.GripPoint.Value = true
+            end
+        end
+    end
 end
 
-function on_client_request_animation.OnServerInvoke(player, animation, put_into)
-
+local function OnClientReleaseObject(player, object)
+    print("client release", object.Name)
+    if object:FindFirstChild("GripPoint") then
+        if object.GripPoint.Value == true then
+            if object.Anchored == false then
+                object:SetNetworkOwner(nil)
+                object.GripPoint.Value = false
+            end
+        end
+    end
 end
 
-function on_client_request_vr_state.OnServerInvoke(player)
-    print("THE REMOTE FIRED! OK")
-    --?
-    --[[local plr_models_folder = Instance.new("Folder") do
-        plr_models_folder.Name = player.Name .."_LocalVR"
-        plr_models_folder.Parent = game.Workspace
-    end]]
+local function OnClientRequestVRState(player)
+    print("Client is ready for VR initialization")
 
-    local plr_left = left_hand_model:Clone()
-    plr_left.Parent = player.Character
+    local plr_left = player.Character.LHand
+    local plr_right = player.Character.RHand
+
     plr_left.PrimaryPart:SetNetworkOwner(player)
-
-    
-    local plr_right = right_hand_model:Clone()
-    plr_right.Parent = player.Character
     plr_right.PrimaryPart:SetNetworkOwner(player)
 
-    -- TODO: if needed, create collision groups for each player @runtime
+
+    local left_a = Instance.new("Animator")
+    left_a.Parent = plr_left.Animator
+
+    local right_a = Instance.new("Animator")
+    right_a.Parent = plr_right.Animator
+
+
     CollisionMasking.SetModelGroup(plr_left, "LeftHand")
     CollisionMasking.SetModelGroup(plr_right, "RightHand")
-
-    get_anim_controller(plr_left)
-    get_anim_controller(plr_right)
-
-    return plr_left, plr_right
+    return true
 end
+
+on_client_grab_object.OnServerEvent:Connect(OnClientGrabObject)
+on_client_release_object.OnServerEvent:Connect(OnClientReleaseObject)
+on_client_request_vr_state.OnServerInvoke = OnClientRequestVRState

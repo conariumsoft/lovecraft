@@ -28,6 +28,10 @@ local module_database = {
         identifier = "VRHead",
         reference = engine_root.VRHead,
     },
+    ["Lovecraft.DebugBoard"] = {
+        identifier = "DebugBoard",
+        reference = engine_root.DebugBoard,
+    },
     ["Lovecraft.BaseClass"] = {
         identifier = "BaseClass",
         reference = engine_root.BaseClass,
