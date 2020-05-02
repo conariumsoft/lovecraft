@@ -12,7 +12,7 @@ https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
 
 - Rumble when slapping things with hand
     - Also add sound system that matches the slapped material
-
+- Low-Latency Singleplayer mode (Toggleable)
 - Can use the force in debugging mode *
 
 - Debug Information Wrist Watch? *
@@ -32,3 +32,6 @@ https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
         - MinimumDamageVelocity (velocity required to damage)
         - MaximumDamage (max damage)
     - Bladed weapons when thrown will embed into the target proportionally to force (mass*accel)
+
+
+    

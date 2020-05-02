@@ -1,4 +1,4 @@
-
+--[[
 while true do
     wait(1/1)
     for _, part in pairs(game.Workspace.physics:GetDescendants()) do
@@ -19,3 +19,4 @@ while true do
         end
     end
 end
+]]

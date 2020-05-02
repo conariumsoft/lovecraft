@@ -65,13 +65,13 @@ local right_hand_model = game.ReplicatedStorage.RHand
 
 
 local function OnClientGrabObject(player, object, grabbed)
-    print("client grab", object.Name)
+
     if grabbed:FindFirstChild("GripPoint") then
-        print("Found Grip")
+
         if grabbed.GripPoint.Value == false then
-            print("Can Grip")
+
             if grabbed.Anchored == false then
-                print("Can Pull")
+
                 Ownership.SetModelNetworkOwner(object, player)
                 grabbed.GripPoint.Value = true
             end
@@ -80,11 +80,11 @@ local function OnClientGrabObject(player, object, grabbed)
 end
 
 local function OnClientReleaseObject(player, object, grabbed)
-    print("client release", object.Name)
+
     if grabbed:FindFirstChild("GripPoint") then
         if grabbed.GripPoint.Value == true then
             if grabbed.Anchored == false then
-                print("jreh")
+
                 grabbed.GripPoint.Value = false
 
                 local obj_ref = object
@@ -102,13 +102,19 @@ end
 local function OnClientRequestVRState(player)
     print("Client is ready for VR initialization")
 
-    local plr_left = player.Character.LHand
-    local plr_right = player.Character.RHand
+   -- local plr_left = player.Character.LHand
+  -- local plr_right = player.Character.RHand
+
+
+    local plr_left = ReplicatedStorage.LHand:Clone()
+    plr_left.Parent = player.Character
+
+    local plr_right = ReplicatedStorage.RHand:Clone()
+    plr_right.Parent = player.Character
 
     plr_left.PrimaryPart:SetNetworkOwner(player)
     plr_right.PrimaryPart:SetNetworkOwner(player)
-
-
+    
     local left_a = Instance.new("Animator")
     left_a.Parent = plr_left.Animator
 

@@ -29,6 +29,7 @@ local local_player = game.Players.LocalPlayer
 local character = local_player.CharacterAdded:Wait()
 local vr_state = Networking.GetNetHook("ClientRequestVRState")
 vr_state:InvokeServer()
+
 local left_hand_model  = character:WaitForChild("LHand")
 local right_hand_model = character:WaitForChild("RHand")
 local my_camera_head = VRHead:new(local_player)
@@ -52,12 +53,24 @@ if _G.VR_DEBUG then
 	DebugBoard.CorrectHandPositions(my_left_hand, my_right_hand)
 end
 
-RunService.RenderStepped:Connect(function(delta)
+local movement_scale = 25
+
+-- physics step
+RunService.Stepped:Connect(function(delta)
+	--local_player.Character.HumanoidRootPart.CFrame = my_camera_head.VirtualHead.CFrame * CFrame.new(0, 0, 0)
+end)
+
+RunService.Stepped:Connect(function(t, delta)
 	my_camera_head:Update(delta)
 	my_left_hand:Update(delta)
 	my_right_hand:Update(delta)
 
-	my_camera_head.BaseStation.CFrame = my_camera_head.BaseStation.CFrame * CFrame.new(joystick_right.X/10, 0, joystick_right.Y/10)
+	my_camera_head.BaseStation.CFrame = my_camera_head.BaseStation.CFrame * 
+		CFrame.new(
+			joystick_right.X/movement_scale, 
+			0, 
+			joystick_right.Y/movement_scale
+		)
 
 	if _G.VR_DEBUG then
 		DebugBoard.RenderStep(my_camera_head, my_left_hand, my_right_hand)
@@ -81,11 +94,11 @@ UserInputService.InputChanged:Connect(function(inp, _)
 				local base = my_camera_head.BaseStation
 				if l_joystick_flick then
 					l_joystick_flick = false
-					base.CFrame = base.CFrame * CFrame.Angles(0, -math.rad(90), 0)
+					base.CFrame = base.CFrame * CFrame.Angles(0, math.rad(90), 0)
 				end
 				if r_joystick_flick then
 					r_joystick_flick = false
-					base.CFrame = base.CFrame * CFrame.Angles(0, math.rad(90), 0)
+					base.CFrame = base.CFrame * CFrame.Angles(0, -math.rad(90), 0)
 				end
 			end
 			if joystick_left.X > 0.9 then  r_joystick_flick = true end

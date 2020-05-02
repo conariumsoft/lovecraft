@@ -14,11 +14,6 @@ _G.using "Game.Data.ItemMetadata"
 --- VR Hand Base class. 
 local VRHand = BaseClass:subclass("VRHand")
 
--- TODO: developer modefff
--- telekensis
--- work on multiplayer
--- make the mechanicsms of the system more transparent (less guessing about what's going on!)
-
 ---
 -- @name VRHand:new()
 function VRHand:__ctor(player, vr_head, handedness, hand_model)
@@ -124,58 +119,73 @@ do -- animation methods
 	end
 	function VRHand:SetCurrentAnim(anim_track)
 	    self.CurrentAnim = anim_track
-	    
 	end
 	function VRHand:PlayAnim(anim_track, fade_time, weight, speed)-->
 		local anim = self.Anims[anim_track]
 		anim:Play(fade_time, weight, speed)
 	end
-	function VRHand:GetAnimTimeSeconds()end
-	function VRHand:SetAnimTimeScale()      end
-	function VRHand:SetAnimPlaybackScale()  end
-	function VRHand:SetAnimOverridable()    end
-	function VRHand:GetAnimOverridable()   end
-	function VRHand:LerpAnimSet() end
+	function VRHand:GetAnimTimeScale(anim_name)
+		local anim = self:GetAnim(anim_name)
+		if anim then
+			return anim.TimePosition / anim.Length
+		end
+	end
+	function VRHand:SetAnimTimeScale(anim_name, timescale)
+		local anim = self:GetAnim(anim_name)
+		if anim then
+			anim.TimePosition = anim.Length * math.min(timescale, .99) 
+			-- dumb hack. if anim ever reaches 1, it decides it's finished playing
+		end
+	end
+end
+
+local function GetItemMetadataByName(itemname)
+	return ItemMetadata[itemname]
 end
 
 ---
 function VRHand:SetIndexFingerCurl(grip_strength)
 	self.IndexFingerPressure = grip_strength
-	local anim = self:GetAnim("Index")
-	if anim then
-		anim.TimePosition = anim.Length * math.min(grip_strength, .99)
+	self:SetAnimTimeScale("Index", grip_strength)
+
+	if self.HoldingObject then
+		local item = self.HoldingObject
+		local object_meta = GetItemMetadataByName(item.Name)
+
+		if object_meta and object_meta.class then
+			object_meta.class:OnTriggerState(self, self.HoldingObject, grip_strength, self.GripPoint)
+		end
 	end
 end
 
 ---
 function VRHand:SetGripCurl(grip_strength)
 	self.GripPressure = grip_strength
-	local anim = self:GetAnim("Grip")
-	if anim then
-		anim.TimePosition = anim.Length * math.min(grip_strength, .99)
-	end
+	self:SetAnimTimeScale("Grip", grip_strength)
 end
 
 local DEBUG_SHOW_HAND_CFRAME = true
 
 function VRHand:_HandleObjectPickup(object, grip_point)
-
 	-- Parse item metadata to apply correct offset, grip type, and animations etc.
-
 	self.HoldingObject = object
 	self.GripPoint = grip_point
 
-	local object_meta = ItemMetadata[object]
+	local object_meta = GetItemMetadataByName(object.Name)
 
 	local grip_cf_offset
 	local grip_ps_reactive
 	local grip_ps_force
+	local grab_anywhere = false
 
 	if object_meta then
-		print("object metadata found!")
+		if object_meta.class then
+			object_meta.class:OnGrab(self, self.HoldingObject, self.GripPoint)
+		end
+
 		if object_meta.grip_type == "Anywhere" then
 			-- preserve orientation of hand relative to object at time of grab
-			grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
+			grab_anywhere = true
 		end
 	
 		if object_meta.grip_type == "GripPoint" then
@@ -186,14 +196,22 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 			end
 			if object_meta.grip_data[grip_point.Name] then
 				grip_cf_offset = object_meta.grip_data[grip_point.Name].offset
+
+				local anim = object_meta.grip_data[grip_point.Name].animation
+				if anim then
+					-- play anim
+				end
 			end
 		end
-		if object_meta.class then
-			object_meta.class:OnHandGrab(self, self.HoldingObject, self.GripPoint)
-		end
-	else
-		--grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
+		
+	else -- no metadata, assume grab anywhere
+		grab_anywhere = true
 	end
+
+	if grab_anywhere then
+		grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
+	end
+
 	-- if no object meta, assume "Anywhere"
 
 	for _, obj in pairs(self.HoldingObject:GetDescendants()) do
@@ -216,11 +234,15 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 
 	-- master and follower part, respectively
 	--self.HoldingObject:SetPrimaryPartCFrame(self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame))	
-	self._GrabbedObjectWeld = SoftWeld:new(self.VirtualHand, grip_point, {
+	self._GrabbedObjectWeld = SoftWeld:new(self.HandModel.PrimaryPart, grip_point, {
 		-- TODO: custom props?
 		cframe_offset = grip_cf_offset,
-		pos_is_reactive = grip_ps_reactive,
+		pos_is_reactive = true,--grip_ps_reactive,
 		pos_max_force = grip_ps_force,
+		rot_max_force = 30000,
+		--pos_is_rigid = true,
+		rot_is_rigid = true,
+		--rot_is_reactive = true,
 	})
 	-- TODO: create sanity checks for indexing metadata list	
 end
@@ -251,9 +273,7 @@ function VRHand:Grab()
 
 		-- a gun's handle for example
 		if v:FindFirstChild("GripPoint") then -- we know this object CAN be grabbed
-			print("hasgrip: "..v.Name)
 			if v.GripPoint.Value == false then -- item hasn't been grabbed yet, so this hand will grab
-				print("cangrip: "..v.Name)
 				-- this hand is now primary grip
 				local cgrab = Networking.GetNetHook("ClientGrab")
 				cgrab:FireServer(v.Parent, v)
@@ -280,7 +300,7 @@ function VRHand:Release()
 		local object_meta = ItemMetadata[self.HoldingObject.Name]
 
 		if object_meta and object_meta.class then
-			object_meta.class:OnHandRelease(self, self.HoldingObject, self.GripPoint)
+			object_meta.class:OnRelease(self, self.HoldingObject, self.GripPoint)
 		end
 
 		local obj = self.HoldingObject
@@ -305,7 +325,7 @@ function VRHand:Update(dt)
 	
 		local object_meta = ItemMetadata[self.HoldingObject.Name]
 		if object_meta and object_meta.class then
-			object_meta.class:OnHeldStep(self, self.HoldingObject, dt, self.GripPoint)
+			object_meta.class:OnSimulationStep(self, self.HoldingObject, dt, self.GripPoint)
 		end
 	end
 	self.LastHandPosition = self.HandPosition

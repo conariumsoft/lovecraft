@@ -9,7 +9,7 @@ local skorpion_grip_animation
 local default_grip_animation = ...
 local R2Down = false
 --?
-UserInputService.InputBegan:Connect(function(inp,gpe)
+--[[UserInputService.InputBegan:Connect(function(inp,gpe)
 	if inp.KeyCode == Enum.KeyCode.ButtonR2 and not gpe then
 		R2Down = true
 	end
@@ -18,7 +18,7 @@ UserInputService.InputEnded:Connect(function(inp,gpe)
 	if inp.KeyCode == Enum.KeyCode.ButtonR2 and not gpe then
 		R2Down = false
 	end
-end)
+end)]]
 --[[
 note: I may later on use OOP for interactive item data generation.
 1. for defaults
@@ -61,8 +61,34 @@ end
 
 local skorpion_deb = false
 
+--[[
+	Item Metadata API spec:
+	ModelName = {
+		BaseClass class,
+		string name, (Required)
+		string grip_type, <"GripPoint", "Anywhere"> (Required)
+		table grip_data { (Required if grip_type == "GripPoint")
+			PartName = {
+				string animation,
+				CFrame offset,
+
+			},
+			PartName2 = {
+				string animation,
+				CFrame offset,
+			}
+		}
+	}
+	
+]]
+
 -- setup code finished. --
 local ItemMetadata = {
+
+	["Environment"] = {
+
+	},
+
 	["Marker"] = {
 		name = "Marker",
 		grip_type = "Custom",
@@ -107,7 +133,6 @@ local ItemMetadata = {
 			end
 		end
 	},
-
 	["Skorpion"] = {
 		name = "Skorpion",
 		grip_type = "GripPoint",
