@@ -66,72 +66,39 @@ local skorpion_deb = false
 	ModelName = {
 		BaseClass class,
 		string name, (Required)
-		string grip_type, <"GripPoint", "Anywhere"> (Required)
+		string grip_type, <"GripPoint", "GripLine", "Anywhere"> (Required)
 		table grip_data { (Required if grip_type == "GripPoint")
 			PartName = {
 				string animation,
 				CFrame offset,
-
 			},
 			PartName2 = {
 				string animation,
 				CFrame offset,
 			}
 		}
-	}
-	
+	}	
 ]]
-
 -- setup code finished. --
 local ItemMetadata = {
-
 	["Environment"] = {
 
 	},
-
 	["Marker"] = {
+		class = require(script.Marker),
 		name = "Marker",
-		grip_type = "Custom",
-		grip_anim = marker_grip_animation,
-		grip_orientation = {
-			offset = Vector3.new(-0.1, 0.22, 0.2),
-			rotation = CFrame.new(0,0,0,-4.37113883e-08,-1,1.74845553e-07,0.0871559754,-1.77989961e-07,-0.996194959,0.996194959,-2.83062302e-08,0.0871559754),
-		},
-		on_grab_begin = function(player, hand, model)
-			
-		end ,
-		on_grab_release = function(player, hand, model)
-			
-		end ,
-		on_grab_step = function(player, hand, model, step)
-			local ray = Ray.new(
-	        	model.Tip.Position, 
-	        	model.Tip.CFrame.LookVector * wb_marker_detection_distance
-		   	 )
-		    local part, hit_position = game.Workspace:FindPartOnRayWithWhitelist(ray,{Workspace.Whiteboard})
-	
-		    if (part and part.Name == "Whiteboard") then
-		        local new_mark = CreateGridMark(model.Tip.Color)
-		        new_mark.Position = hit_position
-		        new_mark.Parent = Workspace.Grid
-		    end
-		end ,
+		grip_type = "GripPoint",
+		grip_data = {
+			MarkerBase = {
+				animation = marker_grip_animation,
+				offset = CFrame.new(0,0,0) * CFrame.Angles(0,0,0),
+			}
+		}
 	},
 	["Eraser"] = {
 		name = "Eraser",
-		grip_type = "Default", --"Anywhere", "GripPoint", "PrimaryGripPoint"
-		grip_anim = "AnimName", 
-		on_grab_step = function(player, hand, model, step)
-			local possible_objects = model.Base:GetTouchingParts()
-			for _, part in pairs(possible_objects) do
-				if part.Name == "GridMark" then
-					part.Transparency = part.Transparency + eraser_aggression
-					if (part.Transparency >= 1) then
-						part:Destroy()
-					end
-				end
-			end
-		end
+		grip_type = "Anywhere",
+		class = require(script.Eraser),
 	},
 	["Skorpion"] = {
 		name = "Skorpion",
@@ -140,7 +107,6 @@ local ItemMetadata = {
 			Handle = {
 				animation = skorpion_grip_animation,
 				offset = CFrame.new(0, 2, 0) * CFrame.Angles(0, 0, 0),
-				--has_weight = false,
 			}
 		},
 		class = Skorpion,

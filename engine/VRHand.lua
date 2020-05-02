@@ -237,11 +237,11 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 	self._GrabbedObjectWeld = SoftWeld:new(self.HandModel.PrimaryPart, grip_point, {
 		-- TODO: custom props?
 		cframe_offset = grip_cf_offset,
-		pos_is_reactive = true,--grip_ps_reactive,
+		--pos_is_reactive = true,--grip_ps_reactive,
 		pos_max_force = grip_ps_force,
-		rot_max_force = 40000,
-		--pos_is_rigid = true,
-		rot_is_rigid = true,
+		--rot_max_force = 30000,
+		pos_is_rigid = true,
+		--rot_is_rigid = true,
 		rot_is_reactive = true,
 	})
 	-- TODO: create sanity checks for indexing metadata list	
