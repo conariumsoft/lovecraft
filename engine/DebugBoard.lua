@@ -46,7 +46,7 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     local r_yaw_right   = UserInputService:IsKeyDown(Enum.KeyCode.Period)
     -- TODO: implement grabbing
 
-    local dt = 1/100
+    local dt = 1/80
 
     local lx = (l_mv_left and dt or 0) - (l_mv_right and dt or 0)
     local ly = (l_mv_up and dt or 0) - (l_mv_down and dt or 0)
