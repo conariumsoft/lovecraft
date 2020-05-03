@@ -204,6 +204,11 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 
 			local gripdata = object_meta.grip_data[grip_point.Name]
 			if gripdata then
+
+				if gripdata.anywhere then
+					grab_anywhere = true
+				end
+
 				gprops.cframe_offset = gripdata.offset
 				if gripdata.not_rigid then
 					gprops.rot_enabled = false
@@ -235,12 +240,6 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 	end
 
 	self._GrabbedObjectWeld = SoftWeld:new(master_part, follow_part, gprops)
-
-	if object_meta.grip_data[grip_point.Name].not_rigid then
-		--self._GrabbedObjectWeld.master_attachment.Axis = Vector3.new(2, 2, 2)
-	end
-	
-	
 end
 ---
 function VRHand:Grab()

@@ -8,8 +8,6 @@ local SoftWeld = BaseClass:subclass("SoftWeld")
 --
 --
 
-
-
 function SoftWeld:__ctor(master_part, follower_part, props, visible)
     props = props or {}
     local pos_enabled = props.pos_enabled or true

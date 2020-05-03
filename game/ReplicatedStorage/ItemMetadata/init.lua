@@ -111,7 +111,13 @@ local ItemMetadata = {
 			Magazine = {
 				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, 0),
 				not_rigid = true,
-			}
+				
+			},
+			ChargingHandle = {
+				offset = CFrame.new(0, 4, 0),
+				not_rigid = true,
+				stiff = false,
+			},
 		},
 		class = Skorpion,
 	},
