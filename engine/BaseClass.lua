@@ -40,6 +40,7 @@ function BaseClass:__ctor(...)
 
 end
 
+
 --- Returns a new instance of the class. Passes arguments to class:__ctor(...).
 -- @usage local myInst = UserDefinedClass:new(...)
 -- @param ... varargs

@@ -45,7 +45,7 @@ function VRHead:__ctor(player)
         -- reference position for VRHand reported position
 		phys_head.Size = Vector3.new(1,1,1)
 		phys_head.Anchored = false
-		phys_head.CanCollide = true
+		phys_head.CanCollide = false
 		phys_head.Transparency = 1
 		phys_head.Color = Color3.new(0.5, 0.5, 1)
 		phys_head.Name = "PhysicalHead"

@@ -105,11 +105,24 @@ local ItemMetadata = {
 		grip_type = "GripPoint",
 		grip_data = {
 			Handle = {
+				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, 0),
 				animation = skorpion_grip_animation,
-				offset = CFrame.new(0, 2, 0) * CFrame.Angles(0, 0, 0),
+			},
+			Magazine = {
+				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, 0),
+				not_rigid = true,
 			}
 		},
 		class = Skorpion,
+	},
+	["SkorpionMagazine"] = {
+		name = "Magazine",
+		grip_type = "Anywhere",
+		grip_data = {
+			Magazine = {
+				offset = CFrame.new(0, 0, 0),
+			}
+		}
 	}
 }
 

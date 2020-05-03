@@ -7,8 +7,13 @@ local SoftWeld = BaseClass:subclass("SoftWeld")
 --
 --
 --
+
+
+
 function SoftWeld:__ctor(master_part, follower_part, props, visible)
     props = props or {}
+    local pos_enabled = props.pos_enabled or true
+    local rot_enabled = props.rot_enabled or true
     local pos_is_rigid = props.pos_is_rigid or false
     local pos_is_reactive = props.pos_is_reactive or false
     local pos_responsiveness = props.pos_responsiveness or 200
@@ -16,10 +21,11 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     local pos_max_velocity = props.pos_max_velocity or math.huge
     local rot_is_rigid = props.rot_is_rigid or false
     local rot_is_reactive = props.rot_is_reactive or false
-    local rot_responsiveness = props.rot_responsiveness or 25
+    local rot_responsiveness = props.rot_responsiveness or 200
     local rot_max_angular_vel = props.rot_max_angular_vel or math.huge
     local rot_max_torque = props.rot_max_torque or 10000
     local rot_primary_axis_only = props.rot_primary_axis_only or false
+    
     local visible = props.visible or false
 
     local cframe_offset = props.cframe_offset
@@ -33,12 +39,14 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     follower_att.Name = "SoftWeldFollowerAttachment"
 
     if cframe_offset then
+        print("Applying offset!")
         master_att.CFrame = cframe_offset
     end
 
 
     local pos_constraint = Instance.new("AlignPosition") do
         pos_constraint.Name = "SoftWeldPositionConstraint"
+        pos_constraint.Enabled              = pos_enabled
         pos_constraint.Visible = visible
         pos_constraint.RigidityEnabled      = pos_is_rigid
         pos_constraint.ReactionForceEnabled = pos_is_reactive
@@ -55,6 +63,7 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     local rot_constraint = Instance.new("AlignOrientation") do
 
         rot_constraint.Name = "SoftWeldRotationConstraint"
+        rot_constraint.Enabled               = rot_enabled
         rot_constraint.Visible = visible
         rot_constraint.MaxAngularVelocity    = rot_max_angular_vel
         rot_constraint.MaxTorque             = rot_max_torque
@@ -80,6 +89,7 @@ end
 ---
 
 function SoftWeld:Destroy()
+    print("Deconstructing SoftWeld", self.master_attachment.Parent, self.follower_attachment.Parent, self.position_constraint.Parent, self.rotation_constraint.Parent)
     self.master_attachment:Destroy()
     self.follower_attachment:Destroy()
     self.position_constraint:Destroy()

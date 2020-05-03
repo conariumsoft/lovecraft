@@ -1,3 +1,8 @@
+--[[
+	Hey there! if you're reading this, then good job. Have a look around.
+	This code is currently pretty bad, I'll be upgrading all of it daily.
+	
+]]
 require(game.ReplicatedStorage.Lovecraft.Lovecraft)
 -- above must be required once per machine...
 _G.log("Initializing VR client.")

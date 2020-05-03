@@ -8,6 +8,9 @@ TODO LIST:
 https://developer.roblox.com/en-us/api-reference/class/Stats
 https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
 
+- Weapons System
+
+
 - Make base station work.
 
 - Rumble when slapping things with hand
@@ -33,5 +36,7 @@ https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
         - MaximumDamage (max damage)
     - Bladed weapons when thrown will embed into the target proportionally to force (mass*accel)
 
-
-    
+- Headset Support
+    - Windows Mixed Reality Support 
+    - Valve Index Support
+    - Grip Linear Interpolation for animations (for controllers without analogue triggers)

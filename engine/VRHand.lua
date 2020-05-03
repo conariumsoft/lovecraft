@@ -54,7 +54,6 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	end
 
 	self.HandModel = hand_model
-	--self.HandModel.Parent = Workspace.LocalVRModels
 	
 	local virtual_hand = Instance.new("Part") do 
 		-- reference position for VRHand reported position
@@ -85,7 +84,6 @@ end
 function VRHand:_LoadAnimationTracks()
 	for _, anim in pairs(ReplicatedStorage.Animations[self.Handedness]:GetChildren()) do
 		local track = self.Animator:LoadAnimation(anim)
-		--track.Parent = self.Animator
 		track:Play()
 		track:AdjustSpeed(0)
 		self.Anims[anim.Name] = track
@@ -166,6 +164,8 @@ end
 
 local DEBUG_SHOW_HAND_CFRAME = true
 
+-- Parse Item Metadata
+-- Construct "SoftWeld" (Physics-based Alignments)
 function VRHand:_HandleObjectPickup(object, grip_point)
 	-- Parse item metadata to apply correct offset, grip type, and animations etc.
 	self.HoldingObject = object
@@ -173,18 +173,25 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 
 	local object_meta = GetItemMetadataByName(object.Name)
 
-	local grip_cf_offset
-	local grip_ps_reactive
-	local grip_ps_force
-	local grab_anywhere = false
+	-- TODO: create sanity checks for indexing metadata list	
+	local gprops = {
+		rot_is_reactive = true,
+		rot_max_force = 30000,
+		rot_enabled = true,
+		pos_enabled = true,
+	}
 
+	local master_part = self.HandModel.PrimaryPart
+	local follow_part = grip_point
+
+	local grab_anywhere = false
+	
 	if object_meta then
 		if object_meta.class then
 			object_meta.class:OnGrab(self, self.HoldingObject, self.GripPoint)
 		end
 
 		if object_meta.grip_type == "Anywhere" then
-			-- preserve orientation of hand relative to object at time of grab
 			grab_anywhere = true
 		end
 	
@@ -194,11 +201,14 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 			if not object_meta.grip_data then
 				error("Object Metadata must contain a grip_data table if object grip_type is set to 'GripPoint' :" .. object_meta.Name)
 			end
-			if object_meta.grip_data[grip_point.Name] then
-				grip_cf_offset = object_meta.grip_data[grip_point.Name].offset
 
-				local anim = object_meta.grip_data[grip_point.Name].animation
-				if anim then
+			local gripdata = object_meta.grip_data[grip_point.Name]
+			if gripdata then
+				gprops.cframe_offset = gripdata.offset
+				if gripdata.not_rigid then
+					gprops.rot_enabled = false
+				end
+				if gripdata.animation then
 					-- play anim
 				end
 			end
@@ -209,42 +219,28 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 	end
 
 	if grab_anywhere then
-		grip_cf_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
+		gprops.cframe_offset = self.HandModel.PrimaryPart.CFrame:inverse() * grip_point.CFrame
 	end
 
 	-- if no object meta, assume "Anywhere"
-
 	for _, obj in pairs(self.HoldingObject:GetDescendants()) do
 		if obj:IsA("BasePart") then
 			PhysicsService:SetPartCollisionGroup(obj, "Grabbed"..self.Handedness)
 		end
 	end
-
-	--grip_point.GripPoint.Value = true
 	
-	if grip_point.Anchored == true then
-		grip_ps_reactive = true
-		grip_ps_force = 1000000
+	if object.Name == "Environment" or grip_point.Anchored == true then
+		gprops.pos_is_rigid = true
+		gprops.pos_max_force = 1000000
 	end
 
-	if object.Name == "Environment" then
-		grip_ps_reactive = true
-		grip_ps_force = 1000000
-	end
+	self._GrabbedObjectWeld = SoftWeld:new(master_part, follow_part, gprops)
 
-	-- master and follower part, respectively
-	--self.HoldingObject:SetPrimaryPartCFrame(self.Head.CFrame * VRService:GetUserCFrame(self.UserCFrame))	
-	self._GrabbedObjectWeld = SoftWeld:new(self.HandModel.PrimaryPart, grip_point, {
-		-- TODO: custom props?
-		cframe_offset = grip_cf_offset,
-		--pos_is_reactive = true,--grip_ps_reactive,
-		pos_max_force = grip_ps_force,
-		--rot_max_force = 30000,
-		pos_is_rigid = true,
-		--rot_is_rigid = true,
-		rot_is_reactive = true,
-	})
-	-- TODO: create sanity checks for indexing metadata list	
+	if object_meta.grip_data[grip_point.Name].not_rigid then
+		--self._GrabbedObjectWeld.master_attachment.Axis = Vector3.new(2, 2, 2)
+	end
+	
+	
 end
 ---
 function VRHand:Grab()
@@ -278,6 +274,7 @@ function VRHand:Grab()
 				local cgrab = Networking.GetNetHook("ClientGrab")
 				cgrab:FireServer(v.Parent, v)
 				self:_HandleObjectPickup(v.Parent, v)
+				v.GripPoint.Value = true
 				return
 			end
 		end
@@ -287,7 +284,7 @@ end
 local function CollisionGroupReset(model)
 	for _, obj in pairs(model:GetDescendants()) do
 		if obj:IsA("BasePart") then
-			PhysicsService:SetPartCollisionGroup(obj, "Interactives")
+			--PhysicsService:SetPartCollisionGroup(obj, "Interactives")
 		end
 	end
 end
@@ -296,23 +293,26 @@ end
 function VRHand:Release() 
 	-- TODO: play anim?
 	if self.HoldingObject ~= nil then
-		--self.GripPoint.GripPoint.Value = false
-		local object_meta = ItemMetadata[self.HoldingObject.Name]
+		local obj = self.HoldingObject
+		local object_meta = ItemMetadata[obj.Name]
 
+		self.GripPoint.GripPoint.Value = false
 		if object_meta and object_meta.class then
-			object_meta.class:OnRelease(self, self.HoldingObject, self.GripPoint)
+			object_meta.class:OnRelease(self, obj, self.GripPoint)
 		end
 
-		local obj = self.HoldingObject
-	--	delay(1, function()
-			CollisionGroupReset(obj)
-		--end)
-		self._GrabbedObjectWeld:Destroy()
-		self._GrabbedObjectWeld = nil
-		--self.HoldingObject.PrimaryPart.Velocity = self.HoldingObject.PrimaryPart.Velocity * 2.5
+		delay(0.25, function() 
+			CollisionGroupReset(obj) 
+		end)
+
+		if self._GrabbedObjectWeld then
+			--print("Destroying Weld?", self._GrabbedObjectWeld)
+			self._GrabbedObjectWeld:Destroy()
+			self._GrabbedObjectWeld = nil
+		end
 
 		local crelease = Networking.GetNetHook("ClientRelease")
-		crelease:FireServer(self.HoldingObject, self.GripPoint)
+		--crelease:FireServer(self.HoldingObject, self.GripPoint)
 		self.HoldingObject = nil
 		self.GripPoint = nil
 		
