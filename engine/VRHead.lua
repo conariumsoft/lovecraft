@@ -5,16 +5,22 @@ _G.using "RBX.VRService"
 
 local VRHead = BaseClass:subclass("VRHead")
 
-local vr_base = game.Workspace.cameraPos
+local player = game.Players.LocalPlayer
+local char = player.CharacterAdded:Wait()
+local vr_base = char:WaitForChild("HumanoidRootPart")
 
 local local_camera = game.Workspace.CurrentCamera
 
 function VRHead:__ctor(player)
+
+    -- TODO: make character model control the positioning
+    -- of VR components
+
     self.Camera = local_camera
     self.Player = player
     self.VRHeadsetCFrame = CFrame.new(0,0,0)
 
-    local base_station = Instance.new("Part") do
+    --[[local base_station = Instance.new("Part") do
         base_station.CFrame = vr_base.CFrame
         base_station.Size = Vector3.new(0.2, 0.2, 0.2)
         base_station.Anchored = true
@@ -23,8 +29,9 @@ function VRHead:__ctor(player)
         base_station.Color = Color3.new(0.5, 0.5, 1)
         base_station.Name = "BaseStation"
         base_station.Parent = Workspace
-    end
-    self.BaseStation = base_station
+    end]]
+    -- :?????
+    self.BaseStation = vr_base
 
 
     local virtual_head = Instance.new("Part") do 
@@ -55,7 +62,6 @@ function VRHead:__ctor(player)
     self.PhysicalHead = phys_head
 
    
-
     self._HeadAlignmentWeld = SoftWeld:new(self.VirtualHead, self.PhysicalHead, {
         rot_responsiveness = 125
     })

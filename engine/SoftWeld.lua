@@ -6,6 +6,15 @@ _G.ForceDirection = {
     REACTIVE = 3,
 }
 
+--[[
+				lhandmaxvel - 600
+				lhandposforce - 15000
+				rhandmaxangular - 250
+				rhandmaxvel - 1000
+				rhandposforce - 20000
+				rhandrottorque - 250
+			]]--
+
 local function default(t, propname, default) -- default
 	if t[propname] then
 		return t[propname]

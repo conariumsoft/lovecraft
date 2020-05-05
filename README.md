@@ -10,9 +10,8 @@ https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
 
 - Weapons System
 
-- Plugin Idea : Code Style Enforcer
-
 - Make base station work.
+- Player model correctly follows
 
 - Rumble when slapping things with hand
     - Also add sound system that matches the slapped material
