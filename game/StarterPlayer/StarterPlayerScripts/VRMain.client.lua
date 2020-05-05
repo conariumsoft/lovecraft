@@ -196,7 +196,7 @@ end)
 UserInputService.InputBegan:Connect(function(inp, _)
 
 	if _G.VR_DEBUG then
-		DebugBoard.InputBegan(inp, my_left_hand, my_right_hand)
+		DebugBoard.InputBegan(inp, my_left_hand, my_right_hand, my_camera_head)
 	end
 
 	if inp.KeyCode == Enum.KeyCode.ButtonL1 then

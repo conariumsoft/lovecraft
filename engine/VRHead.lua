@@ -33,7 +33,6 @@ function VRHead:__ctor(player)
     -- :?????
     self.BaseStation = vr_base
 
-
     local virtual_head = Instance.new("Part") do 
 		-- reference position for VRHand reported position
 		virtual_head.Size = Vector3.new(0.2,0.2,0.2)
@@ -61,18 +60,17 @@ function VRHead:__ctor(player)
     -- align camera to this object
     self.PhysicalHead = phys_head
 
-   
     self._HeadAlignmentWeld = SoftWeld:new(self.VirtualHead, self.PhysicalHead, {
-        rot_responsiveness = 125
+        rot_responsiveness = 125,
+        pos_max_force = 60000,
     })
-
 end
 
 function VRHead:Update(delta)
     if _G.VR_DEBUG == false then
         self.VRHeadsetCFrame = VRService:GetUserCFrame(Enum.UserCFrame.Head)
     end
-    self.VirtualHead.CFrame = self.BaseStation.CFrame * self.VRHeadsetCFrame
+    self.VirtualHead.CFrame = self.BaseStation.CFrame * CFrame.new(0, 4, 0) * self.VRHeadsetCFrame
 
     Workspace.CurrentCamera.CFrame = self.PhysicalHead.CFrame
 end

@@ -4,6 +4,9 @@ _G.using "RBX.UserInputService"
 local mouse_rotation_speed = 0.125
 local camera_rotation = Vector2.new(0, 0)
 
+local human_move_vec = Vector2.new(0, 0)
+
+
 local DebugBoard = {}
 
 function DebugBoard.CorrectHandPositions(left_hand, right_hand)
@@ -73,9 +76,41 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     head.VRHeadsetCFrame = 
         CFrame.Angles(0, -camera_rotation.X, 0) *
         CFrame.Angles(-camera_rotation.Y, 0, 0)
-end
 
-function DebugBoard.InputBegan(inp, my_left_hand, my_right_hand)
+    local x = 0
+    local y = 0
+
+    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadEight) then x = 1  end -- forward
+    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadTwo)   then x = -1 end -- backward
+    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadFour)  then y = -1  end -- left
+    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadSix)   then y = 1 end -- right
+
+    -- GAMER NOTE: make sure humanoid AutoRotate is off, or willn't work.
+    head.BaseStation.Parent.Humanoid:Move(Vector3.new(y, 0, x), true)
+end
+--[[
+    -- parabolic curve
+    local function eq(x, steep, height, offset)
+        return height - ((1/steep) * ( (x-offset)^2) ) )
+    end
+    local function eq2(x, )
+    for x = start, finish, increments do
+
+    end
+]]
+
+function DebugBoard.InputBegan(inp, my_left_hand, my_right_hand, head)
+    -- manual left flicking
+    if inp.KeyCode == Enum.KeyCode.Left then
+        -- TODO: flick
+        head.BaseStation.CFrame = head.BaseStation.CFrame * CFrame.Angles(0, math.rad(90), 0)
+    end
+    -- manual right flick
+    if inp.KeyCode == Enum.KeyCode.Right then
+        -- TODO: flick
+        head.BaseStation.CFrame = head.BaseStation.CFrame * CFrame.Angles(0, -math.rad(90), 0)
+    end
+
     if inp.KeyCode == Enum.KeyCode.LeftShift then
         my_left_hand:Grab()
         my_left_hand:SetGripCurl(1)
@@ -103,6 +138,7 @@ function DebugBoard.InputBegan(inp, my_left_hand, my_right_hand)
 end
 
 function DebugBoard.InputEnded(inp, my_left_hand, my_right_hand)
+
     if inp.KeyCode == Enum.KeyCode.LeftShift then
         my_left_hand:Release()
         my_left_hand:SetGripCurl(0)

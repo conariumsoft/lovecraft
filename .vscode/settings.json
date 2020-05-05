@@ -31,7 +31,8 @@
         "Color3",
         "Vector2",
         "DebugBoard",
-        "Ownership"
+        "Ownership",
+        "delay"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

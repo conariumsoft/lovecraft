@@ -10,6 +10,25 @@ _G.using "RBX.Workspace"
 _G.using "RBX.PhysicsService"
 -- TODO: generate remotes..?
 
+--[[
+    Collision Groups:
+    
+    Default
+    Interactives
+
+    y = 2 + (6x)
+
+    X per player
+        PlayerBodies
+        LeftHand
+        RightHand
+        HeldLeftHand
+        HeldRightHand
+        HeldBothHands
+
+
+]]
+
 -- init physical objects
 for _, child in pairs(Workspace.physics:GetDescendants()) do
     if child:IsA("BasePart") then
