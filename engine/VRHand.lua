@@ -10,10 +10,8 @@ _G.using "Lovecraft.Lib.RotatedRegion3"
 _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
 
-
 --- VR Hand Base class. 
 local VRHand = BaseClass:subclass("VRHand")
-
 ---
 -- @name VRHand:new()
 function VRHand:__ctor(player, vr_head, handedness, hand_model)
@@ -71,9 +69,10 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self.GripPoint = nil
 	self._HandModelSoftWeld = SoftWeld:new(self.VirtualHand, self.HandModel.PrimaryPart, {
 		pos_responsiveness = 75,
-		rot_responsiveness = 50,
-		pos_max_force = 150000,
-
+		rot_responsiveness = 40,
+		pos_max_force = 5000,
+		rot_max_torque = 5000,
+		pos_max_velocity = 50000,
 	})
 	self._GrabbedObjectWeld = nil
 	
@@ -176,7 +175,9 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 	-- TODO: create sanity checks for indexing metadata list	
 	local gprops = {
 		rot_is_reactive = true,
-		rot_max_force = 30000,
+		rot_max_force = 15000,
+		pos_max_force = 50000,
+		pos_responsiveness = 150,
 		rot_enabled = true,
 		pos_enabled = true,
 	}
@@ -187,6 +188,82 @@ function VRHand:_HandleObjectPickup(object, grip_point)
 	local grab_anywhere = false
 	
 	if object_meta then
+		if object_meta.name == "Skorpion" then
+--[[
+	IDEA 2 try:
+		handle has rotation only
+
+		high and even positioning on both
+		mag has no rotation torque
+
+	When RigidityEnabled is false, then the force will be determined
+	by the AlignPosition.MaxForce, AlignPosition.MaxVelocity, and
+	AlignPosition.Responsiveness. MaxForce and MaxVelocity are caps to
+	the force and velocities respectively. The actual scale of the force is
+	determined by the Responsiveness. The mechanism for responsiveness is a
+	little complicated, but put simply the higher the responsiveness, the
+	quickerthe constraint will try to reach its goal.
+]]
+--[[
+	HR
+		AlignPos
+			MaxForce - 100000
+			MaxVelocity - 20k
+			Responsiveness - 100
+		AlignOrientation
+			MaxAngularVelocity - 50k
+			MaxTorque - 50k
+			Responsiveness - 100
+	LR
+		AlignPos
+			MaxForce - 100000
+			MaxVelocity - 25k
+			Responsiveness - 100
+			]]
+			
+			self._HandModelSoftWeld:Disable()
+			local rot_torque = 50000
+			local pos_force = 100000
+			local rot_max_vel = 50000
+			local pos_max_vel = 25000
+			local rot_enabled = true
+
+			local p = game.ReplicatedStorage.Props
+			if grip_point.Name == "Handle" then
+				rot_torque = p.RightHandRotationTorque.Value
+				rot_max_vel = p.RightHandMaxAngularVelocity.Value
+				pos_force = p.RightHandPositionForce.Value
+				pos_max_vel = p.RightHandMaxVelocity.Value
+			end
+
+			if grip_point.Name == "Magazine" then
+				rot_torque = 0
+				rot_enabled = false
+				pos_force = p.LeftHandPositionForce.Value
+				pos_max_vel = p.LeftHandMaxVelocity.value
+			end
+
+			for _, obj in pairs(self.HoldingObject:GetDescendants()) do
+				if obj:IsA("BasePart") then
+					PhysicsService:SetPartCollisionGroup(obj, "Grabbed"..self.Handedness)
+				end
+			end
+			object_meta.class:OnGrab(self, self.HoldingObject, self.GripPoint)
+			self._GrabbedObjectWeld = SoftWeld:new(grip_point, self.HandModel.PrimaryPart, {
+				rot_max_torque = 100000,
+				pos_max_force = 200000,
+				rot_responsiveness = 200,
+				pos_responsiveness = 200
+			})
+			self._HandWeld = SoftWeld:new(self.VirtualHand, grip_point, {
+				rot_max_torque = rot_torque,
+				pos_max_force = pos_force,
+				rot_max_angular_vel = rot_max_vel,
+				pos_max_velocity = pos_max_vel,
+				rot_enabled = rot_enabled,
+			})
+			return
+		end
 		if object_meta.class then
 			object_meta.class:OnGrab(self, self.HoldingObject, self.GripPoint)
 		end
@@ -303,7 +380,12 @@ function VRHand:Release()
 		delay(0.25, function() 
 			CollisionGroupReset(obj) 
 		end)
-
+		--fgff
+		if object_meta.name == "Skorpion" then
+			self._HandModelSoftWeld:Enable()
+			self._HandWeld:Destroy()
+			self._HandWeld = nil
+		end
 		if self._GrabbedObjectWeld then
 			--print("Destroying Weld?", self._GrabbedObjectWeld)
 			self._GrabbedObjectWeld:Destroy()
@@ -327,6 +409,7 @@ function VRHand:Update(dt)
 			object_meta.class:OnSimulationStep(self, self.HoldingObject, dt, self.GripPoint)
 		end
 	end
+
 	self.LastHandPosition = self.HandPosition
 
 	local reported_cframe = self.Head.PhysicalHead.CFrame * self.VRControllerPosition

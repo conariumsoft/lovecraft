@@ -10,6 +10,7 @@ https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
 
 - Weapons System
 
+- Plugin Idea : Code Style Enforcer
 
 - Make base station work.
 

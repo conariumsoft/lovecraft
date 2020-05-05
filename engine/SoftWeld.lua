@@ -1,17 +1,125 @@
 _G.using("Lovecraft.BaseClass")
 
+_G.ForceDirection = {
+    FORWARD = 1,
+    BACKWARD = 2,
+    REACTIVE = 3,
+}
+
+local function default(t, propname, default) -- default
+	if t[propname] then
+		return t[propname]
+	else
+		return default
+	end
+end
+
+local AttachmentSet = BaseClass:subclass("AttachmentSet")
+
+function AttachmentSet:__ctor(alphapart, betapart)
+    assert(alphapart:IsA("BasePart"), "")
+    assert( betapart:IsA("BasePart"), "")
+
+    local alpha_att = Instance.new("Attachment")
+    alpha_att.Parent = alphapart
+
+    local beta_att = Instance.new("Attachment")
+    beta_att.Parent = betapart
+
+    self.AlphaPart = alphapart
+    self.AlphaAttachment = alpha_att
+
+    self.BetaPart = betapart
+    self.BetaAttachment = beta_att
+
+    self.AttachedSolvers = {
+        
+    }
+end
+
+function AttachmentSet:SetVisiblity(visibility)
+    self.BetaAttachment.Visible = visibility
+    self.AlphaAttachment.Visible = visibility
+end
+
+function AttachmentSet:Destroy()
+    self.BetaAttachment:Destroy()
+    self.AlphaAttachment:Destroy()
+end
+
+function AttachmentSet:ConnectSolver(solver)
+    solver.Constraint.Attachment0 = x
+    solver.Constraint.Attachment1 = y
+end
+
+function AttachmentSet:GetSolver()
+
+end
+
+function AttachmentSet:DisconnectSolver(solver)
+    
+end
+
+
+-- set:AddSolver(Solver:new(...), _G.PartControlOrder.FORWARD)
+
+-- just wrappers around ROBLOX's physics solvers.
+local Solver = BaseClass:subclass("Solver")
+
+function Solver:__ctor(props)
+    self.AttachedTo = nil
+end
+function Solver:Attach(set, force_direction)
+
+    -- determine which part gets force applied
+    if force_direction == _G.ForceDirection.FORWARD then
+        self.Constraint.Attachment0 = set.AlphaAttachment
+        self.Constraint.Attachment1 = set.BetaAttachment
+    elseif force_direction == _G.ForceDirection.BACKWARD then
+        self.Constraint.Attachment0 = set.BetaAttachment
+        self.Constraint.Attachment1 = set.AlphaAttachment
+    elseif force_direction == _G.ForceDirection.REACTIVE then
+        -- TODO: aaa
+    end
+
+    self.AttachedTo = set
+end
+function Solver:Detach()
+    self.Constraint.Attachment0 = nil
+    self.Constraint.Attachment1 = nil
+    self.AttachedTo = nil
+end
+
+local PositionSolver = Solver:subclass("PositionSolver")
+function PositionSolver:__ctor(p, ...)
+    Solver.__ctor(self, p, ...) -- super
+    -- p: table of properties
+    -- c: AlignPosition constraint instance
+    -- default(table, property, default) = value
+    local c = Instance.new("AlignPosition")
+    c.ApplyAtCenterOfMass  = default(p, "ApplyAtCenterOfMass",  false)
+    c.MaxForce             = default(p, "MaxForce",             30000)
+    c.MaxVelocity          = default(p, "MaxVelocity",          1000000)
+    c.Responsiveness       = default(p, "Responsiveness",       100)
+    c.ReactionForceEnabled = default(p, "ReactionForceEnabled", false)
+    c.RigidityEnabled      = default(p, "RigidityEnabled",      false)
+    c.Visible              = false
+
+    self.Constraint = c
+end
+
+
+local RotationSolver = Solver:subclass("RotationSolver")
+
+
 local SoftWeld = BaseClass:subclass("SoftWeld")
 
 ---
 -- @name ctor Softweld:new
---
---
---
-
-function SoftWeld:__ctor(master_part, follower_part, props, visible)
+function SoftWeld:__ctor(master_part, follower_part, props)
     props = props or {}
     local pos_enabled = props.pos_enabled or true
-    local rot_enabled = props.rot_enabled or true
+    local rot_enabled = (props.rot_enabled~=nil) and props.rot_enabled or true
     local pos_is_rigid = props.pos_is_rigid or false
     local pos_is_reactive = props.pos_is_reactive or false
     local pos_responsiveness = props.pos_responsiveness or 200
@@ -37,10 +145,8 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     follower_att.Name = "SoftWeldFollowerAttachment"
 
     if cframe_offset then
-        print("Applying offset!")
         master_att.CFrame = cframe_offset
     end
-
 
     local pos_constraint = Instance.new("AlignPosition") do
         pos_constraint.Name = "SoftWeldPositionConstraint"
@@ -84,10 +190,18 @@ function SoftWeld:__ctor(master_part, follower_part, props, visible)
     self.rotation_constraint = rot_constraint
 end
 
----
+function SoftWeld:Enable()
+    self.position_constraint.Enabled = true
+    self.rotation_constraint.Enabled = true
+end
+
+
+function SoftWeld:Disable()
+    self.position_constraint.Enabled = false
+    self.rotation_constraint.Enabled = false
+end
 
 function SoftWeld:Destroy()
-    print("Deconstructing SoftWeld", self.master_attachment.Parent, self.follower_attachment.Parent, self.position_constraint.Parent, self.rotation_constraint.Parent)
     self.master_attachment:Destroy()
     self.follower_attachment:Destroy()
     self.position_constraint:Destroy()

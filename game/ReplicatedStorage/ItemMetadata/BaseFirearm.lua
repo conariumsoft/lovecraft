@@ -38,6 +38,7 @@ end
 -------------------------------------------------------
 -- Handle (Trigger Group) Functionality
 function BaseFirearm:HandleOnGrab(hand, model)
+    print("Handle grabbed!")
     if animation_track == nil then
 
         animation_track = model.AnimationController:LoadAnimation(model.slideBack)
@@ -76,22 +77,22 @@ end
 ---------------------------------------------------
 
 function BaseFirearm:MagazineOnGrab(hand, model)
-
+    print("Magazine Grabbed!")
 end
 
 function BaseFirearm:MagazineOnRelease(hand, model)
-    --hand:Release()
-    --hand:Grab()
-    -- AAAAAAAAAAAAAAAAAAAAA
+    print("Magazine released!")
     self:HandleOnRelease(hand, model)
     self:HandleOnGrab(hand, model)
 end
 ------------------------------------------------------
 function BaseFirearm:ChargingHandleOnGrab(hand, model)
+    print("ChargingHandle grabbed")
     self.BoltGrabbed = true
 end
 
 function BaseFirearm:ChargingHandleOnRelease(hand, model)
+    print("ChargingHandle released")
     if self.MagazineInserted and self.RoundInChamber == false then
         self.RoundInChamber = true
         self.MagazineRoundCount = self.MagazineRoundCount - 1
@@ -103,21 +104,6 @@ function BaseFirearm:ChargingHandleOnRelease(hand, model)
 end
 --------------------------------------------------------------
 
-function BaseFirearm:OnGrab(hand, model, grip_point)
-    local g = grip_point.Name
-    if     g == "Handle"         then self:HandleOnGrab(hand, model)
-    elseif g == "Magazine"       then self:MagazineOnGrab(hand, model)
-    elseif g == "ChargingHandle" then self:ChargingHandleOnGrab(hand, model) 
-    end
-end
-
-function BaseFirearm:OnRelease(hand, model, grip_point)
-    local gp = grip_point.Name
-    if     gp == "Handle"         then self:HandleOnRelease(hand, model)
-    elseif gp == "Magazine"       then self:MagazineOnRelease(hand, model)
-    elseif gp == "ChargingHandle" then self:ChargingHandleOnRelease(hand, model)
-    end
-end
 
 function BaseFirearm:FireProjectile(hand, model, grip_point)
 
@@ -138,7 +124,6 @@ function BaseFirearm:FireProjectile(hand, model, grip_point)
 end
 
 function BaseFirearm:Fire(hand, model, grip_point)
-	print("WOW!", hand)
     local barrel = model[self.BarrelComponent]
     local bolt = model[self.BoltComponent]
 
@@ -207,6 +192,7 @@ function BaseFirearm:TriggerDown(hand, model, dt, grip_point)
 end
 
 function BaseFirearm:OnMagazineInsert(model, magazine)
+     print("Magazine Inserted")
     self.MagazineInserted = true
     self.MagazineRoundCount = 30--magazine.Rounds.Value
 
@@ -222,7 +208,7 @@ function BaseFirearm:OnMagazineInsert(model, magazine)
 end
 
 function BaseFirearm:OnMagazineRemove(hand, model)
-
+    print("Magazine Removed")
     hand:Release()
     self.MagazineInserted = false
 
@@ -231,6 +217,23 @@ function BaseFirearm:OnMagazineRemove(hand, model)
 end
 
 
+---------------------------------
+-- External API-Hook methods
+function BaseFirearm:OnGrab(hand, model, grip_point)
+    local g = grip_point.Name
+    if     g == "Handle"         then self:HandleOnGrab(hand, model)
+    elseif g == "Magazine"       then self:MagazineOnGrab(hand, model)
+    elseif g == "ChargingHandle" then self:ChargingHandleOnGrab(hand, model) 
+    end
+end
+
+function BaseFirearm:OnRelease(hand, model, grip_point)
+    local gp = grip_point.Name
+    if     gp == "Handle"         then self:HandleOnRelease(hand, model)
+    elseif gp == "Magazine"       then self:MagazineOnRelease(hand, model)
+    elseif gp == "ChargingHandle" then self:ChargingHandleOnRelease(hand, model)
+    end
+end
 
 function BaseFirearm:OnSimulationStep(hand, model, dt, grip_point)
     local magazine = model[self.MagazineComponent]
@@ -244,18 +247,21 @@ function BaseFirearm:OnSimulationStep(hand, model, dt, grip_point)
     end
 
     if grip_point.Name == "Handle" then
+        --print("Holding Handle!")
         if hand.IndexFingerPressure > self.TriggerStiffness then
             self:TriggerDown(hand, model, dt, grip_point)
         end
     end
 
-    if grip_point.Name == "Magazine" and self.MagazineInserted and hand.IndexFingerPressure > 0.95 then
-        print("Remove Mag!")
-        self:OnMagazineRemove(hand, model)
+    if grip_point.Name == "Magazine" then
+       -- print("Holding Magazine!")
+        if self.MagazineInserted and hand.IndexFingerPressure > 0.95 then
+            self:OnMagazineRemove(hand, model)
+        end
     end
 
     if grip_point.Name == "ChargingHandle" then
-        
+       -- print("Holding ChargingHandle!")
     end
 end
 

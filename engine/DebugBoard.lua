@@ -85,13 +85,13 @@ function DebugBoard.InputBegan(inp, my_left_hand, my_right_hand)
         my_left_hand:SetIndexFingerCurl(1)
     end
 
-    if inp.KeyCode == Enum.KeyCode.RightControl then
+    if inp.KeyCode == Enum.KeyCode.RightShift then
         my_right_hand:Grab()
         my_right_hand:SetGripCurl(1)
     end
 
     if inp.KeyCode == Enum.KeyCode.RightControl then
-       -- my_right_hand:SetIndexFingerCurl(1)
+       my_right_hand:SetIndexFingerCurl(1)
     end
     if inp.KeyCode == Enum.KeyCode.Space then
         if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
