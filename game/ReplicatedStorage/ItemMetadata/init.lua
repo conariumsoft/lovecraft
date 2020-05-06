@@ -194,11 +194,45 @@ local ItemMetadata = {
 		},
 		class = Skorpion,
 	},
+	["Saiga"] = {
+		name = "Saiga",
+		grip_type = "GripPoint",
+		grip_data = {
+			--[[
+				lhandmaxvel - 600
+				lhandposforce - 15000
+				rhandmaxangular - 250
+				rhandmaxvel - 1000
+				rhandposforce - 20000
+				rhandrottorque - 250
+			]]--
+			Handle = {
+				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(180), 0),
+				--animation = skorpion_grip_animation,
+				not_rigid = true,
+			},
+			Barrel = {
+				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, -math.rad(180)),
+				--not_rigid = true,
+				
+			},
+		},
+		class = Skorpion,
+	},
 	["SkorpionMagazine"] = {
 		name = "Magazine",
 		grip_type = "Anywhere",
 		grip_data = {
 			Magazine = {
+				offset = CFrame.new(0, 0, 0),
+			}
+		}
+	},
+	["LightSaber"] = {
+		name = "LightSaber",
+		grip_type = "GripPoint",
+		grip_data = {
+			MeshPart = {
 				offset = CFrame.new(0, 0, 0),
 			}
 		}

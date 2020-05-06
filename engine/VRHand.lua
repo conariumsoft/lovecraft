@@ -381,7 +381,7 @@ function VRHand:Release()
 			CollisionGroupReset(obj) 
 		end)
 		--fgff
-		if object_meta.name == "Skorpion" then
+		if object_meta and object_meta.name == "Skorpion" then
 			self._HandModelSoftWeld:Enable()
 			self._HandWeld:Destroy()
 			self._HandWeld = nil

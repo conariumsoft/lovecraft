@@ -62,17 +62,31 @@ function VRHead:__ctor(player)
 
     self._HeadAlignmentWeld = SoftWeld:new(self.VirtualHead, self.PhysicalHead, {
         rot_responsiveness = 125,
-        pos_max_force = 60000,
+        pos_max_force = 120000,
+        rot_max_angular_velocity = 120000,
     })
 end
 
+--[[
+
+]]
+
+local eye_level_above_center = 1.5
+local eye_forward_pos = 0.5
 function VRHead:Update(delta)
     if _G.VR_DEBUG == false then
         self.VRHeadsetCFrame = VRService:GetUserCFrame(Enum.UserCFrame.Head)
     end
-    self.VirtualHead.CFrame = self.BaseStation.CFrame * CFrame.new(0, 4, 0) * self.VRHeadsetCFrame
 
-    Workspace.CurrentCamera.CFrame = self.PhysicalHead.CFrame
+    self.VirtualHead.CFrame = (CFrame.new(self.BaseStation.Parent.Head.CFrame.p)
+        * self.VRHeadsetCFrame)
+        * CFrame.new(0, eye_level_above_center, -eye_forward_pos) 
+
+    local rx, ry, rz = self.VRHeadsetCFrame:ToEulerAnglesXYZ()
+
+    self.BaseStation.CFrame = CFrame.new(self.BaseStation.CFrame.p) * CFrame.Angles(0, rz, 0)
+
+    Workspace.CurrentCamera.CFrame = self.VirtualHead.CFrame 
 end
 
 function VRHead:Teleport(coord)

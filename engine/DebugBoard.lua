@@ -80,8 +80,8 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     local x = 0
     local y = 0
 
-    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadEight) then x = 1  end -- forward
-    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadTwo)   then x = -1 end -- backward
+    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadEight) then x = -1  end -- forward
+    if UserInputService:IsKeyDown(Enum.KeyCode.KeypadTwo)   then x = 1 end -- backward
     if UserInputService:IsKeyDown(Enum.KeyCode.KeypadFour)  then y = -1  end -- left
     if UserInputService:IsKeyDown(Enum.KeyCode.KeypadSix)   then y = 1 end -- right
 
@@ -100,6 +100,11 @@ end
 ]]
 
 function DebugBoard.InputBegan(inp, my_left_hand, my_right_hand, head)
+
+    if inp.KeyCode == Enum.KeyCode.KeypadFive then
+        head.BaseStation.Parent.Humanoid.Jump = true
+    end
+
     -- manual left flicking
     if inp.KeyCode == Enum.KeyCode.Left then
         -- TODO: flick

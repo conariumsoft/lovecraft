@@ -56,6 +56,11 @@ local right_hand_model = character:WaitForChild("RHand")
 local my_camera_head = VRHead:new(local_player)
 local my_left_hand   = VRHand:new(local_player, my_camera_head, "Left", left_hand_model)
 local my_right_hand  = VRHand:new(local_player, my_camera_head, "Right", right_hand_model)
+-- dont leave this here!!
+wait()
+my_left_hand:Teleport(character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2))
+my_right_hand:Teleport(character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2))
+
 -- CONSIDER: create VRController class?
 local jstickleft  = Vector2.new(0, 0) -- vr controller joysticks
 local jstickright = Vector2.new(0, 0)
@@ -84,21 +89,18 @@ RunService.Stepped:Connect(function(t, delta)
 	my_right_hand:Update(delta)
 	
 
-	--[[my_camera_head.BaseStation.CFrame = my_camera_head.BaseStation.CFrame * 
-		CFrame.new(
-			joystick_right.X/movement_scale, 
-			0, 
-			joystick_right.Y/movement_scale
-		)]]
-		--[[character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame * 
-		CFrame.new(
-			jstickright.X/movement_scale, 
-			0, 
-			jstickright.Y/movement_scale
-		)]]
-
-		
-
+--[[my_camera_head.BaseStation.CFrame = my_camera_head.BaseStation.CFrame * 
+	CFrame.new(
+		joystick_right.X/movement_scale, 
+		0, 
+		joystick_right.Y/movement_scale
+	)]]
+	--[[character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame * 
+	CFrame.new(
+		jstickright.X/movement_scale, 
+		0, 
+		jstickright.Y/movement_scale
+	)]]
 	if _G.VR_DEBUG then
 		DebugBoard.RenderStep(my_camera_head, my_left_hand, my_right_hand)
 	end
@@ -148,7 +150,7 @@ local function right_joystick_state(jstick_vec)
 	jstickright = jstick_vec
 
 	--- PLAY WITH MOVEMENT
-	character.Humanoid:Move(Vector3.new(jstickright.Y, 0, jstickright.X), true)
+	character.Humanoid:Move(Vector3.new(jstickright.X, 0, -jstickright.Y), true)
 	
 end
 
