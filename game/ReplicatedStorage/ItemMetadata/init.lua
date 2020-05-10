@@ -177,7 +177,9 @@ local ItemMetadata = {
 		name = "Skorpion",
 		grip_type = "GripPoint",
 		grip_data = {
-			Handle = GripPoint:new(CFrame.new(0, 0, 0), 20000, 250, true)
+			Handle = GripPoint:new(CFrame.new(0, 0, 0), 20000, 250, true),
+			Magazine = ...,
+			ChargingHandle = ...,
 			--[[
 				lhandmaxvel - 600
 				lhandposforce - 15000
