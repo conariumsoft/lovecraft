@@ -68,11 +68,8 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
         right_hand.OriginRelativeControllerPosition 
         * CFrame.new(rx, ry, rz)*CFrame.Angles(rp, ryw, rr)
 
-    head.VRHeadsetCFrame = CFrame.new(0, 0, 0) *
-        CFrame.Angles(0, -camera_rotation.X, 0) *
-        CFrame.Angles(-camera_rotation.Y, 0, 0)
-
-
+    head.DebugMouseVec2 = Vector2.new(camera_rotation.X, camera_rotation.Y)
+    
     local x = 0
     local y = 0
 

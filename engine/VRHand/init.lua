@@ -191,7 +191,7 @@ local function object_pickup_criteria(part)
 end
 
 local function find_object_can_pickup(region)
-	local list = Workspace:FindPartsInRegion3WithWhiteList(region, Workspace.physics:GetDescendants())
+	local list = region:FindPartsInRegion3WithWhiteList(Workspace.physics:GetDescendants())
 
 	for _, v in pairs(list) do
 		local matches_criteria = object_pickup_criteria(v)

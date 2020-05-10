@@ -177,6 +177,7 @@ local ItemMetadata = {
 		name = "Skorpion",
 		grip_type = "GripPoint",
 		grip_data = {
+			Handle = GripPoint:new(CFrame.new(0, 0, 0), 20000, 250, true)
 			--[[
 				lhandmaxvel - 600
 				lhandposforce - 15000
@@ -184,7 +185,7 @@ local ItemMetadata = {
 				rhandmaxvel - 1000
 				rhandposforce - 20000
 				rhandrottorque - 250
-			]]--
+
 			Handle = {
 				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, 0),
 				animation = skorpion_grip_animation,
@@ -199,7 +200,7 @@ local ItemMetadata = {
 				offset = CFrame.new(0, 4, 0),
 				not_rigid = true,
 				stiff = false,
-			},
+			},]]
 		},
 		class = Skorpion,
 	},

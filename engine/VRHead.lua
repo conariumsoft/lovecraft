@@ -21,6 +21,7 @@ function VRHead:__ctor(player)
     self.Camera = local_camera
     self.Player = player
     self.VRHeadsetCFrame = CFrame.new(0,0,0)
+    self.DebugMouseVec2 = Vector2.new(0, 0)
 
     -- movement invoked by joysticks, rotation flicking, etc.
     -- combined with VRHeadsetCFrame to achieve final po sition.
@@ -55,11 +56,14 @@ function VRHead:Update(delta)
     local headset_cf = self.VRHeadsetCFrame
     local control_cf = self.TranslatedPosition
     local flick_rt = self.FlickRotation
-    
+    local mouse_vec2 = self.DebugMouseVec2
+
     self.VirtualHead.CFrame = -- humanoidpos
         control_cf * 
         -- flick rotation
-        CFrame.Angles(0, math.rad(flick_rt), 0)
+        CFrame.Angles(0, math.rad(flick_rt), 0) *
+        CFrame.Angles(0, -mouse_vec2.X, 0) *
+        CFrame.Angles(-mouse_vec2.Y, 0, 0)
 
     char.HeadJ.CFrame = headset_cf
 
