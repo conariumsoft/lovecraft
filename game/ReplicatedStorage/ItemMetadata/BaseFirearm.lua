@@ -30,6 +30,11 @@ BaseFirearm.BoltGrabbed = false
 
 local animation_track = nil
 
+function BaseFirearm:__ctor()
+
+
+end
+
 ------------------------------------------------
 -- Various Methods
 function BaseFirearm:GetCycleTime()

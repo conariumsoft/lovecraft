@@ -1,6 +1,4 @@
-_G.using "Lovecraft.BaseClass"
-
-local BaseInteractive = BaseClass:subclass("InteractiveObject")
+local BaseInteractive = _G.newclass("InteractiveObject")
 
 function BaseInteractive:OnGrab(hand, model, grip_point)
 

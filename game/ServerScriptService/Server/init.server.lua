@@ -8,26 +8,9 @@ _G.using "Lovecraft.Ownership"
 _G.using "RBX.ReplicatedStorage"
 _G.using "RBX.Workspace"
 _G.using "RBX.PhysicsService"
--- TODO: generate remotes..?
-
---[[
-    Collision Groups:
-    
-    Default
-    Interactives
-
-    y = 2 + (6x)
-
-    X per player
-        PlayerBodies
-        LeftHand
-        RightHand
-        HeldLeftHand
-        HeldRightHand
-        HeldBothHands
 
 
-]]
+local givehands = require(script.givehands)
 
 -- init physical objects
 for _, child in pairs(Workspace.physics:GetDescendants()) do
@@ -37,9 +20,9 @@ for _, child in pairs(Workspace.physics:GetDescendants()) do
     end
 end
 
--- etc
-Networking.ServerSetup()
-
+--- Hand Animation loading
+-- load objects on server initially (permits client replication)
+-- create folders
 local anims_folder = Instance.new("Folder") do
     anims_folder.Name = "Animations"
     anims_folder.Parent = ReplicatedStorage
@@ -61,11 +44,35 @@ local function LoadAnimation(folder, name, id)
 	return anim
 end
 
-LoadAnimation(lf, "Index",  "rbxassetid://4921338211")
-LoadAnimation(rf, "Index", "rbxassetid://4921265382")
-LoadAnimation(lf, "Grip",   "rbxassetid://4921113867")
-LoadAnimation(rf, "Grip",  "rbxassetid://4921074129")
+-- anim IDs
+local left_hand_animation_defs = {
+  --{"AnimName",   "AssetIDString"          },
+    {"Index",      "rbxassetid://4921338211"},
+    {"Grip",       "rbxassetid://4921113867"},
 
+}
+
+local right_hand_animation_defs = {
+  --{"AnimName",   "AssetIDString"          },
+    {"Index",      "rbxassetid://4921265382"},
+    {"Grip",       "rbxassetid://4921074129"},
+
+}
+
+-- load sets
+for _, data in pairs(left_hand_animation_defs) do
+    LoadAnimation(lf, data[1], data[2])
+end
+
+for _, data in pairs(right_hand_animation_defs) do
+    LoadAnimation(rf, data[1], data[2])
+end
+
+
+--- Remotes
+-- create folder
+Networking.CreateHookContainer()
+-- client init
 local on_client_request_vr_state = Networking.GenerateNetHook("ClientRequestVRState")
 
 local on_client_grip_state = Networking.GenerateAsyncNetHook("ClientGripState")
@@ -75,12 +82,6 @@ local on_client_release_object = Networking.GenerateAsyncNetHook("ClientRelease"
 local on_client_trigger_down = Networking.GenerateAsyncNetHook("ClientTriggerDown")
 local on_client_trigger_up = Networking.GenerateAsyncNetHook("ClientTriggerUp")
 
-local on_client_request_animation_controller = Networking.GenerateNetHook("ClientRequestAnimationController")
-local on_client_request_animation            = Networking.GenerateNetHook("ClientRequestAnimationTrack")
--- TODO: apparently  we have to load the AnimationTrack on the server as well
-
-local left_hand_model = game.ReplicatedStorage.LHand
-local right_hand_model = game.ReplicatedStorage.RHand
 
 
 local function OnClientGrabObject(player, object, grabbed)
@@ -118,31 +119,53 @@ local function OnClientReleaseObject(player, object, grabbed)
     end
 end
 
+PhysicsService:CreateCollisionGroup("AuxParts")
+
+PhysicsService:CollisionGroupSetCollidable("AuxParts", "Default", false)
+PhysicsService:CollisionGroupSetCollidable("AuxParts", "LeftHand", false)
+PhysicsService:CollisionGroupSetCollidable("AuxParts", "RightHand", false)
+PhysicsService:CollisionGroupSetCollidable("AuxParts", "GrabbedLeft", false)
+PhysicsService:CollisionGroupSetCollidable("AuxParts", "GrabbedRight", false)
+
+
+-- parts of a player's body that we need networkownership of
+-- set correct collision groups on as well
+local auxiliary_parts = {
+    "TorsoJ", "HeadJ", "LeftFoot",
+    "LeftLowerArm", "LeftLowerLeg",
+    "LeftUpperArm", "LeftUpperLeg",
+    "RightFoot", "RightLowerArm",
+    "RightLowerLeg", "RightUpperArm",
+    "RightUpperLeg", "HumanoidRootPart"
+}
+
+-- fired by client (presumably) when ready to start VR game
+-- load in hand models and setup animations
 local function OnClientRequestVRState(player)
-    print("Client is ready for VR initialization")
+    _G.log("Client Requested VR State")
+    for _, name in pairs(auxiliary_parts) do
+        local part = player.Character:FindFirstChild(name)
+        if part then
+            part.Anchored = false
+        end
+    end
+    for _, name in pairs(auxiliary_parts) do
+        local part = player.Character:FindFirstChild(name)
+        if part then
 
-   -- local plr_left = player.Character.LHand
-  -- local plr_right = player.Character.RHand
+            PhysicsService:SetPartCollisionGroup(part, "Body")
+            part:SetNetworkOwner(player)
+            --part.CanCollide = false
+            --part.Anchored = true
+            --.CanCollide = false
+        end
+    end
 
-
-    local plr_left = ReplicatedStorage.LHand:Clone()
-    plr_left.Parent = player.Character
-
-    local plr_right = ReplicatedStorage.RHand:Clone()
-    plr_right.Parent = player.Character
-
-    plr_left.PrimaryPart:SetNetworkOwner(player)
-    plr_right.PrimaryPart:SetNetworkOwner(player)
-    
-    local left_a = Instance.new("Animator")
-    left_a.Parent = plr_left.Animator
-
-    local right_a = Instance.new("Animator")
-    right_a.Parent = plr_right.Animator
-
-
-    CollisionMasking.SetModelGroup(plr_left, "LeftHand")
-    CollisionMasking.SetModelGroup(plr_right, "RightHand")
+    -- create hand models for player
+    -- assign networkownership
+    -- set collision groups
+    -- create animator 
+    local hands = givehands(player)
     return true
 end
 

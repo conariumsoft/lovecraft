@@ -15,7 +15,6 @@
     "ServerScriptService": {
       "$className": "ServerScriptService",
       "$path": "game/ServerScriptService"
-
     },
 
     "ReplicatedFirst": {

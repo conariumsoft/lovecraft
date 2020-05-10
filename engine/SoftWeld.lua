@@ -1,5 +1,3 @@
-_G.using("Lovecraft.BaseClass")
-
 _G.ForceDirection = {
     FORWARD = 1,
     BACKWARD = 2,
@@ -23,7 +21,7 @@ local function default(t, propname, default) -- default
 	end
 end
 
-local AttachmentSet = BaseClass:subclass("AttachmentSet")
+local AttachmentSet = _G.newclass("AttachmentSet")
 
 function AttachmentSet:__ctor(alphapart, betapart)
     assert(alphapart:IsA("BasePart"), "")
@@ -73,7 +71,7 @@ end
 -- set:AddSolver(Solver:new(...), _G.PartControlOrder.FORWARD)
 
 -- just wrappers around ROBLOX's physics solvers.
-local Solver = BaseClass:subclass("Solver")
+local Solver = _G.newclass("Solver")
 
 function Solver:__ctor(props)
     self.AttachedTo = nil
@@ -121,7 +119,7 @@ end
 local RotationSolver = Solver:subclass("RotationSolver")
 
 
-local SoftWeld = BaseClass:subclass("SoftWeld")
+local SoftWeld = _G.newclass("SoftWeld")
 
 ---
 -- @name ctor Softweld:new

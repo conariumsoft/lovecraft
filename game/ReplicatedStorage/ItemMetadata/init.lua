@@ -1,7 +1,6 @@
 _G.using "RBX.UserInputService"
 _G.using "RBX.Workspace"
 _G.using "RBX.Debris"
-_G.using "Lovecraft.BaseClass"
 ----------------------------------------------------------------------
 
 
@@ -42,12 +41,10 @@ GripSurface -- hand can grab anywhere on the object
 ```
 ]]
 
-local GripInformation = BaseClass:subclass("GripInformation")
+local GripInformation = _G.newclass("GripInformation")
 
 function GripInformation:__ctor(props)
 	self.Animation = nil -- string
-	self.RotationTorque = 0
-	self.PositionForce = 0
 	
 end
 
@@ -67,6 +64,11 @@ function GripInformation:__pullfrom(t)
 	end
 end
 
+function GripInformation:ToWeldConfiguration()
+	error("NotImplemented! Use subclass methods.")
+end
+
+
 local function default(propname, props, default)
 	if props[propname] then
 		return props[propname]
@@ -77,16 +79,35 @@ end
 
 local GripPoint = GripInformation:subclass("GripPoint")
 
-function GripPoint:__ctor(props)
-	GripInformation.__ctor(self, props)
+function GripPoint:__ctor(Offset, PullForce, RotationForce, ApplyRotation)
+	--GripInformation.__ctor(self, props)
 
 	--self:__default("AllowRotation", props, false)
 
-	self.AllowRotation = false -- lock at initial grip rotation?
 	self.Offset = CFrame.new(0, 0, 0)
+	self.PullForce = 100000
+	self.RotationForce = 50000
+	self.PullMax = 25000   -- max velocity that can be exerted on the assembly
+	self.RotateMax = 50000 -- max angular velocity (rotation)
+	self.ApplyRotation = false -- lock at initial grip rotation?
 
-	self:__pullfrom(props)
+	--self:__pullfrom(props)
 end
+
+function GripPoint:ToWeldConfiguration()
+	return {
+
+		pos_max_force = self.PullForce,
+		rot_max_torque = self.RotationForce,
+		pos_max_velocity = self.PullMax,
+		rot_max_angular_velocity = self.RotateMax,
+		rot_enabled = self.ApplyRotation,
+		rot_responsiveness = 200,
+		pos_responsiveness = 200,
+		cframe_offset = self.Offset,
+	}
+end
+
 
 local GripPointAligned = GripPoint:subclass("GripPointAligned")
 
@@ -124,28 +145,16 @@ local Skorpion = require(script.Skorpion)
 local marker_grip_animation
 local skorpion_grip_animation
 
---[[
-	Item Metadata API spec:
-	ModelName = {
-		BaseClass class,
-		string name, (Required)
-		string grip_type, <"GripPoint", "GripLine", "Anywhere"> (Required)
-		table grip_data { (Required if grip_type == "GripPoint")
-			PartName = {
-				string animation,
-				CFrame offset,
-			},
-			PartName2 = {
-				string animation,
-				CFrame offset,
-			}
-		}
-	}	
-]]
 -- setup code finished. --
 local ItemMetadata = {
-	["Environment"] = {
 
+	["Environment"] = {
+		grip_data = {
+			DoorHandle = {
+				
+			},
+
+		}
 	},
 	["Marker"] = {
 		class = require(script.Marker),

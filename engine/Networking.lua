@@ -3,7 +3,7 @@ _G.using "RBX.RunService"
 
 local Networking = {}
 
-function Networking.ServerSetup()
+function Networking.CreateHookContainer()
     local network_hook_folder = Instance.new("Folder") do
         network_hook_folder.Name = "NetworkHooks"
         network_hook_folder.Parent = ReplicatedStorage

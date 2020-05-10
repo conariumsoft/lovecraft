@@ -1,12 +1,3 @@
---- Importer system, adds _G.using to global namespace.
--- @copyright Conarium Software
-
-
---[[
-    NOTE: this script needs to simply be required once (1x) by the main control script of the platform.
---]]
-
-
 local engine_root = game.ReplicatedStorage.Lovecraft
 
 ----------------------------------------------------------------
@@ -32,10 +23,6 @@ local module_database = {
         identifier = "DebugBoard",
         reference = engine_root.DebugBoard,
     },
-    ["Lovecraft.BaseClass"] = {
-        identifier = "BaseClass",
-        reference = engine_root.BaseClass,
-    },
     ["Lovecraft.SoftWeld"] = {
         identifier = "SoftWeld",
         reference = engine_root.SoftWeld,
@@ -54,6 +41,7 @@ local module_database = {
     },
 
 }
+---------------------------------------------------------
 
 local function confirm(eval, message)
     if not eval then
@@ -72,7 +60,7 @@ end
 -- @param md_signature string - module or service to import
 -- @param recache bool - should a new copy of the module be imported (ROBLOX module cache)
 -- @usage _G.using "RBX.RunService" -- adds RunService to environment without need for local variable
-_G.using = function(md_signature, recache)
+return function(md_signature, recache)
     
     -- Errare humanum est.
     confirm(md_signature, "modulename cannot be nil")
@@ -117,7 +105,3 @@ _G.using = function(md_signature, recache)
     setfenv(2, caller_env)
     return
 end
-
-local Importer = {}
-
-return Importer

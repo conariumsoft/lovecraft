@@ -1,8 +1,9 @@
 --[[
+local me = game.Workspace:WaitForChild("j9j1")
 while true do
-    wait(1/1)
-    for _, part in pairs(game.Workspace.physics:GetDescendants()) do
-        if part:IsA("BasePart") then
+    wait(1/5)
+    for _, part in pairs(me:GetDescendants()) do
+        if part:IsA("BasePart") and part.Anchored == false then
             if part:GetNetworkOwner() ~= nil then
                 if part:FindFirstChild("SelectionBox") == nil then
                     local selbox = Instance.new("SelectionBox")
@@ -18,5 +19,4 @@ while true do
             end
         end
     end
-end
-]]
+end]]

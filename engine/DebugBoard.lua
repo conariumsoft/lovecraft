@@ -6,20 +6,15 @@ local camera_rotation = Vector2.new(0, 0)
 
 local human_move_vec = Vector2.new(0, 0)
 
-
 local DebugBoard = {}
 
-function DebugBoard.CorrectHandPositions(left_hand, right_hand)
-    left_hand.VRControllerPosition = CFrame.new(-1, 0, -2)
-	right_hand.VRControllerPosition = CFrame.new(1, 0, -2)
-end
 
 function DebugBoard.RenderStep(head, left_hand, right_hand)
 
     camera_rotation = camera_rotation + (
 		UserInputService:GetMouseDelta()
 		* math.rad(mouse_rotation_speed)
-	)
+    )
 
     -- can move each hand in 3 degrees, and rotate in 3 degrees
     local l_mv_up       = UserInputService:IsKeyDown(Enum.KeyCode.Q)
@@ -65,17 +60,18 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     local ryw= (r_yaw_left and dt or 0) - (r_yaw_right and dt or 0)
     local rr = (r_roll_left and dt or 0) - (r_roll_right and dt or 0)
 
-    left_hand.VRControllerPosition = 
-    left_hand.VRControllerPosition 
+    left_hand.OriginRelativeControllerPosition = 
+    left_hand.OriginRelativeControllerPosition 
         * CFrame.new(lx, ly, lz)*CFrame.Angles(lp, lyw, lr)
 
-    right_hand.VRControllerPosition = 
-        right_hand.VRControllerPosition 
+    right_hand.OriginRelativeControllerPosition = 
+        right_hand.OriginRelativeControllerPosition 
         * CFrame.new(rx, ry, rz)*CFrame.Angles(rp, ryw, rr)
 
-    head.VRHeadsetCFrame = 
+    head.VRHeadsetCFrame = CFrame.new(0, 0, 0) *
         CFrame.Angles(0, -camera_rotation.X, 0) *
         CFrame.Angles(-camera_rotation.Y, 0, 0)
+
 
     local x = 0
     local y = 0
@@ -86,34 +82,26 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     if UserInputService:IsKeyDown(Enum.KeyCode.KeypadSix)   then y = 1 end -- right
 
     -- GAMER NOTE: make sure humanoid AutoRotate is off, or willn't work.
-    head.BaseStation.Parent.Humanoid:Move(Vector3.new(y, 0, x), true)
+    head.Player.Character.Humanoid:Move(Vector3.new(y, 0, x), true)
 end
---[[
-    -- parabolic curve
-    local function eq(x, steep, height, offset)
-        return height - ((1/steep) * ( (x-offset)^2) ) )
-    end
-    local function eq2(x, )
-    for x = start, finish, increments do
 
-    end
-]]
 
 function DebugBoard.InputBegan(inp, my_left_hand, my_right_hand, head)
 
     if inp.KeyCode == Enum.KeyCode.KeypadFive then
-        head.BaseStation.Parent.Humanoid.Jump = true
+        head.Player.Character.Humanoid.Jump = true
     end
 
+    -- see also VRClient left_joystick_state
     -- manual left flicking
     if inp.KeyCode == Enum.KeyCode.Left then
         -- TODO: flick
-        head.BaseStation.CFrame = head.BaseStation.CFrame * CFrame.Angles(0, math.rad(90), 0)
+        head.FlickRotation = head.FlickRotation + 90
     end
     -- manual right flick
     if inp.KeyCode == Enum.KeyCode.Right then
         -- TODO: flick
-        head.BaseStation.CFrame = head.BaseStation.CFrame * CFrame.Angles(0, -math.rad(90), 0)
+        head.FlickRotation = head.FlickRotation - 90
     end
 
     if inp.KeyCode == Enum.KeyCode.LeftShift then
