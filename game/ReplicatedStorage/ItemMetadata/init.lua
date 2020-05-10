@@ -3,8 +3,6 @@ _G.using "RBX.Workspace"
 _G.using "RBX.Debris"
 ----------------------------------------------------------------------
 
-
-
 --[[
 	im thinking ill need different grip configurations for different objects:
 All of these describe information about how bodymovers are applied to the hands+grabbed object
@@ -79,17 +77,18 @@ end
 
 local GripPoint = GripInformation:subclass("GripPoint")
 
-function GripPoint:__ctor(Offset, PullForce, RotationForce, ApplyRotation)
+function GripPoint:__ctor(Animation, Offset, PullForce, RotationForce, ApplyRotation)
 	--GripInformation.__ctor(self, props)
 
 	--self:__default("AllowRotation", props, false)
 
-	self.Offset = CFrame.new(0, 0, 0)
-	self.PullForce = 100000
-	self.RotationForce = 50000
+	self.Offset = Offset or CFrame.new(0, 0, 0)
+	self.PullForce = PullForce or 100000
+	self.RotationForce = RotationForce or 50000
 	self.PullMax = 25000   -- max velocity that can be exerted on the assembly
 	self.RotateMax = 50000 -- max angular velocity (rotation)
-	self.ApplyRotation = false -- lock at initial grip rotation?
+	self.ApplyRotation = (ApplyRotation ~= nil) and ApplyRotation or false -- lock at initial grip rotation?
+	self.AnimationForHand = Animation or nil
 
 	--self:__pullfrom(props)
 end
@@ -150,16 +149,12 @@ local ItemMetadata = {
 
 	["Environment"] = {
 		grip_data = {
-			DoorHandle = {
-				
-			},
-
+			DoorHandle = GripPoint:new()
 		}
 	},
 	["Marker"] = {
 		class = require(script.Marker),
 		name = "Marker",
-
 		--grip_type = "GripPoint",
 		--grip_data = {
 		--	MarkerBase = {
@@ -177,32 +172,10 @@ local ItemMetadata = {
 		name = "Skorpion",
 		grip_type = "GripPoint",
 		grip_data = {
-			Handle = GripPoint:new(CFrame.new(0, 0, 0), 20000, 250, true),
-			Magazine = ...,
-			ChargingHandle = ...,
-			--[[
-				lhandmaxvel - 600
-				lhandposforce - 15000
-				rhandmaxangular - 250
-				rhandmaxvel - 1000
-				rhandposforce - 20000
-				rhandrottorque - 250
-
-			Handle = {
-				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, 0),
-				animation = skorpion_grip_animation,
-				not_rigid = true,
-			},
-			Magazine = {
-				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, 0),
-				--not_rigid = true,
-				
-			},
-			ChargingHandle = {
-				offset = CFrame.new(0, 4, 0),
-				not_rigid = true,
-				stiff = false,
-			},]]
+				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
+			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   20000,     250,   true),
+			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false),
+			ChargingHandle = GripPoint:new(), 
 		},
 		class = Skorpion,
 	},
@@ -218,16 +191,8 @@ local ItemMetadata = {
 				rhandposforce - 20000
 				rhandrottorque - 250
 			]]--
-			Handle = {
-				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(180), 0),
-				--animation = skorpion_grip_animation,
-				not_rigid = true,
-			},
-			Barrel = {
-				offset = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, -math.rad(180)),
-				--not_rigid = true,
-				
-			},
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(180), 0)),
+			Barrel = GripPoint:new(nil, CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, -math.rad(180))),
 		},
 		class = Skorpion,
 	},
@@ -235,20 +200,16 @@ local ItemMetadata = {
 		name = "Magazine",
 		grip_type = "Anywhere",
 		grip_data = {
-			Magazine = {
-				offset = CFrame.new(0, 0, 0),
-			}
+			Magazine = GripPoint:new()
 		}
 	},
 	["LightSaber"] = {
 		name = "LightSaber",
 		grip_type = "GripPoint",
 		grip_data = {
-			MeshPart = {
-				offset = CFrame.new(0, 0, 0),
-			}
+			MeshPart = GripPoint:new()
 		}
 	}
 }
-	
+
 return ItemMetadata
