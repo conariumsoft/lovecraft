@@ -16,7 +16,7 @@ local Skorpion = BaseFirearm:subclass("Skorpion")
 
 Skorpion.TriggerStiffness = 0.95
 Skorpion.RateOfFire = 850
-Skorpion.MuzzleFlipMax = 70
+Skorpion.MuzzleFlipMax = 700
 Skorpion.MuzzleFlipMin = 50
 Skorpion.YShakeMin = -10
 Skorpion.YShakeMax = 10
@@ -28,14 +28,6 @@ Skorpion.MagazineComponent = "Magazine"
 Skorpion.BoltComponent = "ChargingHandle"
 Skorpion.Timer = 0
 Skorpion.MagazineType = "SkorpionMagazine"
-
---[[
-function Skorpion:HandleOnRelease(hand, model)
-    self.super.HandleOnRelease(self, hand, model)
-
-    --- hhave it
-
-end
-]]
+Skorpion.Automatic = true
 
 return Skorpion

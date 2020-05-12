@@ -7,6 +7,10 @@ local module_database = {
         identifier = "VRHand",
         reference = engine_root.VRHand,
     },
+    ["Lovecraft.ItemInstances"] = {
+        identifier = "ItemInstances",
+        reference = engine_root.ItemInstances,
+    },
     ["Lovecraft.Networking"] = {
         identifier = "Networking",
         reference = engine_root.Networking,

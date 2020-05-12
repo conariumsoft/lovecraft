@@ -4,7 +4,6 @@ _G.using "RBX.Debris"
 ----------------------------------------------------------------------
 
 --[[
-	im thinking ill need different grip configurations for different objects:
 All of these describe information about how bodymovers are applied to the hands+grabbed object
 All values will be applied local-coordinates from the center of the grabbed part.
 ```
@@ -66,43 +65,29 @@ function GripInformation:ToWeldConfiguration()
 	error("NotImplemented! Use subclass methods.")
 end
 
-
-local function default(propname, props, default)
-	if props[propname] then
-		return props[propname]
-	else
-		return default
-	end
-end
-
 local GripPoint = GripInformation:subclass("GripPoint")
 
-function GripPoint:__ctor(Animation, Offset, PullForce, RotationForce, ApplyRotation)
-	--GripInformation.__ctor(self, props)
-
-	--self:__default("AllowRotation", props, false)
-
+function GripPoint:__ctor(Animation, Offset, PullForce, RotationForce, ApplyRotation, PullMax, RotateMax, PullResponsiveness, RotResponsiveness)
 	self.Offset = Offset or CFrame.new(0, 0, 0)
 	self.PullForce = PullForce or 100000
-	self.RotationForce = RotationForce or 50000
-	self.PullMax = 25000   -- max velocity that can be exerted on the assembly
-	self.RotateMax = 50000 -- max angular velocity (rotation)
+	self.RotationForce = RotationForce or 250
+	self.PullMax = PullMax or 60000   -- max velocity that can be exerted on the assembly
+	self.RotateMax = RotateMax or 500 -- max angular velocity (rotation)
 	self.ApplyRotation = (ApplyRotation ~= nil) and ApplyRotation or false -- lock at initial grip rotation?
 	self.AnimationForHand = Animation or nil
-
-	--self:__pullfrom(props)
+	self.PullResponsiveness = PullResponsiveness or 5
+	self.RotResponsiveness = RotResponsiveness or 200
 end
 
 function GripPoint:ToWeldConfiguration()
 	return {
-
 		pos_max_force = self.PullForce,
 		rot_max_torque = self.RotationForce,
 		pos_max_velocity = self.PullMax,
 		rot_max_angular_velocity = self.RotateMax,
 		rot_enabled = self.ApplyRotation,
-		rot_responsiveness = 200,
-		pos_responsiveness = 200,
+		rot_responsiveness = self.RotResponsiveness,
+		pos_responsiveness = self.PosResponsiveness,
 		cframe_offset = self.Offset,
 	}
 end
@@ -173,8 +158,8 @@ local ItemMetadata = {
 		grip_type = "GripPoint",
 		grip_data = {
 				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
-			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   20000,     250,   true),
-			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false),
+			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   80000,     250,   true, math.huge),
+			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false, math.huge),
 			ChargingHandle = GripPoint:new(), 
 		},
 		class = Skorpion,

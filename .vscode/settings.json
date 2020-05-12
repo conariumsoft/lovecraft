@@ -31,7 +31,8 @@
         "Vector2",
         "DebugBoard",
         "Ownership",
-        "delay"
+        "delay",
+        "ItemInstances"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

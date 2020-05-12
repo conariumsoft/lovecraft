@@ -8,6 +8,7 @@ _G.using "Lovecraft.SoftWeld"
 _G.using "Lovecraft.Lib.RotatedRegion3"
 _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
+_G.using "Lovecraft.ItemInstances"
 
 --- VR Hand Base class. 
 local VRHand = _G.newclass("VRHand")
@@ -25,6 +26,8 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	self.HandPosition = Vector3.new(0, 0, 0)
 	self.LastHandPosition = Vector3.new(0, 0, 0)
 	self.OriginRelativeControllerPosition = CFrame.new(0, 0, 0) -- WTF is this name??
+
+	self.ItemInstance = nil
 
 	self.Head = vr_head
 	self.Player = player
@@ -75,11 +78,11 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	-- glue weld that binds hand to correct position and orientation,
 	-- while still respecting physical limits
 	self._HandModelSoftWeld = SoftWeld:new(self.VirtualHand, self.HandModel.PrimaryPart, {
-		pos_responsiveness = 75,
+		pos_responsiveness = 100,--75,
 		rot_responsiveness = 40,
 		pos_max_force = 5000,
-		rot_max_torque = 5000,
-		pos_max_velocity = 50000,
+		rot_max_torque = 10000,
+		pos_max_velocity = 25000,
 	})
 
 	-- used later
@@ -165,11 +168,8 @@ function VRHand:SetIndexFingerCurl(grip_strength)
 	self:SetAnimTimeScale("Index", grip_strength)
 
 	if self.HoldingObject then
-		local item = self.HoldingObject
-		local object_meta = GetItemMetadataByName(item.Name)
-
-		if object_meta and object_meta.class then
-			object_meta.class:OnTriggerState(self, self.HoldingObject, grip_strength, self.GripPoint)
+		if self.ItemInstance then
+			self.ItemInstance:OnTriggerState(self, grip_strength, self.GripPoint)
 		end
 	end
 end
@@ -184,10 +184,19 @@ end
 
 local function object_pickup_criteria(part)
 	-- grip point will be false if our/another player isn't holding
+	for _, child in pairs(part:GetChildren()) do
+		if child.Name == "GripPoint" and child.Value == false then
+			return true
+		end
+
+	end
+	return false
+	--[[--
 	if part:FindFirstChild("GripPoint") and part.GripPoint.Value == false then
 		return true
 	end
 	return false
+	]]
 end
 
 local function find_object_can_pickup(region)
@@ -220,9 +229,7 @@ end
 function VRHand:Grab()
 	--- find something to pick up within our palm region
 	-- TODO: make this the palm area of real hand
-
 	local reported_pos = self.VirtualHand.CFrame
-	
 	local palm_radius = 0.25
 	local region = RotatedRegion3.new(
 		reported_pos,
@@ -246,11 +253,19 @@ function VRHand:Grab()
 	self.HoldingObject = item_pickup
 	self.GripPoint = part
 
-	set_model_collision_group(item_pickup, "Grabbed"..self.Handedness)
 	
-	-- 
+	--! We got the parameters _roughly_ figured out
+	-- DO NOT CHANGE: change objects to fit around these from now on
 	local grip_config = {
-		cframe_offset = self.HandModel.PrimaryPart.CFrame:inverse() * part.CFrame
+		--master_offset = self.VirtualHand.CFrame:inverse() * part.CFrame,
+		follower_offset = part.CFrame:inverse() * self.VirtualHand.CFrame,
+		rot_responsiveness = 100,
+		rot_max_torque = 250,
+		pos_max_force = 8000,
+	}
+	local hand_weld_config = {
+		master_offset =  part.CFrame:inverse() * self.HandModel.PrimaryPart.CFrame
+		--rot_reactive = true
 	}
 
 	-- object's Model.Name is used to search.
@@ -263,15 +278,18 @@ function VRHand:Grab()
 	-- (most likely non-functional prop or scenery)
 	-- (needs no custom anim or grip style)
 	if obj_meta then
-
 		-- grip_data table contains def 
 		if obj_meta.grip_data then
 
 			-- class is optional value
 			-- defines item functionality
 			if obj_meta.class then
-				-- onGrab(hand, item, grip_point)
-				obj_meta.class:OnGrab(self, item_pickup, part)
+				local inst = ItemInstances.GetClassInstance(item_pickup)
+				if not inst then
+					inst = ItemInstances.CreateClassInstance(item_pickup, obj_meta.class)
+				end
+				self.ItemInstance = inst
+				inst:OnGrab(self, part)
 			end
 			-- hand animation state?
 			if obj_meta.animation then
@@ -281,78 +299,32 @@ function VRHand:Grab()
 			if obj_meta.hand_override then
 
 			end
-
 			-- if grip data is missing for this
 			-- piece, assume "Anywhere" grip style
 			if obj_meta.grip_data[part.Name] then
 				local grip_data = obj_meta.grip_data[part.Name]
 
 				grip_config = grip_data:ToWeldConfiguration()
+				hand_weld_config = {}
 			end
 		end
 	end
 
 	-- firstly, disable hand->handmodel softweld.
-	--self._HandModelSoftWeld:Disable()
+	-----------------------------------------------------------------------
+	-- ITEM WEIGHT CODE --
+	set_model_collision_group(item_pickup, "Grabbed"..self.Handedness)
+	self._HandModelSoftWeld:Disable()
+	
 
 	local hand_origin = self.HandModel.PrimaryPart
 	-- finally, glue object to handmodel
-	self._GrabbedObjectWeld = glue(hand_origin, part, grip_config)
+	self._GrabbedObjectWeld = glue(self.VirtualHand, part, grip_config)
 	-- glue object to hand's real position?
-	--self._HandWeld = glue()
-end
-
---- old special case for "Skorpion" that I made during debugging, which
--- soon bloated
--- may incorporate some of the functionality back in
---[[
-if object_meta.name == "Skorpion" then
-			
-	self._HandModelSoftWeld:Disable()
-	local rot_torque = 50000
-	local pos_force = 100000
-	local rot_max_vel = 50000
-	local pos_max_vel = 25000
-	local rot_enabled = true
-
-	local p = game.ReplicatedStorage.Props
-	if grip_point.Name == "Handle" then
-		rot_torque = p.RightHandRotationTorque.Value
-		rot_max_vel = p.RightHandMaxAngularVelocity.Value
-		pos_force = p.RightHandPositionForce.Value
-		pos_max_vel = p.RightHandMaxVelocity.Value
-	end
-
-	if grip_point.Name == "Magazine" then
-		rot_torque = 0
-		rot_enabled = false
-		pos_force = p.LeftHandPositionForce.Value
-		pos_max_vel = p.LeftHandMaxVelocity.value
-	end
-	object_meta.class:OnGrab(self, self.HoldingObject, self.GripPoint)
-	self._GrabbedObjectWeld = SoftWeld:new(grip_point, self.HandModel.PrimaryPart, {
-		rot_max_torque = 100000,
-		pos_max_force = 200000,
-		rot_responsiveness = 200,
-		pos_responsiveness = 200
-	})
-	self._HandWeld = SoftWeld:new(self.VirtualHand, grip_point, {
-		rot_max_torque = rot_torque,
-		pos_max_force = pos_force,
-		rot_max_angular_vel = rot_max_vel,
-		pos_max_velocity = pos_max_vel,
-		rot_enabled = rot_enabled,
-	})
-	return
-end
-]]
-
-local function CollisionGroupReset(model)
-	for _, obj in pairs(model:GetDescendants()) do
-		if obj:IsA("BasePart") then
-			--PhysicsService:SetPartCollisionGroup(obj, "Interactives")
-		end
-	end
+	self._HandWeld = glue(part, hand_origin, hand_weld_config)
+	---------------------------------------------------------------------
+	-- NON-WEIGHT CODE --
+	--self._GrabbedObjectWeld = glue(self.HandModel.PrimaryPart, part, grip_config)
 end
 
 --- fired when hand grip goes below certain threshold
@@ -361,8 +333,6 @@ function VRHand:Release()
 	--- drop any object currently in the hand
 	-- must check if holding an item
 	if self.HoldingObject == nil then return end
-
-
 	-- we are no longer holding
 	self.GripPoint.GripPoint.Value = false
 
@@ -371,26 +341,32 @@ function VRHand:Release()
 
 	-- if class definition exists
 	-- run OnRelease callback
-	if object_meta and object_meta.class then
-		object_meta.class:OnRelease(self, obj, self.GripPoint)
+	--if object_meta and object_meta.class then
+	if self.ItemInstance then
+		self.ItemInstance:OnRelease(self, self.GripPoint)
+		self.ItemInstance = nil
 	end
+	--end
 
 	-- async wait .25 seconds
 	-- must delay so hand and object's collisions don't 
 	-- immediately get the two stuck inside each other
 	-- then reset the collision mask on the held object
 	delay(0.25, function() 
-		CollisionGroupReset(obj) 
+		set_model_collision_group(obj, "Default") 
 	end)
+	-----------------------------------------------------------------------
+	-- ITEM WEIGHT CODE --
+	-- if we created a weld (we most likely did)
+	self._HandModelSoftWeld:Enable()
+	
 
-	-- TODO: check for special condition where virtualhand takes priority
---[[	if object_meta and object_meta.name == "Skorpion" then
-		self._HandModelSoftWeld:Enable()
+	if self._HandWeld then
 		self._HandWeld:Destroy()
 		self._HandWeld = nil
-	end]]
+	end
+	-----------------------------------------------------------------------
 
-	-- if we created a weld (we most likely did)
 	if self._GrabbedObjectWeld then
 		self._GrabbedObjectWeld:Destroy()
 		self._GrabbedObjectWeld = nil
@@ -408,12 +384,12 @@ end
 ---
 function VRHand:Update(dt)
 
-	if self.HoldingObject ~= nil then
+	if self.HoldingObject ~= nil and self.ItemInstance then
 	
-		local object_meta = ItemMetadata[self.HoldingObject.Name]
-		if object_meta and object_meta.class then
-			object_meta.class:OnSimulationStep(self, self.HoldingObject, dt, self.GripPoint)
-		end
+		--local object_meta = ItemMetadata[self.HoldingObject.Name]
+	--	if object_meta and object_meta.class then
+			self.ItemInstance:OnSimulationStep(self, dt, self.GripPoint)
+	--	end
 	end
 
 	self.LastHandPosition = self.HandPosition

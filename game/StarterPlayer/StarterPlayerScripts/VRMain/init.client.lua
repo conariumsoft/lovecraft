@@ -16,7 +16,6 @@ _G.using "Lovecraft.DebugBoard"
 _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
 
-
 local vr_enabled = UserInputService.VREnabled
 
 -- if doing game testing, start in keyboard mode
@@ -30,7 +29,6 @@ else
 	--error("This game is VR only dummy!") 
 	_G.log("VR is not enabled, assuming Keyboard mode...")
 end
-
 
 local local_player = game.Players.LocalPlayer
 local character = local_player.Character or local_player.CharacterAdded:wait()
@@ -123,20 +121,19 @@ local function left_joystick_state(jstick_vec)
 	jstickleft = jstick_vec
 
 	local accur_x = jstickleft.X
-	local approx_x = round(jstickleft.X, 1)
 
 	-- joystick is considered at rest
-	if approx_x == 0 then
+	if accur_x <= 0.1 and accur_x >= -0.1 then
 		-- See also DebugBoard.InputBegan
 		-- must rotate left
 		if r_joystick_flick then
 			r_joystick_flick = false
-			my_camera_head.FlickRotation = my_camera_head.FlickRotation + 90
+			my_camera_head.FlickRotation = my_camera_head.FlickRotation - 90
 		end
 		-- must roatate right
 		if l_joystick_flick then
 			l_joystick_flick = false
-			my_camera_head.FlickRotation = my_camera_head.FlickRotation - 90
+			my_camera_head.FlickRotation = my_camera_head.FlickRotation + 90
 		end
 	end
 	-- joystick has been moved to the right

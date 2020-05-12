@@ -1,18 +1,22 @@
 local BaseInteractive = _G.newclass("InteractiveObject")
 
-function BaseInteractive:OnGrab(hand, model, grip_point)
+function BaseInteractive:__ctor(model)
+    self.Model = model
+end
+
+function BaseInteractive:OnGrab(hand, grip_point)
 
 end
 
-function BaseInteractive:OnRelease(hand, model, grip_point)
+function BaseInteractive:OnRelease(hand, grip_point)
 
 end
 
-function BaseInteractive:OnSimulationStep(hand, model, delta, grip_point)
+function BaseInteractive:OnSimulationStep(hand, delta, grip_point)
 
 end
 
-function BaseInteractive:OnTriggerState(hand, model, finger_pressure, grip_point)
+function BaseInteractive:OnTriggerState(hand, finger_pressure, grip_point)
 
 end
 

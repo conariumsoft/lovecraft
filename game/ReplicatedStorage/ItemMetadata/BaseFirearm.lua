@@ -4,35 +4,42 @@ local BaseFirearm = BaseInteractive:subclass("BaseFirearm")
 
 BaseFirearm.TriggerStiffness = 0.95
 BaseFirearm.RateOfFire = 850
-
-BaseFirearm.MuzzleFlipMax = 150
+BaseFirearm.MuzzleFlipMax = 1500
 BaseFirearm.MuzzleFlipMin = 50
 BaseFirearm.YShakeMin = -15
 BaseFirearm.YShakeMax = 15
 BaseFirearm.ZShakeMin = -10
 BaseFirearm.ZShakeMax = 10
-BaseFirearm.RecoilRecoverySpeed = 5
-
+BaseFirearm.RecoilRecoverySpeed = 2
+BaseFirearm.BoltTravelDistance = 0.2
 BaseFirearm.BarrelComponent = nil
 BaseFirearm.MagazineComponent = nil
 BaseFirearm.BoltComponent = nil
-BaseFirearm.BoltTravelDistance = 0.2
+BaseFirearm.MagazineType = nil
+BaseFirearm.Automatic = false
+
+--[[
 BaseFirearm.RoundInChamber = true
 BaseFirearm.MagazineInserted = true
 BaseFirearm.MagazineRoundCount = 30
 
 BaseFirearm.Timer = 0
-BaseFirearm.MagazineType = nil
+
 BaseFirearm.OpenBolt = false
 BaseFirearm.BoltGrabbed = false
-
+]]
 -- this blows, but we just need to get guns working for now.
 
 local animation_track = nil
 
-function BaseFirearm:__ctor()
-
-
+function BaseFirearm:__ctor(...)
+    BaseInteractive.__ctor(self, ...)
+    self.Timer = 0
+    self.RoundInChamber = true
+    self.MagazineInserted = true
+    self.MagazineRoundCount = 30
+    self.BoltGrabbed = false
+    self.TriggerPressed = false
 end
 
 ------------------------------------------------
@@ -42,16 +49,19 @@ function BaseFirearm:GetCycleTime()
 end
 -------------------------------------------------------
 -- Handle (Trigger Group) Functionality
-function BaseFirearm:HandleOnGrab(hand, model)
+function BaseFirearm:HandleOnGrab(hand)
     print("Handle grabbed!")
     if animation_track == nil then
 
-        animation_track = model.AnimationController:LoadAnimation(model.slideBack)
+        animation_track = self.Model.AnimationController:LoadAnimation(self.Model.slideBack)
         animation_track.Priority = Enum.AnimationPriority.Core
         print("Initial Anim Load:", animation_track)
     end
-    local barrel = model[self.BarrelComponent]
-    local magazine = model[self.MagazineComponent]
+    local barrel = self.Model[self.BarrelComponent]
+    local magazine = self.Model[self.MagazineComponent]
+
+
+    --barrel.CFrame = barrel.CFrame * CFrame.Angles(math.rad(5), 0, 0)
 
     local muzzle_flip = Instance.new("BodyThrust") do
         muzzle_flip.Name = "MuzzleFlip"
@@ -67,9 +77,9 @@ function BaseFirearm:HandleOnGrab(hand, model)
     end
 end
 
-function BaseFirearm:HandleOnRelease(hand, model)
+function BaseFirearm:HandleOnRelease(hand)
     print("Handle Released")
-    local barrel = model[self.BarrelComponent]
+    local barrel = self.Model[self.BarrelComponent]
     if barrel:FindFirstChild("MuzzleFlip") then
         barrel.MuzzleFlip:Destroy()
     end
@@ -81,22 +91,22 @@ function BaseFirearm:HandleOnRelease(hand, model)
 end
 ---------------------------------------------------
 
-function BaseFirearm:MagazineOnGrab(hand, model)
+function BaseFirearm:MagazineOnGrab(hand)
     print("Magazine Grabbed!")
 end
 
-function BaseFirearm:MagazineOnRelease(hand, model)
+function BaseFirearm:MagazineOnRelease(hand)
     print("Magazine released!")
-    self:HandleOnRelease(hand, model)
-    self:HandleOnGrab(hand, model)
+    self:HandleOnRelease(hand)
+    self:HandleOnGrab(hand)
 end
 ------------------------------------------------------
-function BaseFirearm:ChargingHandleOnGrab(hand, model)
+function BaseFirearm:ChargingHandleOnGrab(hand)
     print("ChargingHandle grabbed")
     self.BoltGrabbed = true
 end
 
-function BaseFirearm:ChargingHandleOnRelease(hand, model)
+function BaseFirearm:ChargingHandleOnRelease(hand)
     print("ChargingHandle released")
     if self.MagazineInserted and self.RoundInChamber == false then
         self.RoundInChamber = true
@@ -110,12 +120,11 @@ end
 --------------------------------------------------------------
 
 
-function BaseFirearm:FireProjectile(hand, model, grip_point)
-
+function BaseFirearm:FireProjectile(hand, grip_point)
     if grip_point.Name == "Handle" then
-        local barrel = model[self.BarrelComponent]
+        local barrel = self.Model[self.BarrelComponent]
         local coach_ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
-        local hit, pos = game.Workspace:FindPartOnRay(coach_ray, model)
+        local hit, pos = game.Workspace:FindPartOnRay(coach_ray, self.Model)
         local bullet_impact = Instance.new("Part") do
             bullet_impact.Color = Color3.new(0, 0, 0)
             bullet_impact.Shape = Enum.PartType.Ball
@@ -127,14 +136,22 @@ function BaseFirearm:FireProjectile(hand, model, grip_point)
         end
     end
 end
+--[[
+    a groan
+    of tedium escapes me
+    startling the fearful
+    is this a test?
+    it has to be
+    otherwise I can't go on
+    draining patience, claimed vitality
+]]
+function BaseFirearm:Fire(hand, grip_point)
+    local barrel = self.Model[self.BarrelComponent]
+    local bolt = self.Model[self.BoltComponent]
 
-function BaseFirearm:Fire(hand, model, grip_point)
-    local barrel = model[self.BarrelComponent]
-    local bolt = model[self.BoltComponent]
-
-    model.fire:Stop()
-    model.fire.TimePosition = 0.05
-    model.fire:Play()
+    self.Model.fire:Stop()
+    self.Model.fire.TimePosition = 0.05
+    self.Model.fire:Play()
 
     -- bolt anim
     animation_track:Stop()
@@ -148,8 +165,8 @@ function BaseFirearm:Fire(hand, model, grip_point)
     end
     --
 
-    self:ApplyRecoilImpulse(hand, model, grip_point)
-    self:FireProjectile(hand, model, grip_point)
+    self:ApplyRecoilImpulse(hand, grip_point)
+    self:FireProjectile(hand, grip_point)
 
     barrel.BillboardGui.Enabled = true
     barrel.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
@@ -158,13 +175,12 @@ function BaseFirearm:Fire(hand, model, grip_point)
     end)
 end
 
-function BaseFirearm:ClientFireEffects(hand, model, grip_point)
-
+function BaseFirearm:ClientFireEffects(hand, grip_point)
 
 end
 
-function BaseFirearm:ApplyRecoilImpulse(hand, model, grip_point)
-    local barrel = model[self.BarrelComponent]
+function BaseFirearm:ApplyRecoilImpulse(hand, grip_point)
+    local barrel = self.Model[self.BarrelComponent]
     -- TODO: Backwards recoil!
     local recoil_impulse = barrel.RecoilImpulse
 
@@ -180,8 +196,12 @@ function BaseFirearm:ApplyRecoilImpulse(hand, model, grip_point)
     end)
 end
 
-function BaseFirearm:TriggerDown(hand, model, dt, grip_point)
+function BaseFirearm:TriggerDown(hand, dt, grip_point)
     
+    if self.Automatic ~= true then
+        if self.TriggerPressed then return end
+    end
+
     self.Timer = self.Timer + dt
     if self.Timer >= (1/self:GetCycleTime()) and self.RoundInChamber then
         self.Timer = self.Timer - (1/self:GetCycleTime())
@@ -192,76 +212,87 @@ function BaseFirearm:TriggerDown(hand, model, dt, grip_point)
             self.RoundInChamber = false
         end
 
-        self:Fire(hand, model, grip_point)
+        self:Fire(hand, grip_point)
     end
 end
 
-function BaseFirearm:OnMagazineInsert(model, magazine)
+function BaseFirearm:OnMagazineInsert(magazine)
      print("Magazine Inserted")
     self.MagazineInserted = true
     self.MagazineRoundCount = 30--magazine.Rounds.Value
 
-    model[self.MagazineComponent].Transparency = 0
+    self.Model[self.MagazineComponent].Transparency = 0
     magazine.Parent = nil
 
-    if model[self.MagazineComponent]:FindFirstChild("GripPoint") == nil then
+    if self.Model[self.MagazineComponent]:FindFirstChild("GripPoint") == nil then
         local mag_gp = Instance.new("BoolValue") do
             mag_gp.Name = "GripPoint"
-            mag_gp.Parent = model[self.MagazineComponent]
+            mag_gp.Parent = self.Model[self.MagazineComponent]
         end
     end
 end
 
-function BaseFirearm:OnMagazineRemove(hand, model)
+function BaseFirearm:OnMagazineRemove(hand)
     print("Magazine Removed")
     hand:Release()
     self.MagazineInserted = false
 
-    model[self.MagazineComponent].GripPoint:Destroy()
-    model[self.MagazineComponent].Transparency = 1
+    self.Model[self.MagazineComponent].GripPoint:Destroy()
+    self.Model[self.MagazineComponent].Transparency = 1
 end
-
 
 ---------------------------------
 -- External API-Hook methods
-function BaseFirearm:OnGrab(hand, model, grip_point)
+function BaseFirearm:OnGrab(hand, grip_point)
+
+    -- delete folder?
+    if not self.Model:FindFirstChild("Data") then
+        local folder = Instance.new("Folder")
+        folder.Name = "Data"
+        folder.Parent = self.Model
+    end
+
     local g = grip_point.Name
-    if     g == "Handle"         then self:HandleOnGrab(hand, model)
-    elseif g == "Magazine"       then self:MagazineOnGrab(hand, model)
-    elseif g == "ChargingHandle" then self:ChargingHandleOnGrab(hand, model) 
+    if     g == "Handle"         then self:HandleOnGrab(hand)
+    elseif g == "Magazine"       then self:MagazineOnGrab(hand)
+    elseif g == "ChargingHandle" then self:ChargingHandleOnGrab(hand) 
     end
 end
 
-function BaseFirearm:OnRelease(hand, model, grip_point)
+function BaseFirearm:OnRelease(hand, grip_point)
     local gp = grip_point.Name
-    if     gp == "Handle"         then self:HandleOnRelease(hand, model)
-    elseif gp == "Magazine"       then self:MagazineOnRelease(hand, model)
-    elseif gp == "ChargingHandle" then self:ChargingHandleOnRelease(hand, model)
+    if     gp == "Handle"         then self:HandleOnRelease(hand)
+    elseif gp == "Magazine"       then self:MagazineOnRelease(hand)
+    elseif gp == "ChargingHandle" then self:ChargingHandleOnRelease(hand)
     end
 end
 
-function BaseFirearm:OnSimulationStep(hand, model, dt, grip_point)
-    local magazine = model[self.MagazineComponent]
+function BaseFirearm:OnSimulationStep(hand, dt, grip_point)
+    local magazine = self.Model[self.MagazineComponent]
 
-    local mag_well = model.MagazineCorrect
+    local mag_well = self.Model.MagazineCorrect
 
     for _, part in pairs(mag_well:GetTouchingParts()) do
         if part.Parent.Name == self.MagazineType then
-            self:OnMagazineInsert(model, part.Parent)
+            self:OnMagazineInsert(part.Parent)
         end
     end
 
     if grip_point.Name == "Handle" then
-        --print("Holding Handle!")
         if hand.IndexFingerPressure > self.TriggerStiffness then
-            self:TriggerDown(hand, model, dt, grip_point)
+            self:TriggerDown(hand, dt, grip_point)
+            self.TriggerPressed = true
+        end
+
+        
+        if hand.IndexFingerPressure < 0.25 then
+            self.TriggerPressed = false
         end
     end
 
     if grip_point.Name == "Magazine" then
-       -- print("Holding Magazine!")
         if self.MagazineInserted and hand.IndexFingerPressure > 0.95 then
-            self:OnMagazineRemove(hand, model)
+            self:OnMagazineRemove(hand)
         end
     end
 
@@ -270,7 +301,7 @@ function BaseFirearm:OnSimulationStep(hand, model, dt, grip_point)
     end
 end
 
-function BaseFirearm:OnTriggerState(hand, model, finger_pressure, grip_point)
+function BaseFirearm:OnTriggerState(hand, finger_pressure, grip_point)
 end
 
 return BaseFirearm
