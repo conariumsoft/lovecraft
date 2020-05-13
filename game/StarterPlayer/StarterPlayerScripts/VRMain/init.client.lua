@@ -18,6 +18,9 @@ _G.using "Game.Data.ItemMetadata"
 
 local vr_enabled = UserInputService.VREnabled
 
+local no_button_scale = true
+
+
 -- if doing game testing, start in keyboard mode
 -- when game is live, make so this will error & kick the playe
 -- (at least until/if non-VR support is working)
@@ -198,9 +201,20 @@ UserInputService.InputChanged:Connect(function(inp, _)
 	end
 end)
 
+
 UserInputService.InputEnded:Connect(function(inp, _)
 	if _G.VR_DEBUG then
 		DebugBoard.InputEnded(inp, my_left_hand, my_right_hand)
+	end
+
+	if inp.KeyCode == l_grip_sensor then
+		print("Left hand released hard!")
+		my_left_hand:Release()
+	end
+
+	if inp.KeyCode == r_grip_sensor then
+		print("Right hand released hard!")
+		my_right_hand:Release()
 	end
 end)
 
@@ -210,10 +224,12 @@ UserInputService.InputBegan:Connect(function(inp, _)
 		DebugBoard.InputBegan(inp, my_left_hand, my_right_hand, my_camera_head)
 	end
 
-	if inp.KeyCode == Enum.KeyCode.ButtonL1 then
+	if inp.KeyCode == l_grip_sensor then
+		print("Left hand grabbed hard!")
 		my_left_hand:Grab()
 	end
-	if inp.KeyCode == Enum.KeyCode.ButtonR1 then
+	if inp.KeyCode == r_grip_sensor then
+		print("Right hand grabbed hard!")
 		my_right_hand:Grab()
 	end
 end)

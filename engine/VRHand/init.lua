@@ -348,12 +348,14 @@ function VRHand:Release()
 	end
 	--end
 
+
+	--TODO: come up with fix
 	-- async wait .25 seconds
 	-- must delay so hand and object's collisions don't 
 	-- immediately get the two stuck inside each other
 	-- then reset the collision mask on the held object
-	delay(0.25, function() 
-		set_model_collision_group(obj, "Default") 
+	delay(0.5, function() 
+		--set_model_collision_group(obj, "Interactives") 
 	end)
 	-----------------------------------------------------------------------
 	-- ITEM WEIGHT CODE --

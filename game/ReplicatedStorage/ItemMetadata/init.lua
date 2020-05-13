@@ -125,6 +125,8 @@ end
 
 --------------------------------------------------------------------------
 local Skorpion = require(script.Skorpion)
+local Hecate   = require(script.Hecate)
+local Saiga    = require(script.Saiga)
 
 local marker_grip_animation
 local skorpion_grip_animation
@@ -164,14 +166,24 @@ local ItemMetadata = {
 				rhandposforce - 20000
 				rhandrottorque - 250
 			]]--
-			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)),-- * CFrame.Angles(0, -math.rad(180), 0)),
-			Barrel = GripPoint:new(nil, CFrame.new(0, 0, 0)),-- * CFrame.Angles(0, 0, -math.rad(180))),
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0), 100000, 400, true, math.huge),-- * CFrame.Angles(0, -math.rad(180), 0)),
+			BarrelShroud = GripPoint:new(nil, CFrame.new(0, 0, 0), 15000, 0, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
 			Magazine = GripPoint:new(),
 		},
-		class = Skorpion,
+		class = Saiga,
+	},
+	["stupidSniper"] = {
+		class = Hecate,
+		name = "stupidSniper",
+		grip_type = "GripPoint",
+		grip_data = {
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0), 10000, 5000, true, 100000),-- * CFrame.Angles(0, -math.rad(180), 0)),
+			BarrelShroud = GripPoint:new(nil, CFrame.new(0, 0, 0), 500, 50, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
+			Magazine = GripPoint:new(),
+		},
 	},
 	---------------------------------------------------------------------
-	-- @section Guns --
+	-- @section Guns mags --
 	["SkorpionMagazine"] = {
 		name = "Magazine",
 		grip_type = "Anywhere",

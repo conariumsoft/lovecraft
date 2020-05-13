@@ -16,13 +16,13 @@ local Skorpion = BaseFirearm:subclass("Skorpion")
 
 Skorpion.TriggerStiffness = 0.95
 Skorpion.RateOfFire = 850
-Skorpion.MuzzleFlipMax = 4000
+Skorpion.MuzzleFlipMax = 500
 Skorpion.MuzzleFlipMin = 50
 Skorpion.YShakeMin = -10
 Skorpion.YShakeMax = 10
 Skorpion.ZShakeMin = -10
 Skorpion.ZShakeMax = 10
-Skorpion.RecoilRecoverySpeed = 5
+Skorpion.RecoilRecoverySpeed = 3
 Skorpion.BarrelComponent = "Rifling"
 Skorpion.MagazineComponent = "Magazine"
 Skorpion.BoltComponent = "ChargingHandle"

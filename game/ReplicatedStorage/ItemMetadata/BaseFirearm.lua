@@ -125,12 +125,24 @@ function BaseFirearm:FireProjectile(hand, grip_point)
         local barrel = self.Model[self.BarrelComponent]
         local coach_ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
         local hit, pos = game.Workspace:FindPartOnRay(coach_ray, self.Model)
+
+        if hit then
+            if hit.Parent:FindFirstChild("Humanoid") then
+                hit.Parent.Humanoid.Health = hit.Parent.Humanoid.Health - 100
+                for _, obj in pairs(hit.Parent:GetDescendants()) do
+                        
+                    if obj:IsA("WeldConstraint") then obj:Destroy() end
+                end
+            end
+        end
+
         local bullet_impact = Instance.new("Part") do
-            bullet_impact.Color = Color3.new(0, 0, 0)
+            bullet_impact.Color = Color3.new(1, 0, 0)
             bullet_impact.Shape = Enum.PartType.Ball
             bullet_impact.Transparency = 0.25
             bullet_impact.Size = Vector3.new(0.075, 0.075, 0.075)
             bullet_impact.Anchored = true
+            bullet_impact.CanCollide = false
             bullet_impact.CFrame = CFrame.new(pos)
             bullet_impact.Parent = game.Workspace
         end
@@ -165,7 +177,10 @@ function BaseFirearm:Fire(hand, grip_point)
     end
     --
 
-    self:ApplyRecoilImpulse(hand, grip_point)
+    self.Model:SetPrimaryPartCFrame(
+        self.Model:GetPrimaryPartCFrame() * CFrame.new(0, 0, 2)
+    )
+   -- self:ApplyRecoilImpulse(hand, grip_point)
     self:FireProjectile(hand, grip_point)
 
     barrel.BillboardGui.Enabled = true
@@ -200,6 +215,7 @@ function BaseFirearm:TriggerDown(hand, dt, grip_point)
     
     if self.Automatic ~= true then
         if self.TriggerPressed then return end
+        self.Timer = 1/self:GetCycleTime()
     end
 
     self.Timer = self.Timer + dt
@@ -260,6 +276,7 @@ function BaseFirearm:OnGrab(hand, grip_point)
 end
 
 function BaseFirearm:OnRelease(hand, grip_point)
+    print("Stinky part 300 and 34")
     local gp = grip_point.Name
     if     gp == "Handle"         then self:HandleOnRelease(hand)
     elseif gp == "Magazine"       then self:MagazineOnRelease(hand)
