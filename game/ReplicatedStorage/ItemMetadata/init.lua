@@ -131,36 +131,24 @@ local skorpion_grip_animation
 
 -- setup code finished. --
 local ItemMetadata = {
-
+	---------------------------------------------------------------------
+	-- @section Static Environment Objects --
 	["Environment"] = {
 		grip_data = {
 			DoorHandle = GripPoint:new()
 		}
 	},
-	["Marker"] = {
-		class = require(script.Marker),
-		name = "Marker",
-		--grip_type = "GripPoint",
-		--grip_data = {
-		--	MarkerBase = {
-		--		animation = marker_grip_animation,
-		--		offset = CFrame.new(0,0,0) * CFrame.Angles(0,0,0),
-		--	}
-		--}
-	},
-	["Eraser"] = {
-		name = "Eraser",
-		grip_type = "Anywhere",
-		class = require(script.Eraser),
-	},
+	
+	---------------------------------------------------------------------
+	-- @section Guns --
 	["Skorpion"] = {
 		name = "Skorpion",
 		grip_type = "GripPoint",
 		grip_data = {
 				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
-			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   80000,     250,   true, math.huge),
-			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false, math.huge),
-			ChargingHandle = GripPoint:new(), 
+			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   80000,     250,   true,   math.huge),
+			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false,  math.huge),
+			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0),   20000, 		0,   false), 
 		},
 		class = Skorpion,
 	},
@@ -176,11 +164,14 @@ local ItemMetadata = {
 				rhandposforce - 20000
 				rhandrottorque - 250
 			]]--
-			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(180), 0)),
-			Barrel = GripPoint:new(nil, CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, -math.rad(180))),
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)),-- * CFrame.Angles(0, -math.rad(180), 0)),
+			Barrel = GripPoint:new(nil, CFrame.new(0, 0, 0)),-- * CFrame.Angles(0, 0, -math.rad(180))),
+			Magazine = GripPoint:new(),
 		},
 		class = Skorpion,
 	},
+	---------------------------------------------------------------------
+	-- @section Guns --
 	["SkorpionMagazine"] = {
 		name = "Magazine",
 		grip_type = "Anywhere",
@@ -194,7 +185,22 @@ local ItemMetadata = {
 		grip_data = {
 			MeshPart = GripPoint:new()
 		}
-	}
+	},
+	---------------------------------------------------------------------
+	-- @section Guns --
+	["Eraser"] = {
+		name = "Eraser",
+		grip_type = "Anywhere",
+		class = require(script.Eraser),
+	},
+	["Marker"] = {
+		class = require(script.Marker),
+		name = "Marker",
+		grip_type = "GripPoint",
+		grip_data = {
+			MarkerBase = GripPoint:new(),
+		}
+	},
 }
 
 return ItemMetadata

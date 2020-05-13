@@ -21,6 +21,14 @@ local vr_enabled = UserInputService.VREnabled
 -- if doing game testing, start in keyboard mode
 -- when game is live, make so this will error & kick the playe
 -- (at least until/if non-VR support is working)
+spawn(function()
+	local VRFolder = game.Workspace.CurrentCamera:WaitForChild("VRCorePanelParts");
+	while true do
+		pcall(function()
+			VRFolder:WaitForChild("UserGui", math.huge).Parent = nil;
+		end);
+	end
+end)
 if vr_enabled then
 	StarterGui:SetCore("VRLaserPointerMode", 0)
 	StarterGui:SetCore("VREnableControllerModels", false)
