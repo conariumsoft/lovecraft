@@ -27,9 +27,9 @@ local module_database = {
         identifier = "DebugBoard",
         reference = engine_root.DebugBoard,
     },
-    ["Lovecraft.SoftWeld"] = {
-        identifier = "SoftWeld",
-        reference = engine_root.SoftWeld,
+    ["Lovecraft.Physics"] = {
+        identifier = "Physics",
+        reference = engine_root.Physics,
     },
     ["Lovecraft.Ownership"] = {
         identifier = "Ownership",

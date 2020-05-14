@@ -1,4 +1,4 @@
-_G.using "Lovecraft.SoftWeld"
+_G.using "Lovecraft.Physics"
 _G.using "RBX.Workspace"
 _G.using "RBX.VRService"
 
@@ -51,7 +51,7 @@ function VRHead:Update(delta)
     end
     -- we just want the position. rot doesnt matter.
     --self.TranslatedPosition = CFrame.new(char.HumanoidRootPart.CFrame.Position)
-    self.TranslatedPosition = char.HumanoidRootPart.CFrame
+    self.TranslatedPosition = CFrame.new(char.HumanoidRootPart.CFrame.Position)
     -- combine with translated pos to get camera pos.
     local headset_cf = self.VRHeadsetCFrame
     local control_cf = self.TranslatedPosition
@@ -73,12 +73,12 @@ function VRHead:Update(delta)
 
     ws_cc.CFrame = ws_cc.CFrame:Lerp(self.VirtualHead.CFrame, camera_smooth)
 
+    self.PhysicalHead.CFrame = self.VirtualHead.CFrame
 end
 
 function VRHead:Teleport(coord)
     --self.VirtualHead.CFrame = coord
    -- self.PhysicalHead.CFrame = coord
 end
-
 
 return VRHead

@@ -1,7 +1,6 @@
 --- Client game loop. Handles input and local rendering
-
-
 require(game.ReplicatedStorage.Lovecraft.Lovecraft)
+
 -- Lovecraft API intializer
 _G.log("Initializing VR client.")
 
@@ -16,25 +15,21 @@ _G.using "Lovecraft.DebugBoard"
 _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
 
+local ui = require(script.ui)
+
 local vr_enabled = UserInputService.VREnabled
+
+require(script.highlighter)
 
 local no_button_scale = true
 
+-- later on: make non-vr players go into spectator mode for deathmatch
 
 -- if doing game testing, start in keyboard mode
 -- when game is live, make so this will error & kick the playe
 -- (at least until/if non-VR support is working)
-spawn(function()
-	local VRFolder = game.Workspace.CurrentCamera:WaitForChild("VRCorePanelParts");
-	while true do
-		pcall(function()
-			VRFolder:WaitForChild("UserGui", math.huge).Parent = nil;
-		end);
-	end
-end)
 if vr_enabled then
-	StarterGui:SetCore("VRLaserPointerMode", 0)
-	StarterGui:SetCore("VREnableControllerModels", false)
+	ui.DisableDefaultRobloxCrap()
 else
 	_G.VR_DEBUG = true
 	--error("This game is VR only dummy!") 
@@ -43,6 +38,7 @@ end
 
 local local_player = game.Players.LocalPlayer
 local character = local_player.Character or local_player.CharacterAdded:wait()
+
 -- explain
 character:WaitForChild("Humanoid")
 character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
@@ -134,25 +130,25 @@ local function left_joystick_state(jstick_vec)
 	local accur_x = jstickleft.X
 
 	-- joystick is considered at rest
-	if accur_x <= 0.1 and accur_x >= -0.1 then
+	if accur_x <= 0.3 and accur_x >= -0.3 then
 		-- See also DebugBoard.InputBegan
 		-- must rotate left
 		if r_joystick_flick then
 			r_joystick_flick = false
-			my_camera_head.FlickRotation = my_camera_head.FlickRotation - 90
+			my_camera_head.FlickRotation = my_camera_head.FlickRotation - 45
 		end
 		-- must roatate right
 		if l_joystick_flick then
 			l_joystick_flick = false
-			my_camera_head.FlickRotation = my_camera_head.FlickRotation + 90
+			my_camera_head.FlickRotation = my_camera_head.FlickRotation + 45
 		end
 	end
 	-- joystick has been moved to the right
-	if accur_x > 0.8 then
+	if accur_x > 0.6 then
 		r_joystick_flick = true
 	end
 	-- joystick has been moved to the left
-	if accur_x < -0.8 then
+	if accur_x < -0.6 then
 		l_joystick_flick = true
 	end
 end

@@ -9,8 +9,28 @@ _G.using "RBX.ReplicatedStorage"
 _G.using "RBX.Workspace"
 _G.using "RBX.PhysicsService"
 
+-- create remotes folder first
+Networking.CreateHookContainer()
 
 local givehands = require(script.givehands)
+local itemownerlist = require(script.itemownerlist)
+local highlighter = require(script.datahighlight)
+
+spawn(function()
+    local me = game.Workspace:WaitForChild("physics")
+    while true do
+        wait(1)
+        for _, part in pairs(me:GetDescendants()) do
+            if part:IsA("BasePart") and part.Anchored == false then
+                if part:GetNetworkOwner() ~= nil then
+                    highlighter.SetPartHighlight(part:GetNetworkOwner(), part, true)
+                else
+                    highlighter.SetPartHighlight(nil, part, false)
+                end
+            end
+        end
+    end
+end)
 
 -- init physical objects
 for _, child in pairs(Workspace.physics:GetDescendants()) do
@@ -68,10 +88,8 @@ for _, data in pairs(right_hand_animation_defs) do
     LoadAnimation(rf, data[1], data[2])
 end
 
-
 --- Remotes
--- create folder
-Networking.CreateHookContainer()
+
 -- client init
 local on_client_request_vr_state = Networking.GenerateNetHook("ClientRequestVRState")
 
@@ -83,40 +101,75 @@ local on_client_trigger_down = Networking.GenerateAsyncNetHook("ClientTriggerDow
 local on_client_trigger_up = Networking.GenerateAsyncNetHook("ClientTriggerUp")
 
 
+local function set_model_collision_group(model, group)
+	for _, obj in pairs(model:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			PhysicsService:SetPartCollisionGroup(obj, group)
+		end
+	end
+end
 
-local function OnClientGrabObject(player, object, grabbed)
+local function OnClientGrabObject(player, object, grabbed, handstr)
+    if not object then
+        _G.log("ignoring grab request: player passed nil object")
+        return
+    end
+    if not grabbed then 
+        _G.log("ignoring grab request: player passed nil grabpoint")
+        return
+    end
+    if not handstr then
+        _G.log("ignoring grab request: player passed nil handstr")
+        return
+    end
 
-    if grabbed:FindFirstChild("GripPoint") then
+    if grabbed.Anchored == true then return end
+    if not grabbed:FindFirstChild("GripPoint") then return end
+    if grabbed.GripPoint.Value == true then return end
 
-        if grabbed.GripPoint.Value == false then
+    local entry = itemownerlist.GetEntry(object, true)
 
-            if grabbed.Anchored == false then
+    -- currently owned by nobody...
+    if entry.owner == nil then
+        itemownerlist.SetEntryOwner(object, player)
+        --set_model_collision_group(object, "Grabbed"..handstr)
+    end
 
-                Ownership.SetModelNetworkOwner(object, player)
-                grabbed.GripPoint.Value = true
-            end
-        end
+    -- we own it :D
+    if entry.owner == player then
+
+        itemownerlist.SetEntryState(object, handstr, true)
+
+        Ownership.SetModelNetworkOwner(object, player)
+        grabbed.GripPoint.Value = true
     end
 end
 
-local function OnClientReleaseObject(player, object, grabbed)
+local function OnClientReleaseObject(player, object_ref, grabbed_part, handstr)
+    if grabbed_part.Anchored                        then return end
+    if not grabbed_part:FindFirstChild("GripPoint") then return end
+    if not grabbed_part.GripPoint.Value             then return end
 
-    if grabbed:FindFirstChild("GripPoint") then
-        if grabbed.GripPoint.Value == true then
-            if grabbed.Anchored == false then
+    local entry = itemownerlist.GetEntry(object_ref, false)
 
-                grabbed.GripPoint.Value = false
+    print("bruh", entry.Left, entry.Right, entry.owner)
+    if entry.owner ~= player then return end
 
-                local obj_ref = object
-                local grabbed_ref = grabbed
-                delay(2, function()
-                    if grabbed_ref.GripPoint.Value == false then
-                       -- Ownership.SetModelNetworkOwner(obj_ref, nil)
-                    end
-                end)
+    itemownerlist.SetEntryState(object_ref, handstr, false)
+
+    -- we are no longer grabbing anywhere...
+    if (entry.Left == false) and (entry.Right == false) then
+        itemownerlist.SetEntryOwner(object_ref, nil)
+        -- ! oh asynchronous lua
+        delay(0, function()
+            if entry.owner == nil then
+                Ownership.SetModelNetworkOwner(object_ref, nil)
             end
-        end
+        end)
     end
+
+    grabbed_part.GripPoint.Value = false
+    
 end
 
 PhysicsService:CreateCollisionGroup("AuxParts")

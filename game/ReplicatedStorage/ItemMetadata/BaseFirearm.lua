@@ -97,8 +97,8 @@ end
 
 function BaseFirearm:MagazineOnRelease(hand)
     print("Magazine released!")
-    self:HandleOnRelease(hand)
-    self:HandleOnGrab(hand)
+    --self:HandleOnRelease(hand)
+    --self:HandleOnGrab(hand)
 end
 ------------------------------------------------------
 function BaseFirearm:ChargingHandleOnGrab(hand)
@@ -126,7 +126,7 @@ function BaseFirearm:FireProjectile(hand, grip_point)
         local coach_ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
         local hit, pos = game.Workspace:FindPartOnRay(coach_ray, self.Model)
 
-        if hit then
+        --[[if hit then
             if hit.Parent:FindFirstChild("Humanoid") then
                 hit.Parent.Humanoid.Health = hit.Parent.Humanoid.Health - 100
                 for _, obj in pairs(hit.Parent:GetDescendants()) do
@@ -134,7 +134,7 @@ function BaseFirearm:FireProjectile(hand, grip_point)
                     if obj:IsA("WeldConstraint") then obj:Destroy() end
                 end
             end
-        end
+        end]]
 
         local bullet_impact = Instance.new("Part") do
             bullet_impact.Color = Color3.new(1, 0, 0)
@@ -250,7 +250,8 @@ end
 
 function BaseFirearm:OnMagazineRemove(hand)
     print("Magazine Removed")
-    hand:Release()
+    hand:Release(true)
+    print("Hand force removed!")
     self.MagazineInserted = false
 
     self.Model[self.MagazineComponent].GripPoint:Destroy()

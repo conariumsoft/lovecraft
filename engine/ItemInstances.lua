@@ -1,13 +1,11 @@
 _G.using "Game.Data.ItemMetadata"
 
-local items = {
-
-}
+local item_db = {}
 
 local Module = {}
 
 function Module.GetClassInstance(model_to_find)
-    for model, data in pairs(items) do
+    for model, data in pairs(item_db) do
         if model == model_to_find then
             return data
         end
@@ -20,8 +18,8 @@ function Module.CreateClassInstance(model, class)
     if Module.GetClassInstance(model) then
         error("Already exists retard!")
     end
-    items[model] = class:new(model)
-    return items[model]
+    item_db[model] = class:new(model)
+    return item_db[model]
 end
 
 return Module

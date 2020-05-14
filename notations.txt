@@ -1,0 +1,1 @@
+Nessecary Gun structure for VRFirearm:

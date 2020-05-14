@@ -1,13 +1,10 @@
-_G.ForceDirection = {
-    FORWARD = 1,
-    BACKWARD = 2,
-    REACTIVE = 3,
-}
+local Solver = require(script.Parent.Solver)
 
-local SoftWeld = _G.newclass("SoftWeld")
+local PointSolver = Solver:subclass("SoftWeld")
 ---
--- @name ctor Softweld:new
-function SoftWeld:__ctor(master_part, follower_part, props)
+-- @name ctor PointSolver:new
+function PointSolver:__ctor(master_part, follower_part, props)
+    Solver.__ctor(self, master_part, follower_part)
     props = props or {}
     local pos_enabled = props.pos_enabled or true
     local rot_enabled = (props.rot_enabled~=nil) and props.rot_enabled or true
@@ -28,20 +25,12 @@ function SoftWeld:__ctor(master_part, follower_part, props)
     local master_offset = props.master_offset
     local follower_offset = props.follower_offset
 
-    local master_att = Instance.new("Attachment")
-    master_att.Parent = master_part
-    master_att.Name = "SoftWeldMasterAttachment"
-
-    local follower_att = Instance.new("Attachment")
-    follower_att.Parent = follower_part
-    follower_att.Name = "SoftWeldFollowerAttachment"
-
     if master_offset then
-        master_att.CFrame = master_offset
+        self.master_attachment.CFrame = master_offset
     end
 
     if follower_offset then
-        follower_att.CFrame = follower_offset
+        self.follower_attachment.CFrame = follower_offset
     end
 
     local pos_constraint = Instance.new("AlignPosition") do
@@ -54,10 +43,10 @@ function SoftWeld:__ctor(master_part, follower_part, props)
         pos_constraint.MaxForce             = pos_max_force
         pos_constraint.MaxVelocity          = pos_max_velocity
 
-        pos_constraint.Attachment0 = follower_att
-		pos_constraint.Attachment1 = master_att
+        pos_constraint.Attachment0 = self.follower_attachment
+		pos_constraint.Attachment1 = self.master_attachment
 		
-		pos_constraint.Parent = master_part
+		pos_constraint.Parent = self.master_part
     end
 
     local rot_constraint = Instance.new("AlignOrientation") do
@@ -72,37 +61,33 @@ function SoftWeld:__ctor(master_part, follower_part, props)
         rot_constraint.Responsiveness        = rot_responsiveness
         rot_constraint.RigidityEnabled       = rot_is_rigid
 
-        rot_constraint.Attachment0 = follower_att
-		rot_constraint.Attachment1 = master_att
+        rot_constraint.Attachment0 = self.follower_attachment
+		rot_constraint.Attachment1 = self.master_attachment
 		
-		rot_constraint.Parent = master_part
+		rot_constraint.Parent = self.master_part
     end
 
-    self.master_part = master_part
-    self.follower_part = follower_part
-    self.master_attachment = master_att
-    self.follower_attachment = follower_att
     self.position_constraint = pos_constraint
     self.rotation_constraint = rot_constraint
 end
 
-function SoftWeld:Enable()
+function PointSolver:Enable()
+    Solver.Enable(self)
     self.position_constraint.Enabled = true
     self.rotation_constraint.Enabled = true
 end
 
-
-function SoftWeld:Disable()
+function PointSolver:Disable()
+    Solver.Disable(self)
     self.position_constraint.Enabled = false
     self.rotation_constraint.Enabled = false
 end
 
-function SoftWeld:Destroy()
-    self.master_attachment:Destroy()
-    self.follower_attachment:Destroy()
+function PointSolver:Destroy()
+    Solver.Destroy(self)
     self.position_constraint:Destroy()
     self.rotation_constraint:Destroy()
 end
 
 
-return SoftWeld
+return PointSolver

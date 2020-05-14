@@ -16,7 +16,7 @@
         "RunService",
         "Workspace",
         "BaseObject",
-        "SoftWeld",
+        "Physics",
         "PhysicsService",
         "RotatedRegion3",
         "InteractiveObjectMetadata",
@@ -32,7 +32,8 @@
         "DebugBoard",
         "Ownership",
         "delay",
-        "ItemInstances"
+        "ItemInstances",
+        "spawn"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

@@ -1,5 +1,5 @@
 --[[
-local me = game.Workspace:WaitForChild("j9j1")
+local me = game.Workspace:WaitForChild("physics")
 while true do
     wait(1/5)
     for _, part in pairs(me:GetDescendants()) do
@@ -10,7 +10,7 @@ while true do
                     selbox.Parent = part
                     selbox.Adornee = part
                     selbox.Color3 = Color3.new(1, 0, 1)
-                    selbox.LineThickness = 0.025
+                    selbox.LineThickness = 0.001
                 end
             else
                 if part:FindFirstChild("SelectionBox") ~= nil then
@@ -19,4 +19,5 @@ while true do
             end
         end
     end
-end]]
+end
+]]

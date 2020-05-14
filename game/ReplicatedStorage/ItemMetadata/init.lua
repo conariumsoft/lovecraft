@@ -61,7 +61,7 @@ function GripInformation:__pullfrom(t)
 	end
 end
 
-function GripInformation:ToWeldConfiguration()
+function GripInformation:ToWeldConfiguration(master_part, follower_part)
 	error("NotImplemented! Use subclass methods.")
 end
 
@@ -79,8 +79,8 @@ function GripPoint:__ctor(Animation, Offset, PullForce, RotationForce, ApplyRota
 	self.RotResponsiveness = RotResponsiveness or 200
 end
 
-function GripPoint:ToWeldConfiguration()
-	return {
+function GripPoint:ToWeldConfiguration(master_part, follower_part)
+	return  {
 		pos_max_force = self.PullForce,
 		rot_max_torque = self.RotationForce,
 		pos_max_velocity = self.PullMax,
@@ -92,32 +92,23 @@ function GripPoint:ToWeldConfiguration()
 	}
 end
 
-
-local GripPointAligned = GripPoint:subclass("GripPointAligned")
-
-function GripPointAligned:__ctor(props)
-	GripPoint.__ctor(self, props)
-
-	self.Orientation = CFrame.Angles(0, 0, 0)
-end
-
 local GripLine = GripInformation:subclass("GripLine")
 
-function GripLine:__ctor()
+function GripLine:__ctor(Animation, Offset, AlignmentForce)
+	
+end
+
+function GripLine:ToWeldConfiguration(master_part, follower_part)
 
 end
 
-
-local GripLineCurve = GripInformation:subclass("GripLineCurve")
-
-function GripLineCurve:__ctor()
-
-
+--
+local GripSocket = GripPoint:subclass("GripSocket")
+function GripSocket:__ctor(props)
+	GripInformation.__ctor(self, props)
 end
 
 local GripSurface = GripInformation:subclass("GripSurface")
-
-
 function GripSurface:__ctor()
 
 end
@@ -150,7 +141,7 @@ local ItemMetadata = {
 				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
 			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   80000,     250,   true,   math.huge),
 			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false,  math.huge),
-			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0),   20000, 		0,   false), 
+			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0),   500, 		0,   false), 
 		},
 		class = Skorpion,
 	},
@@ -158,15 +149,7 @@ local ItemMetadata = {
 		name = "Saiga",
 		grip_type = "GripPoint",
 		grip_data = {
-			--[[
-				lhandmaxvel - 600
-				lhandposforce - 15000
-				rhandmaxangular - 250
-				rhandmaxvel - 1000
-				rhandposforce - 20000
-				rhandrottorque - 250
-			]]--
-			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0), 100000, 400, true, math.huge),-- * CFrame.Angles(0, -math.rad(180), 0)),
+			Handle = GripPoint:new(nil, CFrame.Angles(0, math.rad(180), 0), 100000, 400, true, math.huge),-- * CFrame.Angles(0, -math.rad(180), 0)),
 			BarrelShroud = GripPoint:new(nil, CFrame.new(0, 0, 0), 15000, 0, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
 			Magazine = GripPoint:new(),
 		},
@@ -177,8 +160,8 @@ local ItemMetadata = {
 		name = "stupidSniper",
 		grip_type = "GripPoint",
 		grip_data = {
-			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0), 10000, 5000, true, 100000),-- * CFrame.Angles(0, -math.rad(180), 0)),
-			BarrelShroud = GripPoint:new(nil, CFrame.new(0, 0, 0), 500, 50, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0), 10000, 1500, true, 50000),-- * CFrame.Angles(0, -math.rad(180), 0)),
+			BarrelShroud = GripPoint:new(nil, CFrame.new(0, 0, 0), 1000, 25, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
 			Magazine = GripPoint:new(),
 		},
 	},

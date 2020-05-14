@@ -4,7 +4,7 @@ _G.using "RBX.Workspace"
 _G.using "RBX.VRService"
 _G.using "RBX.HapticService"
 _G.using "RBX.PhysicsService"
-_G.using "Lovecraft.SoftWeld"
+_G.using "Lovecraft.Physics"
 _G.using "Lovecraft.Lib.RotatedRegion3"
 _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
@@ -77,8 +77,8 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 
 	-- glue weld that binds hand to correct position and orientation,
 	-- while still respecting physical limits
-	self._HandModelSoftWeld = SoftWeld:new(self.VirtualHand, self.HandModel.PrimaryPart, {
-		pos_responsiveness = 100,--75,
+	self._HandModelSoftWeld = Physics.CreatePointSolver(self.VirtualHand, self.HandModel.PrimaryPart, {
+		pos_responsiveness = 100,
 		rot_responsiveness = 40,
 		pos_max_force = 5000,
 		rot_max_torque = 10000,
@@ -191,12 +191,6 @@ local function object_pickup_criteria(part)
 
 	end
 	return false
-	--[[--
-	if part:FindFirstChild("GripPoint") and part.GripPoint.Value == false then
-		return true
-	end
-	return false
-	]]
 end
 
 local function find_object_can_pickup(region)
@@ -213,7 +207,15 @@ end
 -- when item is grabbed
 -- stick to hand at the position of grip
 local function glue(hand_part, grip_point, glue_config)
-	return SoftWeld:new(hand_part, grip_point, glue_config)
+	return Physics.CreatePointSolver(hand_part, grip_point, glue_config)
+end
+
+local function is_model_collision_group(model, group)
+	for _, obj in pairs(model:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			PhysicsService:CollisionGroupContainsPart(group, obj)
+		end
+	end
 end
 
 ---
@@ -223,6 +225,11 @@ local function set_model_collision_group(model, group)
 			PhysicsService:SetPartCollisionGroup(obj, group)
 		end
 	end
+end
+
+
+local function solve_collision_group(model)
+	
 end
 
 ---
@@ -246,14 +253,13 @@ function VRHand:Grab()
 
 	-- tell server what we're up to (picking something up)
 	local notify_server_grab = Networking.GetNetHook("ClientGrab")
-	notify_server_grab:FireServer(item_pickup, part)
+	notify_server_grab:FireServer(item_pickup, part, self.Handedness)
 
 	part.GripPoint.Value = true
 	-- assign some members. (what are these used for?)
 	self.HoldingObject = item_pickup
 	self.GripPoint = part
 
-	
 	--! We got the parameters _roughly_ figured out
 	-- DO NOT CHANGE: change objects to fit around these from now on
 	local grip_config = {
@@ -310,12 +316,22 @@ function VRHand:Grab()
 		end
 	end
 
+	-- collision group..
+	local other = (self.Handedness == "Left") and "Right" or "Left" --! giant weiner
+	local is_other = is_model_collision_group(item_pickup, "Grabbed"..other)
+
+	-- one is already attached
+	if is_other then
+		set_model_collision_group(item_pickup, "GrabbedBoth")
+	else
+		set_model_collision_group(item_pickup, "Grabbed"..self.Handedness)
+	end
+
 	-- firstly, disable hand->handmodel softweld.
 	-----------------------------------------------------------------------
 	-- ITEM WEIGHT CODE --
-	set_model_collision_group(item_pickup, "Grabbed"..self.Handedness)
-	self._HandModelSoftWeld:Disable()
 	
+	self._HandModelSoftWeld:Disable()
 
 	local hand_origin = self.HandModel.PrimaryPart
 	-- finally, glue object to handmodel
@@ -327,13 +343,16 @@ function VRHand:Grab()
 	--self._GrabbedObjectWeld = glue(self.HandModel.PrimaryPart, part, grip_config)
 end
 
+
 --- fired when hand grip goes below certain threshold
-function VRHand:Release() 
+function VRHand:Release(forced) 
 
 	--- drop any object currently in the hand
 	-- must check if holding an item
 	if self.HoldingObject == nil then return end
 	-- we are no longer holding
+
+
 	self.GripPoint.GripPoint.Value = false
 
 	local obj = self.HoldingObject
@@ -354,7 +373,22 @@ function VRHand:Release()
 	-- must delay so hand and object's collisions don't 
 	-- immediately get the two stuck inside each other
 	-- then reset the collision mask on the held object
-	delay(0.5, function() 
+	delay(0.25, function() 
+		local is_us = is_model_collision_group(obj, "Grabbed"..self.Handedness)
+		local is_both  = is_model_collision_group(obj, "GrabbedBoth")
+
+		-- one is already attached
+		if is_both then
+			
+			-- set to other?
+			local other = (self.Handedness == "Left") and "Right" or "Left" --! giant weiner
+			print("back to "..other)
+			set_model_collision_group(obj, "Grabbed"..other)
+		elseif is_us then
+			print("last grip")
+			set_model_collision_group(obj, "Interactives")
+		end
+
 		--set_model_collision_group(obj, "Interactives") 
 	end)
 	-----------------------------------------------------------------------
@@ -376,7 +410,7 @@ function VRHand:Release()
 
 	-- inform server of our actions
 	local crelease = Networking.GetNetHook("ClientRelease")
-	crelease:FireServer(self.HoldingObject, self.GripPoint)
+	crelease:FireServer(self.HoldingObject, self.GripPoint, self.Handedness)
 
 	-- reset our fields
 	--
