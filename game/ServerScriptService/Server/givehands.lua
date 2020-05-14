@@ -9,6 +9,9 @@ return function(player)
     local plr_right = ReplicatedStorage.RHand:Clone()
     plr_right.Parent = player.Character
 
+    plr_left.PrimaryPart.Anchored = false
+    plr_right.PrimaryPart.Anchored = false
+
     -- assign networkownership
     plr_left.PrimaryPart:SetNetworkOwner(player)
     plr_right.PrimaryPart:SetNetworkOwner(player)

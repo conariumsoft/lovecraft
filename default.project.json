@@ -2,41 +2,28 @@
   "name": "lovecraftVR",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
       "$path": "game/ReplicatedStorage",
-
       "Lovecraft": {
         "$path": "engine"
       }
     },
-
     "ServerScriptService": {
       "$className": "ServerScriptService",
       "$path": "game/ServerScriptService"
     },
-
-    "ReplicatedFirst": {
-      "$className": "ReplicatedFirst",
-      "$path": "game/ReplicatedFirst"
-    },
-    
     "StarterPlayer": {
       "$className": "StarterPlayer",
-
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-
         "$path": "game/StarterPlayer/StarterPlayerScripts"
       },
       "StarterCharacterScripts": {
         "$className": "StarterCharacterScripts",
-
         "$path": "game/StarterPlayer/StarterCharacterScripts"
       }
     },
-
     "Workspace": {
       "$className": "Workspace",
       "$properties": {

@@ -10,10 +10,10 @@ local local_camera = game.Workspace.CurrentCamera
 -----------------------------------------------------
 -- config?
 
-local camera_smooth = 0.5 -- higher values = faster camera
+local camera_smooth = 0.9 -- higher values = faster camera
 -----------------------------------------------------
 
-function VRHead:__ctor(player)
+function VRHead:__ctor(player, head_model)
 
     -- TODO: make character model control the positioning
     -- of VR components
@@ -40,6 +40,8 @@ function VRHead:__ctor(player)
 
     -- requested position...
     self.VirtualHead = virtual_head
+    
+    self.PhysicalHead = head_model
 end
 
 function VRHead:Update(delta)
@@ -65,7 +67,7 @@ function VRHead:Update(delta)
         CFrame.Angles(0, -mouse_vec2.X, 0) *
         CFrame.Angles(-mouse_vec2.Y, 0, 0)
 
-    char.HeadJ.CFrame = headset_cf
+    --char.HeadJ.CFrame = 
 
     -- TODO: figure out how to do flickrotation without rotating around the HRP
     -- makes it feel weird...
@@ -73,7 +75,8 @@ function VRHead:Update(delta)
 
     ws_cc.CFrame = ws_cc.CFrame:Lerp(self.VirtualHead.CFrame, camera_smooth)
 
-    self.PhysicalHead.CFrame = self.VirtualHead.CFrame
+    --! TODO:
+    self.PhysicalHead.CFrame = self.VirtualHead.CFrame * headset_cf
 end
 
 function VRHead:Teleport(coord)

@@ -3,7 +3,6 @@ require(game.ReplicatedStorage.Lovecraft.Lovecraft)
 
 -- Lovecraft API intializer
 _G.log("Initializing VR client.")
-
 _G.using "RBX.UserInputService"
 _G.using "RBX.RunService"
 _G.using "RBX.VRService"
@@ -30,6 +29,10 @@ local no_button_scale = true
 -- (at least until/if non-VR support is working)
 if vr_enabled then
 	ui.DisableDefaultRobloxCrap()
+	pcall(function()
+		local starterGui = game:GetService('StarterGui')
+		starterGui:SetCore("TopbarEnabled", false)
+	end)
 else
 	_G.VR_DEBUG = true
 	--error("This game is VR only dummy!") 
@@ -45,6 +48,8 @@ character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
 character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
 character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
 character.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+character.HeadJ.Transparency = 1
+character.HeadJ.BillboardGui.Enabled = false
 
 -- client is ready to start
 -- send request for server-side init
@@ -60,7 +65,7 @@ Workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
 local left_hand_model  = character:WaitForChild("LHand")
 local right_hand_model = character:WaitForChild("RHand")
 
-local my_camera_head = VRHead:new(local_player) -- Head Physics & Camera
+local my_camera_head = VRHead:new(local_player, character:WaitForChild("HeadJ")) -- Head Physics & Camera
 
 -- poll hapticservice for rumble support
 local client_haptics_support
@@ -109,7 +114,6 @@ RunService.Stepped:Connect(function(t, delta)
 	--character.HeadJ.CFrame = my_camera_head.VirtualHead.CFrame
 	character.HeadJ.Velocity = Vector3.new(0, 0, 0)
 	character.TorsoJ.Velocity = Vector3.new(0, 0, 0)
-
 	if _G.VR_DEBUG then
 		DebugBoard.RenderStep(my_camera_head, my_left_hand, my_right_hand)
 	end

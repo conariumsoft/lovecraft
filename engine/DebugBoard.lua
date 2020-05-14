@@ -8,7 +8,6 @@ local human_move_vec = Vector2.new(0, 0)
 
 local DebugBoard = {}
 
-
 function DebugBoard.RenderStep(head, left_hand, right_hand)
 
     camera_rotation = camera_rotation + (
@@ -22,7 +21,7 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     local l_mv_left     = UserInputService:IsKeyDown(Enum.KeyCode.W)
     local l_mv_right    = UserInputService:IsKeyDown(Enum.KeyCode.S)
     local l_mv_back     = UserInputService:IsKeyDown(Enum.KeyCode.E)
-    local l_mv_forward  = UserInputService:IsKeyDown(Enum.KeyCode.D)
+    local l_mv_forward  = UserInputService:IsKeyDown(Enum.KeyCode.D) 
     local l_roll_left   = UserInputService:IsKeyDown(Enum.KeyCode.R)
     local l_roll_right  = UserInputService:IsKeyDown(Enum.KeyCode.F)
     local l_pitch_left  = UserInputService:IsKeyDown(Enum.KeyCode.Z)

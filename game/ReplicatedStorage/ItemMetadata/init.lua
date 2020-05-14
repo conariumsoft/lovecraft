@@ -89,6 +89,7 @@ function GripPoint:ToWeldConfiguration(master_part, follower_part)
 		rot_responsiveness = self.RotResponsiveness,
 		pos_responsiveness = self.PosResponsiveness,
 		cframe_offset = self.Offset,
+		pos_is_rigid = true,
 	}
 end
 
@@ -150,7 +151,7 @@ local ItemMetadata = {
 		grip_type = "GripPoint",
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.Angles(0, math.rad(180), 0), 100000, 400, true, math.huge),-- * CFrame.Angles(0, -math.rad(180), 0)),
-			BarrelShroud = GripPoint:new(nil, CFrame.new(0, 0, 0), 15000, 0, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
+			BarrelGrip = GripPoint:new(nil, CFrame.new(0, 0, 0), 15000, 0, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
 			Magazine = GripPoint:new(),
 		},
 		class = Saiga,

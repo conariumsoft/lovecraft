@@ -8,18 +8,19 @@ set_highlight.OnClientEvent:Connect(function(part, value, color)
     -- add a new object
     if value == true then
         if part:FindFirstChild("DataHighlightBox") then
-            part.DataHighlightBox.Color3 = Color3.new(color)
+            part.DataHighlightBox.Color3 = Color3.new(unpack(color))
         else
             local obj = Instance.new("SelectionBox") do
                 obj.Parent = part
                 obj.Adornee = part
-                obj.Color3 = color
+                obj.Color3 = Color3.new(unpack(color))
                 obj.LineThickness = 0
+                obj.Name = "DataHighlightBox"
             end
             delay(0, function()
-                for i = 1, 20 do
+                for i = 1, 30 do
+                    obj.LineThickness = i/3000
                     wait()
-                    obj.LineThickness = i/2000
                 end
             end)
         end
@@ -28,9 +29,9 @@ set_highlight.OnClientEvent:Connect(function(part, value, color)
     if value == false then
         if part:FindFirstChild("DataHighlightBox") then
             delay(0, function()
-                for i = 1, 20 do
+                for i = 30, 0 do
+                    part.DataHighlightBox.LineThickness = i/3000
                     wait()
-                    part.DataHighlightBox.LineThickness = i/2000
                 end
                 part.DataHighlightBox:Destroy()
             end)

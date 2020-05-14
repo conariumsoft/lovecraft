@@ -8,31 +8,15 @@ _G.using "Lovecraft.Ownership"
 _G.using "RBX.ReplicatedStorage"
 _G.using "RBX.Workspace"
 _G.using "RBX.PhysicsService"
+_G.using "RBX.RunService"
+
+-------------------------------------------------------------------
+-- Gameserver setup --
 
 -- create remotes folder first
 Networking.CreateHookContainer()
 
-local givehands = require(script.givehands)
-local itemownerlist = require(script.itemownerlist)
-local highlighter = require(script.datahighlight)
-
-spawn(function()
-    local me = game.Workspace:WaitForChild("physics")
-    while true do
-        wait(1)
-        for _, part in pairs(me:GetDescendants()) do
-            if part:IsA("BasePart") and part.Anchored == false then
-                if part:GetNetworkOwner() ~= nil then
-                    highlighter.SetPartHighlight(part:GetNetworkOwner(), part, true)
-                else
-                    highlighter.SetPartHighlight(nil, part, false)
-                end
-            end
-        end
-    end
-end)
-
--- init physical objects
+-- drop interactive objects into appropriate collisiongroup
 for _, child in pairs(Workspace.physics:GetDescendants()) do
     if child:IsA("BasePart") then
         child:SetNetworkOwner(nil)
@@ -40,76 +24,27 @@ for _, child in pairs(Workspace.physics:GetDescendants()) do
     end
 end
 
---- Hand Animation loading
--- load objects on server initially (permits client replication)
--- create folders
-local anims_folder = Instance.new("Folder") do
-    anims_folder.Name = "Animations"
-    anims_folder.Parent = ReplicatedStorage
-end
-local lf = Instance.new("Folder") do
-    lf.Name = "Left"
-    lf.Parent = anims_folder
-end
-local rf = Instance.new("Folder") do
-    rf.Name = "Right"
-    rf.Parent = anims_folder
-end
+-- load animations for hand models
+require(script.loadanims)()
 
-local function LoadAnimation(folder, name, id)
-	local anim = Instance.new("Animation")
-    anim.AnimationId = id
-    anim.Name = name
-	anim.Parent = folder
-	return anim
-end
 
--- anim IDs
-local left_hand_animation_defs = {
-  --{"AnimName",   "AssetIDString"          },
-    {"Index",      "rbxassetid://4921338211"},
-    {"Grip",       "rbxassetid://4921113867"},
+local givehands = require(script.givehands)
+local itemownerlist = require(script.itemownerlist)
+local data_highlight = require(script.datahighlight)
 
-}
-
-local right_hand_animation_defs = {
-  --{"AnimName",   "AssetIDString"          },
-    {"Index",      "rbxassetid://4921265382"},
-    {"Grip",       "rbxassetid://4921074129"},
-
-}
-
--- load sets
-for _, data in pairs(left_hand_animation_defs) do
-    LoadAnimation(lf, data[1], data[2])
-end
-
-for _, data in pairs(right_hand_animation_defs) do
-    LoadAnimation(rf, data[1], data[2])
-end
 
 --- Remotes
 
 -- client init
 local on_client_request_vr_state = Networking.GenerateNetHook("ClientRequestVRState")
 
-local on_client_grip_state = Networking.GenerateAsyncNetHook("ClientGripState")
-local on_client_pointer_state = Networking.GenerateAsyncNetHook("ClientPointerState")
+
+
+-- Player Object Control --
 local on_client_grab_object = Networking.GenerateAsyncNetHook("ClientGrab")
 local on_client_release_object = Networking.GenerateAsyncNetHook("ClientRelease")
-local on_client_trigger_down = Networking.GenerateAsyncNetHook("ClientTriggerDown")
-local on_client_trigger_up = Networking.GenerateAsyncNetHook("ClientTriggerUp")
 
-
-local function set_model_collision_group(model, group)
-	for _, obj in pairs(model:GetDescendants()) do
-		if obj:IsA("BasePart") then
-			PhysicsService:SetPartCollisionGroup(obj, group)
-		end
-	end
-end
-
-local function OnClientGrabObject(player, object, grabbed, handstr)
+local function on_plr_grab_object(player, object, grabbed, handstr)
     if not object then
         _G.log("ignoring grab request: player passed nil object")
         return
@@ -141,11 +76,12 @@ local function OnClientGrabObject(player, object, grabbed, handstr)
         itemownerlist.SetEntryState(object, handstr, true)
 
         Ownership.SetModelNetworkOwner(object, player)
+        data_highlight(player, object, true)
         grabbed.GripPoint.Value = true
     end
 end
 
-local function OnClientReleaseObject(player, object_ref, grabbed_part, handstr)
+local function on_plr_drop_object(player, object_ref, grabbed_part, handstr)
     if grabbed_part.Anchored                        then return end
     if not grabbed_part:FindFirstChild("GripPoint") then return end
     if not grabbed_part.GripPoint.Value             then return end
@@ -161,8 +97,9 @@ local function OnClientReleaseObject(player, object_ref, grabbed_part, handstr)
     if (entry.Left == false) and (entry.Right == false) then
         itemownerlist.SetEntryOwner(object_ref, nil)
         -- ! oh asynchronous lua
-        delay(0, function()
+        delay(3, function()
             if entry.owner == nil then
+                data_highlight(player, object_ref, false)
                 Ownership.SetModelNetworkOwner(object_ref, nil)
             end
         end)
@@ -171,15 +108,7 @@ local function OnClientReleaseObject(player, object_ref, grabbed_part, handstr)
     grabbed_part.GripPoint.Value = false
     
 end
-
-PhysicsService:CreateCollisionGroup("AuxParts")
-
-PhysicsService:CollisionGroupSetCollidable("AuxParts", "Default", false)
-PhysicsService:CollisionGroupSetCollidable("AuxParts", "LeftHand", false)
-PhysicsService:CollisionGroupSetCollidable("AuxParts", "RightHand", false)
-PhysicsService:CollisionGroupSetCollidable("AuxParts", "GrabbedLeft", false)
-PhysicsService:CollisionGroupSetCollidable("AuxParts", "GrabbedRight", false)
-
+-----------------------------------------------------------------
 
 -- parts of a player's body that we need networkownership of
 -- set correct collision groups on as well
@@ -218,10 +147,21 @@ local function OnClientRequestVRState(player)
     -- assign networkownership
     -- set collision groups
     -- create animator 
-    local hands = givehands(player)
+    givehands(player)
     return true
 end
 
-on_client_grab_object.OnServerEvent:Connect(OnClientGrabObject)
-on_client_release_object.OnServerEvent:Connect(OnClientReleaseObject)
+
+local function server_update(server_run_time, tick_dt)
+
+end
+
+on_client_grab_object.OnServerEvent:Connect(on_plr_grab_object)
+on_client_release_object.OnServerEvent:Connect(on_plr_drop_object)
 on_client_request_vr_state.OnServerInvoke = OnClientRequestVRState
+
+RunService.Stepped:Connect(server_update)
+game.Players.PlayerAdded:Connect(function(plr)
+    local c = plr.Character or plr.CharacterAdded:Wait()
+    c.HeadJ.BillboardGui.TextLabel.Text = plr.Name
+end)

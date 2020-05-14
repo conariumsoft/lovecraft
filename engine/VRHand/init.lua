@@ -83,6 +83,7 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 		pos_max_force = 5000,
 		rot_max_torque = 10000,
 		pos_max_velocity = 25000,
+		
 	})
 
 	-- used later
@@ -227,11 +228,6 @@ local function set_model_collision_group(model, group)
 	end
 end
 
-
-local function solve_collision_group(model)
-	
-end
-
 ---
 function VRHand:Grab()
 	--- find something to pick up within our palm region
@@ -268,6 +264,7 @@ function VRHand:Grab()
 		rot_responsiveness = 100,
 		rot_max_torque = 250,
 		pos_max_force = 8000,
+		pos_is_rigid = true,
 	}
 	local hand_weld_config = {
 		master_offset =  part.CFrame:inverse() * self.HandModel.PrimaryPart.CFrame
