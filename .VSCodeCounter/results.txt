@@ -1,0 +1,85 @@
+Date : 2020-05-13 16:41:53
+Directory : c:\code\lovecraftVR
+Total : 44 files,  2362 codes, 323 comments, 671 blanks, all 3356 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Lua      |         42 |      2,239 |        323 |        647 |      3,209 |
+| JSON     |          1 |         86 |          0 |          9 |         95 |
+| Markdown |          1 |         37 |          0 |         15 |         52 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                  | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                     |         44 |      2,362 |        323 |        671 |      3,356 |
+| engine                                                                                |         25 |      1,290 |        207 |        378 |      1,875 |
+| engine\Lib                                                                            |          4 |        461 |         25 |        123 |        609 |
+| engine\Lib\RotatedRegion3                                                             |          4 |        461 |         25 |        123 |        609 |
+| engine\Lovecraft                                                                      |          4 |        155 |         44 |         43 |        242 |
+| engine\Physics                                                                        |          6 |        157 |         11 |         60 |        228 |
+| engine\VRHand                                                                         |          3 |        260 |         95 |         64 |        419 |
+| game                                                                                  |         16 |        899 |        106 |        256 |      1,261 |
+| game\ReplicatedStorage                                                                |          9 |        571 |         46 |        157 |        774 |
+| game\ReplicatedStorage\ItemMetadata                                                   |          9 |        571 |         46 |        157 |        774 |
+| game\ServerScriptService                                                              |          3 |        154 |         28 |         42 |        224 |
+| game\ServerScriptService\Server                                                       |          2 |        133 |         27 |         42 |        202 |
+| game\StarterPlayer                                                                    |          4 |        174 |         32 |         57 |        263 |
+| game\StarterPlayer\StarterCharacterScripts                                            |          1 |          0 |          1 |          0 |          1 |
+| game\StarterPlayer\StarterPlayerScripts                                               |          3 |        174 |         31 |         57 |        262 |
+| game\StarterPlayer\StarterPlayerScripts\VRMain                                        |          3 |        174 |         31 |         57 |        262 |
++---------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                              | language | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\code\lovecraftVR\README.md                                                         | Markdown |         37 |          0 |         15 |         52 |
+| c:\code\lovecraftVR\conventions.lua                                                   | Lua      |         50 |         10 |         13 |         73 |
+| c:\code\lovecraftVR\default.project.json                                              | JSON     |         86 |          0 |          9 |         95 |
+| c:\code\lovecraftVR\engine\CollisionMasking.lua                                       | Lua      |         10 |          0 |          5 |         15 |
+| c:\code\lovecraftVR\engine\DebugBoard.lua                                             | Lua      |        111 |          9 |         32 |        152 |
+| c:\code\lovecraftVR\engine\ItemInstances.lua                                          | Lua      |         28 |          1 |         13 |         42 |
+| c:\code\lovecraftVR\engine\Lib\RotatedRegion3\GJK.lua                                 | Lua      |         86 |          6 |         25 |        117 |
+| c:\code\lovecraftVR\engine\Lib\RotatedRegion3\Supports.lua                            | Lua      |         39 |          3 |         10 |         52 |
+| c:\code\lovecraftVR\engine\Lib\RotatedRegion3\Vertices.lua                            | Lua      |        157 |          7 |         37 |        201 |
+| c:\code\lovecraftVR\engine\Lib\RotatedRegion3\init.lua                                | Lua      |        179 |          9 |         51 |        239 |
+| c:\code\lovecraftVR\engine\Lovecraft\class.lua                                        | Lua      |         49 |         28 |         11 |         88 |
+| c:\code\lovecraftVR\engine\Lovecraft\enums.lua                                        | Lua      |          2 |          0 |          2 |          4 |
+| c:\code\lovecraftVR\engine\Lovecraft\init.lua                                         | Lua      |         24 |          5 |          9 |         38 |
+| c:\code\lovecraftVR\engine\Lovecraft\using.lua                                        | Lua      |         80 |         11 |         21 |        112 |
+| c:\code\lovecraftVR\engine\LuaUtils.lua                                               | Lua      |          0 |          0 |          1 |          1 |
+| c:\code\lovecraftVR\engine\Networking.lua                                             | Lua      |         27 |          1 |          9 |         37 |
+| c:\code\lovecraftVR\engine\Ownership.lua                                              | Lua      |         11 |          0 |          4 |         15 |
+| c:\code\lovecraftVR\engine\Physics\LineSolver.lua                                     | Lua      |         22 |          0 |          6 |         28 |
+| c:\code\lovecraftVR\engine\Physics\PointSolver.lua                                    | Lua      |         73 |          2 |         18 |         93 |
+| c:\code\lovecraftVR\engine\Physics\RotationSolver.lua                                 | Lua      |         17 |          9 |         11 |         37 |
+| c:\code\lovecraftVR\engine\Physics\Solver.lua                                         | Lua      |         28 |          0 |         12 |         40 |
+| c:\code\lovecraftVR\engine\Physics\SurfaceSolver.lua                                  | Lua      |          3 |          0 |          6 |          9 |
+| c:\code\lovecraftVR\engine\Physics\init.lua                                           | Lua      |         14 |          0 |          7 |         21 |
+| c:\code\lovecraftVR\engine\RigTesting.lua                                             | Lua      |         23 |          2 |          6 |         31 |
+| c:\code\lovecraftVR\engine\VRHand\controller.lua                                      | Lua      |          0 |          0 |          1 |          1 |
+| c:\code\lovecraftVR\engine\VRHand\grabbing.lua                                        | Lua      |          0 |          0 |          1 |          1 |
+| c:\code\lovecraftVR\engine\VRHand\init.lua                                            | Lua      |        260 |         95 |         62 |        417 |
+| c:\code\lovecraftVR\engine\VRHead.lua                                                 | Lua      |         47 |         19 |         18 |         84 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\BaseFirearm.lua               | Lua      |        244 |         22 |         58 |        324 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\BaseInteractive.lua           | Lua      |         13 |          0 |         10 |         23 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\Eraser.lua                    | Lua      |         24 |          0 |         12 |         36 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\Hecate.lua                    | Lua      |         26 |          1 |          6 |         33 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\LightSaber.lua                | Lua      |         12 |          0 |         12 |         24 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\Marker.lua                    | Lua      |         35 |          0 |         13 |         48 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\Saiga.lua                     | Lua      |         29 |          3 |          9 |         41 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\Skorpion.lua                  | Lua      |         26 |          1 |          6 |         33 |
+| c:\code\lovecraftVR\game\ReplicatedStorage\ItemMetadata\init.lua                      | Lua      |        162 |         19 |         31 |        212 |
+| c:\code\lovecraftVR\game\ServerScriptService\OwnerVisualizer.server.lua               | Lua      |         21 |          1 |          0 |         22 |
+| c:\code\lovecraftVR\game\ServerScriptService\Server\givehands.lua                     | Lua      |         17 |          4 |          7 |         28 |
+| c:\code\lovecraftVR\game\ServerScriptService\Server\init.server.lua                   | Lua      |        116 |         23 |         35 |        174 |
+| c:\code\lovecraftVR\game\StarterPlayer\StarterCharacterScripts\Placeholder.client.lua | Lua      |          0 |          1 |          0 |          1 |
+| c:\code\lovecraftVR\game\StarterPlayer\StarterPlayerScripts\VRMain\camera.lua         | Lua      |          0 |          0 |          1 |          1 |
+| c:\code\lovecraftVR\game\StarterPlayer\StarterPlayerScripts\VRMain\init.client.lua    | Lua      |        157 |         30 |         49 |        236 |
+| c:\code\lovecraftVR\game\StarterPlayer\StarterPlayerScripts\VRMain\ui.lua             | Lua      |         17 |          1 |          7 |         25 |
+| Total                                                                                 |          |      2,362 |        323 |        671 |      3,356 |
++---------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
