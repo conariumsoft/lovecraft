@@ -152,6 +152,26 @@ local function OnClientRequestVRState(player)
 end
 
 
+local on_client_shoot = Networking.GenerateAsyncNetHook("ClientShoot")
+local on_client_hit = Networking.GenerateAsyncNetHook("ClientHit")
+
+
+local function client_reflect_gunshot(client, weapon)
+
+end
+
+-- ? no hit verification?
+-- yes. this is bad. extremely bad.
+-- don't worry, hit verification will be implemented before
+-- public testing.
+local function client_hit_enemy(client, enemy, weapon)
+
+end
+
+on_client_shoot.OnServerEvent:Connect(client_reflect_gunshot)
+on_client_hit.OnServerEvent:Connect(client_hit_enemy)
+
+
 local function server_update(server_run_time, tick_dt)
 
 end

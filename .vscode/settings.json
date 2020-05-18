@@ -33,7 +33,8 @@
         "Ownership",
         "delay",
         "ItemInstances",
-        "spawn"
+        "spawn",
+        "Kinematics"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

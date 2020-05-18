@@ -97,8 +97,6 @@ end
 
 function BaseFirearm:MagazineOnRelease(hand)
     print("Magazine released!")
-    --self:HandleOnRelease(hand)
-    --self:HandleOnGrab(hand)
 end
 ------------------------------------------------------
 function BaseFirearm:ChargingHandleOnGrab(hand)

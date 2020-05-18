@@ -41,7 +41,6 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     local r_pitch_right = UserInputService:IsKeyDown(Enum.KeyCode.M)
     local r_yaw_left    = UserInputService:IsKeyDown(Enum.KeyCode.Comma)
     local r_yaw_right   = UserInputService:IsKeyDown(Enum.KeyCode.Period)
-    -- TODO: implement grabbing
 
     local dt = 1/50
 
@@ -91,12 +90,10 @@ function DebugBoard.InputBegan(inp, my_left_hand, my_right_hand, head)
     -- see also VRClient left_joystick_state
     -- manual left flicking
     if inp.KeyCode == Enum.KeyCode.Left then
-        -- TODO: flick
         head.FlickRotation = head.FlickRotation + 90
     end
     -- manual right flick
     if inp.KeyCode == Enum.KeyCode.Right then
-        -- TODO: flick
         head.FlickRotation = head.FlickRotation - 90
     end
 

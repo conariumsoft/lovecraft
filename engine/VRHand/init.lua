@@ -78,14 +78,21 @@ function VRHand:__ctor(player, vr_head, handedness, hand_model)
 	-- glue weld that binds hand to correct position and orientation,
 	-- while still respecting physical limits
 	self._HandModelSoftWeld = Physics.CreatePointSolver(self.VirtualHand, self.HandModel.PrimaryPart, {
-		pos_responsiveness = 100,
+		pos_responsiveness = 125,
 		rot_responsiveness = 40,
-		pos_max_force = 5000,
+		pos_max_force = 10000,
 		rot_max_torque = 10000,
 		pos_max_velocity = 25000,
-		
 	})
 
+	--[[self._HandModelSoftWeld = Physics.CreatePointSolver(self.VirtualHand, self.HandModel.PrimaryPart, {
+		pos_responsiveness = 100,
+		rot_responsiveness = 40,
+		pos_max_force = 0,
+		rot_max_torque = 0,
+		pos_max_velocity = 0,
+		
+	})]]
 	-- used later
 	self._GrabbedObjectWeld = nil -- hand->held object glue
 	self.HoldingObject = nil -- if grabbed something
@@ -232,7 +239,7 @@ end
 function VRHand:Grab()
 	--- find something to pick up within our palm region
 	-- TODO: make this the palm area of real hand
-	local reported_pos = self.VirtualHand.CFrame
+	local reported_pos = self.HandModel.PrimaryPart.CFrame
 	local palm_radius = 0.25
 	local region = RotatedRegion3.new(
 		reported_pos,
@@ -260,15 +267,11 @@ function VRHand:Grab()
 	-- DO NOT CHANGE: change objects to fit around these from now on
 	local grip_config = {
 		--master_offset = self.VirtualHand.CFrame:inverse() * part.CFrame,
-		follower_offset = part.CFrame:inverse() * self.VirtualHand.CFrame,
+		follower_offset = part.CFrame:inverse() * self.HandModel.PrimaryPart.CFrame,
 		rot_responsiveness = 100,
 		rot_max_torque = 250,
 		pos_max_force = 8000,
 		pos_is_rigid = true,
-	}
-	local hand_weld_config = {
-		master_offset =  part.CFrame:inverse() * self.HandModel.PrimaryPart.CFrame
-		--rot_reactive = true
 	}
 
 	-- object's Model.Name is used to search.
@@ -294,10 +297,12 @@ function VRHand:Grab()
 				self.ItemInstance = inst
 				inst:OnGrab(self, part)
 			end
+
 			-- hand animation state?
 			if obj_meta.animation then
-
+				
 			end
+
 			-- TODO: rig object to hand virtual position
 			if obj_meta.hand_override then
 
@@ -308,7 +313,6 @@ function VRHand:Grab()
 				local grip_data = obj_meta.grip_data[part.Name]
 
 				grip_config = grip_data:ToWeldConfiguration()
-				hand_weld_config = {}
 			end
 		end
 	end
@@ -328,16 +332,9 @@ function VRHand:Grab()
 	-----------------------------------------------------------------------
 	-- ITEM WEIGHT CODE --
 	
-	self._HandModelSoftWeld:Disable()
 
-	local hand_origin = self.HandModel.PrimaryPart
 	-- finally, glue object to handmodel
-	self._GrabbedObjectWeld = glue(self.VirtualHand, part, grip_config)
-	-- glue object to hand's real position?
-	self._HandWeld = glue(part, hand_origin, hand_weld_config)
-	---------------------------------------------------------------------
-	-- NON-WEIGHT CODE --
-	--self._GrabbedObjectWeld = glue(self.HandModel.PrimaryPart, part, grip_config)
+	self._GrabbedObjectWeld = glue(self.HandModel.PrimaryPart, part, grip_config)
 end
 
 
@@ -348,7 +345,6 @@ function VRHand:Release(forced)
 	-- must check if holding an item
 	if self.HoldingObject == nil then return end
 	-- we are no longer holding
-
 
 	self.GripPoint.GripPoint.Value = false
 
@@ -386,20 +382,7 @@ function VRHand:Release(forced)
 			set_model_collision_group(obj, "Interactives")
 		end
 
-		--set_model_collision_group(obj, "Interactives") 
 	end)
-	-----------------------------------------------------------------------
-	-- ITEM WEIGHT CODE --
-	-- if we created a weld (we most likely did)
-	self._HandModelSoftWeld:Enable()
-	
-
-	if self._HandWeld then
-		self._HandWeld:Destroy()
-		self._HandWeld = nil
-	end
-	-----------------------------------------------------------------------
-
 	if self._GrabbedObjectWeld then
 		self._GrabbedObjectWeld:Destroy()
 		self._GrabbedObjectWeld = nil
@@ -410,7 +393,6 @@ function VRHand:Release(forced)
 	crelease:FireServer(self.HoldingObject, self.GripPoint, self.Handedness)
 
 	-- reset our fields
-	--
 	self.HoldingObject = nil
 	self.GripPoint = nil
 end
@@ -433,16 +415,19 @@ function VRHand:Update(dt)
 
 	-- TODO: optimize
 	local hand_from_virtual_distance = (self.VirtualHand.Position - self.HandModel.PrimaryPart.Position).magnitude
+	
 	if hand_from_virtual_distance > 0.25 then
-		self:SetRumble(hand_from_virtual_distance/8) -- play with this value.?
-		--SetCollisions(self.handModel, false)
+		self:SetRumble(hand_from_virtual_distance/8)
 	else
 		self:SetRumble(0)
-		--SetCollisions(self.handModel, true)
 	end
 
 	if _G.VR_DEBUG then return end
 	self.OriginRelativeControllerPosition = VRService:GetUserCFrame(self.UserCFrame)
+end
+
+function VRHand:GetGoalCFrame()
+	return self.Head.VirtualHead.CFrame * self.OriginRelativeControllerPosition
 end
 
 return VRHand
