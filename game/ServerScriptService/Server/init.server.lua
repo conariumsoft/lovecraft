@@ -72,7 +72,7 @@ local function on_plr_grab_object(player, object, grabbed, handstr)
 
     -- we own it :D
     if entry.owner == player then
-
+ 
         itemownerlist.SetEntryState(object, handstr, true)
 
         Ownership.SetModelNetworkOwner(object, player)
@@ -88,7 +88,6 @@ local function on_plr_drop_object(player, object_ref, grabbed_part, handstr)
 
     local entry = itemownerlist.GetEntry(object_ref, false)
 
-    print("bruh", entry.Left, entry.Right, entry.owner)
     if entry.owner ~= player then return end
 
     itemownerlist.SetEntryState(object_ref, handstr, false)
@@ -157,7 +156,7 @@ local on_client_hit = Networking.GenerateAsyncNetHook("ClientHit")
 
 
 local function client_reflect_gunshot(client, weapon)
-
+    on_client_shoot:FireAllClients(client, weapon)
 end
 
 -- ? no hit verification?

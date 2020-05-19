@@ -2,8 +2,6 @@ local Module = {}
 
 local items = {}
 
-local ServerRepresentation = {}
-
 function Module.GenerateEntry(instance)
     items[instance] = {
         owner = nil,
@@ -36,9 +34,14 @@ end
 
 function Module.SetEntryState(model, hand, value)
     local entry = Module.GetEntry(model, false)
-
     entry[hand] = value
-    print("SetState", model, entry[hand], value)
+end
+
+function Module.ReportData()
+    print("itemrefs:")
+    for index, value in pairs(items) do
+        print(string.format("modl: %s, owner: %s, l: %s, r:%s", index.Name, value.owner, tostring(value.left), tostring(value.right)))
+    end
 end
 
 return Module

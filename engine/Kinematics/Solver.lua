@@ -4,13 +4,6 @@
     Modified by joshuu
 ]] 
 
-local function sum(t)
-	local s = 0;
-	for _, value in ipairs(t) do
-		s = s + value;
-	end;
-	return s;
-end
 
 local Solver = {}
 

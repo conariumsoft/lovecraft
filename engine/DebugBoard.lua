@@ -58,12 +58,12 @@ function DebugBoard.RenderStep(head, left_hand, right_hand)
     local ryw= (r_yaw_left and dt or 0) - (r_yaw_right and dt or 0)
     local rr = (r_roll_left and dt or 0) - (r_roll_right and dt or 0)
 
-    left_hand.OriginRelativeControllerPosition = 
-    left_hand.OriginRelativeControllerPosition 
+    left_hand.RelativeHandCFrame = 
+    left_hand.RelativeHandCFrame 
         * CFrame.new(lx, ly, lz)*CFrame.Angles(lp, lyw, lr)
 
-    right_hand.OriginRelativeControllerPosition = 
-        right_hand.OriginRelativeControllerPosition 
+    right_hand.RelativeHandCFrame = 
+        right_hand.RelativeHandCFrame 
         * CFrame.new(rx, ry, rz)*CFrame.Angles(rp, ryw, rr)
 
     head.DebugMouseVec2 = Vector2.new(camera_rotation.X, camera_rotation.Y)

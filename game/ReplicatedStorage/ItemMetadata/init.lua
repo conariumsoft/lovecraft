@@ -67,16 +67,17 @@ end
 
 local GripPoint = GripInformation:subclass("GripPoint")
 
-function GripPoint:__ctor(Animation, Offset, PullForce, RotationForce, ApplyRotation, PullMax, RotateMax, PullResponsiveness, RotResponsiveness)
+function GripPoint:__ctor(Animation, Offset, PullForce, RotationForce, ApplyRotation, PullMax, RotateMax, PullResponsiveness, RotResponsiveness, PosRigid)
 	self.Offset = Offset or CFrame.new(0, 0, 0)
 	self.PullForce = PullForce or 100000
 	self.RotationForce = RotationForce or 250
-	self.PullMax = PullMax or 60000   -- max velocity that can be exerted on the assembly
+	self.PullMax = PullMax or 120000   -- max velocity that can be exerted on the assembly
 	self.RotateMax = RotateMax or 500 -- max angular velocity (rotation)
 	self.ApplyRotation = (ApplyRotation ~= nil) and ApplyRotation or false -- lock at initial grip rotation?
 	self.AnimationForHand = Animation or nil
 	self.PullResponsiveness = PullResponsiveness or 5
 	self.RotResponsiveness = RotResponsiveness or 200
+	self.PosRigid = PosRigid
 end
 
 function GripPoint:ToWeldConfiguration(master_part, follower_part)
@@ -89,7 +90,7 @@ function GripPoint:ToWeldConfiguration(master_part, follower_part)
 		rot_responsiveness = self.RotResponsiveness,
 		pos_responsiveness = self.PosResponsiveness,
 		cframe_offset = self.Offset,
-		pos_is_rigid = true,
+		pos_is_rigid = false,
 	}
 end
 
@@ -140,7 +141,7 @@ local ItemMetadata = {
 		grip_type = "GripPoint",
 		grip_data = {
 				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
-			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   80000,     250,   true,   math.huge),
+			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   80000,     350,   true,   math.huge),
 			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false,  math.huge),
 			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0),   500, 		0,   false), 
 		},

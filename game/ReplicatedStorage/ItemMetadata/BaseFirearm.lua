@@ -1,33 +1,25 @@
+_G.using "Lovecraft.Networking"
+
 local BaseInteractive = require(script.Parent.BaseInteractive)
 
-local BaseFirearm = BaseInteractive:subclass("BaseFirearm")
+local BaseFirearm = BaseInteractive:subclass("BaseFirearm") do
+    BaseFirearm.TriggerStiffness = 0.95
+    BaseFirearm.RateOfFire = 850
+    BaseFirearm.MuzzleFlipMax = 1500
+    BaseFirearm.MuzzleFlipMin = 50
+    BaseFirearm.YShakeMin = -15
+    BaseFirearm.YShakeMax = 15
+    BaseFirearm.ZShakeMin = -10
+    BaseFirearm.ZShakeMax = 10
+    BaseFirearm.RecoilRecoverySpeed = 2
+    BaseFirearm.BoltTravelDistance = 0.2
+    BaseFirearm.BarrelComponent = nil
+    BaseFirearm.MagazineComponent = nil
+    BaseFirearm.BoltComponent = nil
+    BaseFirearm.MagazineType = nil
+    BaseFirearm.Automatic = false
+end
 
-BaseFirearm.TriggerStiffness = 0.95
-BaseFirearm.RateOfFire = 850
-BaseFirearm.MuzzleFlipMax = 1500
-BaseFirearm.MuzzleFlipMin = 50
-BaseFirearm.YShakeMin = -15
-BaseFirearm.YShakeMax = 15
-BaseFirearm.ZShakeMin = -10
-BaseFirearm.ZShakeMax = 10
-BaseFirearm.RecoilRecoverySpeed = 2
-BaseFirearm.BoltTravelDistance = 0.2
-BaseFirearm.BarrelComponent = nil
-BaseFirearm.MagazineComponent = nil
-BaseFirearm.BoltComponent = nil
-BaseFirearm.MagazineType = nil
-BaseFirearm.Automatic = false
-
---[[
-BaseFirearm.RoundInChamber = true
-BaseFirearm.MagazineInserted = true
-BaseFirearm.MagazineRoundCount = 30
-
-BaseFirearm.Timer = 0
-
-BaseFirearm.OpenBolt = false
-BaseFirearm.BoltGrabbed = false
-]]
 -- this blows, but we just need to get guns working for now.
 
 local animation_track = nil
@@ -58,10 +50,6 @@ function BaseFirearm:HandleOnGrab(hand)
         print("Initial Anim Load:", animation_track)
     end
     local barrel = self.Model[self.BarrelComponent]
-    local magazine = self.Model[self.MagazineComponent]
-
-
-    --barrel.CFrame = barrel.CFrame * CFrame.Angles(math.rad(5), 0, 0)
 
     local muzzle_flip = Instance.new("BodyThrust") do
         muzzle_flip.Name = "MuzzleFlip"
@@ -91,16 +79,11 @@ function BaseFirearm:HandleOnRelease(hand)
 end
 ---------------------------------------------------
 
-function BaseFirearm:MagazineOnGrab(hand)
-    print("Magazine Grabbed!")
-end
+function BaseFirearm:MagazineOnGrab(hand) end
 
-function BaseFirearm:MagazineOnRelease(hand)
-    print("Magazine released!")
-end
+function BaseFirearm:MagazineOnRelease(hand) end
 ------------------------------------------------------
 function BaseFirearm:ChargingHandleOnGrab(hand)
-    print("ChargingHandle grabbed")
     self.BoltGrabbed = true
 end
 
@@ -124,16 +107,6 @@ function BaseFirearm:FireProjectile(hand, grip_point)
         local coach_ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
         local hit, pos = game.Workspace:FindPartOnRay(coach_ray, self.Model)
 
-        --[[if hit then
-            if hit.Parent:FindFirstChild("Humanoid") then
-                hit.Parent.Humanoid.Health = hit.Parent.Humanoid.Health - 100
-                for _, obj in pairs(hit.Parent:GetDescendants()) do
-                        
-                    if obj:IsA("WeldConstraint") then obj:Destroy() end
-                end
-            end
-        end]]
-
         local bullet_impact = Instance.new("Part") do
             bullet_impact.Color = Color3.new(1, 0, 0)
             bullet_impact.Shape = Enum.PartType.Ball
@@ -146,22 +119,16 @@ function BaseFirearm:FireProjectile(hand, grip_point)
         end
     end
 end
---[[
-    a groan
-    of tedium escapes me
-    startling the fearful
-    is this a test?
-    it has to be
-    otherwise I can't go on
-    draining patience, claimed vitality
-]]
+
 function BaseFirearm:Fire(hand, grip_point)
+    local cf_reflect = Networking.GetNetHook("ClientShoot")
+    cf_reflect:FireServer(self.Model)
     local barrel = self.Model[self.BarrelComponent]
     local bolt = self.Model[self.BoltComponent]
 
-    self.Model.fire:Stop()
-    self.Model.fire.TimePosition = 0.05
-    self.Model.fire:Play()
+    self.Model.Fire:Stop()
+    self.Model.Fire.TimePosition = 0.05
+    self.Model.Fire:Play()
 
     -- bolt anim
     animation_track:Stop()
@@ -299,7 +266,6 @@ function BaseFirearm:OnSimulationStep(hand, dt, grip_point)
             self:TriggerDown(hand, dt, grip_point)
             self.TriggerPressed = true
         end
-
         
         if hand.IndexFingerPressure < 0.25 then
             self.TriggerPressed = false
@@ -313,7 +279,7 @@ function BaseFirearm:OnSimulationStep(hand, dt, grip_point)
     end
 
     if grip_point.Name == "ChargingHandle" then
-       -- print("Holding ChargingHandle!")
+        
     end
 end
 
