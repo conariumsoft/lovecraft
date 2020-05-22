@@ -34,7 +34,8 @@
         "delay",
         "ItemInstances",
         "spawn",
-        "Kinematics"
+        "Kinematics",
+        "Stats"
     ],
     "Lua.runtime.version": "Lua 5.1"
 }

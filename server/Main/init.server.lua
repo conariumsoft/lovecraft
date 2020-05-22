@@ -11,38 +11,33 @@ _G.using "RBX.PhysicsService"
 _G.using "RBX.RunService"
 
 -------------------------------------------------------------------
--- Gameserver setup --
-
--- create remotes folder first
-Networking.CreateHookContainer()
-
--- drop interactive objects into appropriate collisiongroup
-for _, child in pairs(Workspace.physics:GetDescendants()) do
-    if child:IsA("BasePart") then
-        child:SetNetworkOwner(nil)
-        PhysicsService:SetPartCollisionGroup(child, "Interactives")
+-- Create remotes
+Networking.Initialize()
+local on_client_request_vr_state = Networking.GenerateNetHook     ("ClientRequestVRState")
+local on_client_grab_object      = Networking.GenerateAsyncNetHook("ClientGrab")
+local on_client_release_object   = Networking.GenerateAsyncNetHook("ClientRelease")
+local on_client_shoot            = Networking.GenerateAsyncNetHook("ClientShoot")
+local on_client_hit              = Networking.GenerateAsyncNetHook("ClientHit")
+-----------------------------------------------------------------------------
+-- Physically interactive objects are set into appropriate collision group
+for _, inst in pairs(Workspace.physics:GetDescendants()) do
+    if inst:IsA("BasePart") then
+        inst:SetNetworkOwner(nil)
+        PhysicsService:SetPartCollisionGroup(inst, "Interactives")
     end
 end
-
+---------------------------------------------------------------------------
 -- load animations for hand models
 require(script.loadanims)()
 
-
+------------------------------------------------------------
+-- server modules
 local givehands = require(script.givehands)
 local itemownerlist = require(script.itemownerlist)
 local data_highlight = require(script.datahighlight)
 
-
---- Remotes
-
--- client init
-local on_client_request_vr_state = Networking.GenerateNetHook("ClientRequestVRState")
-
-
-
 -- Player Object Control --
-local on_client_grab_object = Networking.GenerateAsyncNetHook("ClientGrab")
-local on_client_release_object = Networking.GenerateAsyncNetHook("ClientRelease")
+
 
 local function on_plr_grab_object(player, object, grabbed, handstr)
     if not object then
@@ -151,8 +146,7 @@ local function OnClientRequestVRState(player)
 end
 
 
-local on_client_shoot = Networking.GenerateAsyncNetHook("ClientShoot")
-local on_client_hit = Networking.GenerateAsyncNetHook("ClientHit")
+
 
 
 local function client_reflect_gunshot(client, weapon)
@@ -184,3 +178,5 @@ game.Players.PlayerAdded:Connect(function(plr)
     local c = plr.Character or plr.CharacterAdded:Wait()
     c.HeadJ.BillboardGui.TextLabel.Text = plr.Name
 end)
+
+require(script.Parent.gm_deathmatch)

@@ -18,25 +18,10 @@ BACKLOG:
 https://developer.roblox.com/en-us/api-reference/class/Stats
 https://developer.roblox.com/en-us/api-reference/class/DebuggerManager
 
-- Weapons System
-
 - Make base station work.
 - Player model correctly follows
 
-- Rumble when slapping things with hand
-    - Also add sound system that matches the slapped material
-- Low-Latency Singleplayer mode (Toggleable)
-- Can use the force in debugging mode *
-
-- Debug Information Wrist Watch? *
-
-- Movement system sorta works. Fix around base station
-
 - Climbing *
-
-- Make body & camera physics based (Can push yourself around?)
-
-- Object Weight Solver (For Grips N Shiet)
 
 - Ballistics Module
     - Determines properties such as the damage of a punch or slap.

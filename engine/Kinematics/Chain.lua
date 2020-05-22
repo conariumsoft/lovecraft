@@ -1,7 +1,6 @@
-local chain = {}
+local chain = _G.newclass("KinematicsChain")
 -- fabrik chain class
-function chain.new(joints, target)
-	local self = setmetatable({}, {__index = chain})
+function chain:__ctor(joints)
 
 	self.lengths = {}
 	self.totallength = 0
@@ -12,10 +11,9 @@ function chain.new(joints, target)
 	
 	self.n = #joints
 	self.tolerance = 0.01
-	self.target = target
+	self.target = Vector3.new(0, 0, 0)
 	self.joints = joints
 	self.origin = CFrame.new(joints[1].vec)
 	
-	return self
 end
 return chain

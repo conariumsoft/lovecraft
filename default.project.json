@@ -4,24 +4,26 @@
     "$className": "DataModel",
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
-      "$path": "game/ReplicatedStorage",
       "Lovecraft": {
         "$path": "engine"
+      },
+      "Data": {
+        "$path": "data"
       }
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "$path": "game/ServerScriptService"
+      "$path": "server"
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "$path": "game/StarterPlayer/StarterPlayerScripts"
+        "$path": "client"
       },
       "StarterCharacterScripts": {
         "$className": "StarterCharacterScripts",
-        "$path": "game/StarterPlayer/StarterCharacterScripts"
+        "$path": "char"
       }
     },
     "Workspace": {
@@ -50,32 +52,6 @@
             512
           ]
         }
-      }
-    },
-    "Lighting": {
-      "$className": "Lighting",
-      "$properties": {
-        "Ambient": [
-          0,
-          0,
-          0
-        ],
-        "Brightness": 2,
-        "GlobalShadows": true,
-        "Outlines": false,
-        "Technology": "Voxel"
-      }
-    },
-    "SoundService": {
-      "$className": "SoundService",
-      "$properties": {
-        "RespectFilteringEnabled": true
-      }
-    },
-    "HttpService": {
-      "$className": "HttpService",
-      "$properties": {
-        "HttpEnabled": true
       }
     }
   }

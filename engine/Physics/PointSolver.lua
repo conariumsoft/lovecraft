@@ -3,8 +3,8 @@ local Solver = require(script.Parent.Solver)
 local PointSolver = Solver:subclass("SoftWeld")
 ---
 -- @name ctor PointSolver:new
-function PointSolver:__ctor(master_part, follower_part, props)
-    Solver.__ctor(self, master_part, follower_part)
+function PointSolver:__ctor(master_attach, follower_attach, props)
+    Solver.__ctor(self, master_attach, follower_attach)
     props = props or {}
     local pos_enabled = props.pos_enabled or true
     local rot_enabled = (props.rot_enabled~=nil) and props.rot_enabled or true
@@ -20,6 +20,7 @@ function PointSolver:__ctor(master_part, follower_part, props)
     local rot_max_torque = props.rot_max_torque or 5000
     local rot_primary_axis_only = props.rot_primary_axis_only or false
     
+    -- TODO: phase attachment properties out of Solver classes
     local visible = true
 
     local master_offset = props.master_offset
@@ -46,7 +47,7 @@ function PointSolver:__ctor(master_part, follower_part, props)
         pos_constraint.Attachment0 = self.follower_attachment
 		pos_constraint.Attachment1 = self.master_attachment
 		
-		pos_constraint.Parent = self.master_part
+		pos_constraint.Parent = self.master_attachment
     end
 
     local rot_constraint = Instance.new("AlignOrientation") do
@@ -64,7 +65,7 @@ function PointSolver:__ctor(master_part, follower_part, props)
         rot_constraint.Attachment0 = self.follower_attachment
 		rot_constraint.Attachment1 = self.master_attachment
 		
-		rot_constraint.Parent = self.master_part
+		rot_constraint.Parent = self.master_attachment
     end
 
     self.position_constraint = pos_constraint

@@ -14,88 +14,51 @@ _G.using "Lovecraft.ItemInstances"
 local VRHand = _G.newclass("VRHand")
 ---
 -- @name VRHand:new()
-function VRHand:__ctor(player, vr_head, handedness, hand_model)
+function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 
-	self.Haptics = {} -- list of detected rumble motors
+	self.Haptics        = data.HapticMotorList -- list of detected rumble motors
+	self.UserCFrameEnum = data.VREnum
+	self.Handedness     = data.Handedness
+	self.Player			= data.Player
+	self.HandModel		= data.Model
+
+	self.GoalCFrame       = CFrame.new(0,0,0) -- where the hand will be pushed to...
+	self.SolvedGoalCFrame = CFrame.new(0, 0, 0)
+	self.OriginCFrame     = CFrame.new(0, 0, 0) -- cam origin?
+	self.RelativeCFrame   = CFrame.new(0, 0, 0)
+	self.DebugCFrame	  = CFrame.new(0, 0, 0)
+ 
 	self.IsGripped = true
 	self.IndexFingerPressure = 0
 	self.GripPressure = 0
 	self.Anims = {} -- anim list? (make static anim list?)
-    self.CurrentAnim = nil
-	self.IsRunning = false
-	self.HandPosition = Vector3.new(0, 0, 0)
-	self.RelativeHandCFrame = CFrame.new(0, 0, 0) -- WTF is this name??
-
+	self.CurrentAnim = nil
+	
 	self.ItemInstance = nil
 
-	self.Head = vr_head
-	self.Player = player
-	self.Handedness = handedness
-
-	-- does VR controller support vibration?
-	local has_vibration = HapticService:IsVibrationSupported(Enum.UserInputType.Gamepad1)
-
-	-- grab haptic enums (ID's for motors)
-	if has_vibration then
-		if self.Handedness == "Left" then
-			self.Haptics = { Enum.VibrationMotor.LeftTrigger,  Enum.VibrationMotor.LeftHand  }
-		else
-			self.Haptics = { Enum.VibrationMotor.RightTrigger, Enum.VibrationMotor.RightHand }
-		end
+	 
+	local hgp = Instance.new("Part") do
+		hgp.Anchored = true
+		hgp.CanCollide = false
+		hgp.Transparency = 0.5
+		hgp.Size = Vector3.new(0.1, 0.1, 0.1)
+		hgp.Parent = game.Workspace
 	end
+	local hgp_attachment = Instance.new("Attachment")
+	hgp_attachment.Parent = hgp
 
-	-- detect correct hand enum for later use 
-	-- make an enum?
-	if     self.Handedness == "Left" then
-		self.UserCFrame = Enum.UserCFrame.LeftHand
-	elseif self.Handedness == "Right" then
-		self.UserCFrame = Enum.UserCFrame.RightHand
-	end
-	self.HandModel = hand_model
-
-	-- visualization of where VRService is reporting the hand to be
-	local virtual_hand = Instance.new("Part") do 
-		virtual_hand.Size = Vector3.new(0.2,0.2,0.2)
-		virtual_hand.Anchored = true
-		virtual_hand.CanCollide = false
-		virtual_hand.Transparency = 0.5
-		virtual_hand.Color = Color3.new(0.5, 0.5, 1)
-		virtual_hand.Name = "VirtualHand"
-		virtual_hand.Parent = game.Workspace
-	end
-
-	self.VirtualHand = virtual_hand
-
-	local corr_hand = Instance.new("Part") do
-		corr_hand.Size = Vector3.new(0.2, 0.2, 0.2)
-		corr_hand.Anchored = true
-		corr_hand.CanCollide = false
-		corr_hand.Transparency = 0.5
-		corr_hand.Color = Color3.new(1, 1, 0)
-		corr_hand.Parent = game.Workspace
-		corr_hand.Name = "CorrectedHand"
-	end
-
-	self.CorrectedHand = corr_hand
-
+	self.HandGoalPart = hgp
+	
 	-- glue weld that binds hand to correct position and orientation,
 	-- while still respecting physical limits
-	self._HandModelSoftWeld = Physics.PointSolver:new(self.CorrectedHand, self.HandModel.PrimaryPart, {
-		pos_responsiveness = 125,
+	self._HandModelSoftWeld = Physics.PointSolver:new(hgp_attachment, self.HandModel.PrimaryPart.Attachment, {
+		pos_responsiveness = 200,
 		rot_responsiveness = 100,
-		pos_max_force      = 4000,
+		pos_max_force      = 20000,
 		rot_max_torque     = 3000,
-		pos_max_velocity   = 3000,
+		pos_max_velocity   = 300000000,
 	})
 
-	--[[self._HandModelSoftWeld = Physics.PointSolver:new(self.VirtualHand, self.HandModel.PrimaryPart, {
-		pos_responsiveness = 100,
-		rot_responsiveness = 40,
-		pos_max_force = 0,
-		rot_max_torque = 0,
-		pos_max_velocity = 0,
-		
-	})]]
 	-- used later
 	self._GrabbedObjectWeld = nil -- hand->held object glue
 	self.HoldingObject = nil -- if grabbed something
@@ -172,18 +135,14 @@ function VRHand:SetIndexFingerCurl(grip_strength)
 	end
 end
 
----
 function VRHand:SetGripCurl(grip_strength)
 	self.GripPressure = grip_strength
 	self:SetAnimTimeScale("Grip", grip_strength)
 end
-
----
-
 local function object_pickup_criteria(part)
 	-- grip point will be false if our/another player isn't holding
 	for _, child in pairs(part:GetChildren()) do
-		if child.Name == "GripPoint" and child.Value == false then
+		if child.Name == "GripPoint" and child.Visible == false then
 			return true
 		end
 	end
@@ -249,7 +208,7 @@ function VRHand:Grab()
 	local notify_server_grab = Networking.GetNetHook("ClientGrab")
 	notify_server_grab:FireServer(item_pickup, part, self.Handedness)
 
-	part.GripPoint.Value = true
+	part.GripPoint.Visible = true
 
 	self.HoldingObject = item_pickup
 	self.GripPoint = part
@@ -318,7 +277,7 @@ function VRHand:Release(forced)
 	if self.HoldingObject == nil then return end
 	-- we are no longer holding
 
-	self.GripPoint.GripPoint.Value = false
+	self.GripPoint.GripPoint.Visible = false
 	local obj = self.HoldingObject
 	local object_meta = ItemMetadata[obj.Name]
 
@@ -362,45 +321,34 @@ function VRHand:Release(forced)
 	self.HoldingObject = nil
 	self.GripPoint = nil
 end
+
+function VRHand:DoNearbyCheck()
+
+	
+end
+
 ---
 function VRHand:Update(dt)
+	self:DoNearbyCheck()
+
+	self.RelativeCFrame = VRService:GetUserCFrame(self.UserCFrameEnum)
 
 	if self.ItemInstance then
 		self.ItemInstance:OnSimulationStep(self, dt, self.GripPoint)
 	end
 
-	local reported_cframe = self.Head.VirtualHead.CFrame * self.RelativeHandCFrame
-	self.HandPosition = reported_cframe
-	self.VirtualHand.CFrame = reported_cframe
+	self.HandGoalPart.CFrame = self.SolvedGoalCFrame
+	local vrhand_goal_cframe = self.SolvedGoalCFrame
 
 	-- TODO: optimize
-	local hand_from_virtual_distance = (self.VirtualHand.Position - self.HandModel.PrimaryPart.Position).magnitude
+	local hand_from_virtual_distance = (vrhand_goal_cframe.p - self.HandModel.PrimaryPart.Position).magnitude
 	
 	if hand_from_virtual_distance > 0.25 then
 		self:SetRumble(hand_from_virtual_distance/8)
 	else
 		self:SetRumble(0)
 	end
-
-	if not _G.VR_DEBUG then
-		self.RelativeHandCFrame = VRService:GetUserCFrame(self.UserCFrame)
-	end
-end
-
-function VRHand:GetRelativeCFrame()
-	return self.RelativeHandCFrame
-end
-
-function VRHand:GetPreSolveWorldCFrame()
-	return self.Head.VirtualHead.CFrame * self.RelativeHandCFrame
-end
-
-function VRHand:GetPostSolveWorldCFrame()
-	return self.CorrectedHand.CFrame
-end
-
-function VRHand:SetPostSolveWorldCFrame(cf)
-	self.CorrectedHand.CFrame = cf
+	
 end
 
 return VRHand

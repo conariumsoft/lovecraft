@@ -11,7 +11,6 @@ local Hecate = BaseFirearm:subclass("Hecate")
     Action: Blowback, Closed bolt,
     RoF: 850 rounds/minute
     Muzzle velocity: 320 m/s (1050 ft/s)
-
 ]]
 
 Hecate.TriggerStiffness = 0.95

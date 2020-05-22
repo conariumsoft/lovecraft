@@ -3,7 +3,8 @@ _G.using "RBX.RunService"
 
 local Networking = {}
 
-function Networking.CreateHookContainer()
+function Networking.Initialize()
+    if not RunService:IsServer() then error() end
     local network_hook_folder = Instance.new("Folder") do
         network_hook_folder.Name = "NetworkHooks"
         network_hook_folder.Parent = ReplicatedStorage
@@ -11,6 +12,7 @@ function Networking.CreateHookContainer()
 end
 
 function Networking.GenerateNetHook(name)
+    if not RunService:IsServer() then error() end
     local sync = Instance.new("RemoteFunction")
     sync.Name = name
     sync.Parent = ReplicatedStorage.NetworkHooks
@@ -19,6 +21,7 @@ function Networking.GenerateNetHook(name)
 end
 
 function Networking.GenerateAsyncNetHook(name)
+    if not RunService:IsServer() then error() end
     local async = Instance.new("RemoteEvent")
     async.Name = name
     async.Parent = ReplicatedStorage.NetworkHooks
@@ -29,9 +32,6 @@ function Networking.GetNetHook(name)
     return ReplicatedStorage.NetworkHooks:FindFirstChild(name)
 end
 
-function Networking.GetAsyncNetHook(name)
-    -- unused
-end
 
 
 return Networking

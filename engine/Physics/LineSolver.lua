@@ -2,8 +2,8 @@ local Solver = require(script.Parent.Solver)
 
 local GripLineSolver = Solver:subclass("GripLineSolver")
 
-function GripLineSolver:__ctor(master_part, follower_part, props)
-    Solver.__ctor(self, master_part, follower_part)
+function GripLineSolver:__ctor(master_attach, follower_attach, props)
+    Solver.__ctor(self, master_attach, follower_attach)
     local line_constraint = Instance.new("PrismaticConstraint") do
         line_constraint.ActuatorType = Enum.ActuactorType.Servo
     end

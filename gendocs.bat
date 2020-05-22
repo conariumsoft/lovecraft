@@ -1,0 +1,1 @@
+luadoc_start.bat -d ../scientiist.github.io/lovecraft/ engine

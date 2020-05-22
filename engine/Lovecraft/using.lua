@@ -23,10 +23,6 @@ local module_database = {
         identifier = "CollisionMasking",
         reference = engine_root.CollisionMasking
     },
-    ["Lovecraft.VRHead"] = {
-        identifier = "VRHead",
-        reference = engine_root.VRHead,
-    },
     ["Lovecraft.DebugBoard"] = {
         identifier = "DebugBoard",
         reference = engine_root.DebugBoard,
