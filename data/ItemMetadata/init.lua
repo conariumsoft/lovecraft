@@ -38,61 +38,21 @@ GripSurface -- hand can grab anywhere on the object
 ```
 ]]
 
+----------------------------------------------------------------------
+-- Grip Information Abstract Class -- 
+
 local GripInformation = _G.newclass("GripInformation")
 
-function GripInformation:__ctor(props)
-	self.Animation = nil -- string
-	
-end
-
-function GripInformation:__default(propname, t, default) -- default
-	if t[propname] then
-		self[propname] = t[propname]
-	else
-		self[propname] = default
-	end
-end
-
-function GripInformation:__pullfrom(t)
-	for key, val in pairs(t) do
-		if self[key] then
-			self[key] = val
-		end
-	end
-end
-
-function GripInformation:ToWeldConfiguration(master_part, follower_part)
-	error("NotImplemented! Use subclass methods.")
-end
-
+---------------------------------
 local GripPoint = GripInformation:subclass("GripPoint")
 
-function GripPoint:__ctor(Animation, Offset, PullForce, RotationForce, ApplyRotation, PullMax, RotateMax, PullResponsiveness, RotResponsiveness, PosRigid)
-	self.Offset = Offset or CFrame.new(0, 0, 0)
-	self.PullForce = PullForce or 100000
-	self.RotationForce = RotationForce or 250
-	self.PullMax = PullMax or 120000   -- max velocity that can be exerted on the assembly
-	self.RotateMax = RotateMax or 500 -- max angular velocity (rotation)
-	self.ApplyRotation = (ApplyRotation ~= nil) and ApplyRotation or false -- lock at initial grip rotation?
+
+function GripPoint:__ctor(Animation, Offset)
+	self.Offset = Offset or nil
 	self.AnimationForHand = Animation or nil
-	self.PullResponsiveness = PullResponsiveness or 5
-	self.RotResponsiveness = RotResponsiveness or 200
-	self.PosRigid = PosRigid
 end
 
-function GripPoint:ToWeldConfiguration(master_part, follower_part)
-	return  {
-		pos_max_force = self.PullForce,
-		rot_max_torque = self.RotationForce,
-		pos_max_velocity = self.PullMax,
-		rot_max_angular_velocity = self.RotateMax,
-		rot_enabled = self.ApplyRotation,
-		rot_responsiveness = self.RotResponsiveness,
-		pos_responsiveness = self.PosResponsiveness,
-		cframe_offset = self.Offset,
-		pos_is_rigid = false,
-	}
-end
+
 
 local GripLine = GripInformation:subclass("GripLine")
 
@@ -100,9 +60,6 @@ function GripLine:__ctor(Animation, Offset, AlignmentForce)
 	
 end
 
-function GripLine:ToWeldConfiguration(master_part, follower_part)
-
-end
 
 --
 local GripSocket = GripPoint:subclass("GripSocket")

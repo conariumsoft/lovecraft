@@ -10,6 +10,22 @@ _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
 _G.using "Lovecraft.ItemInstances"
 
+local function hand_attachment_part()
+	local hgp = Instance.new("Part") do
+		hgp.Anchored = true
+		hgp.CanCollide = false
+		hgp.Transparency = 0.25
+		hgp.Color = Color3.new(0, 1, 1)
+		hgp.Size = Vector3.new(0.1, 0.1, 0.1)
+		hgp.Parent = game.Workspace
+		hgp.Name = "HandAttachmentPart"
+	end
+	
+	return hgp
+end
+
+
+
 --- VR Hand Base class. 
 local VRHand = _G.newclass("VRHand")
 ---
@@ -33,17 +49,13 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self.GripPressure = 0
 	self.Anims = {} -- anim list? (make static anim list?)
 	self.CurrentAnim = nil
+
+
+	self.RecoilCorrectionCFrame = CFrame.new(0, 0, 0)
 	
 	self.ItemInstance = nil
 
-	 
-	local hgp = Instance.new("Part") do
-		hgp.Anchored = true
-		hgp.CanCollide = false
-		hgp.Transparency = 0.5
-		hgp.Size = Vector3.new(0.1, 0.1, 0.1)
-		hgp.Parent = game.Workspace
-	end
+	local hgp = hand_attachment_part()
 	local hgp_attachment = Instance.new("Attachment")
 	hgp_attachment.Parent = hgp
 
@@ -52,12 +64,15 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	-- glue weld that binds hand to correct position and orientation,
 	-- while still respecting physical limits
 	self._HandModelSoftWeld = Physics.PointSolver:new(hgp_attachment, self.HandModel.PrimaryPart.Attachment, {
-		pos_responsiveness = 200,
+		pos_responsiveness = 100,
 		rot_responsiveness = 100,
-		pos_max_force      = 20000,
+		pos_max_force      = 5000,
 		rot_max_torque     = 3000,
-		pos_max_velocity   = 300000000,
+		pos_max_velocity   = 100000,
 	})
+
+
+	self._CollisionMask = nil
 
 	-- used later
 	self._GrabbedObjectWeld = nil -- hand->held object glue
@@ -67,6 +82,19 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	-- confirm replication of Animator (or else animations will not replicate back to server)
 	self.Animator = self.HandModel.Animator
 	self:_LoadAnimationTracks()
+
+	local highlight = Instance.new("Part") do
+		highlight.Size = Vector3.new(0.3, 0.3, 0.3)
+		highlight.Shape = Enum.PartType.Ball
+		highlight.Parent = Workspace
+		highlight.Anchored = true
+		highlight.CanCollide = false
+		highlight.Color = Color3.new(0.25, 0.25, 1)
+		highlight.Material = Enum.Material.ForceField
+		highlight.Transparency = 0
+	end
+
+	self.HighlightPart = highlight
 end
 
 function VRHand:_LoadAnimationTracks()
@@ -81,6 +109,8 @@ end
 -- since models are physical, it's a good idea to teleport them along with the player
 -- lest the get stuck in walls
 function VRHand:Teleport(coord)
+	self.GoalCFrame = coord
+	self.SolvedGoalCFrame = coord
 	self.HandModel:SetPrimaryPartCFrame(coord)
 end
 
@@ -139,37 +169,13 @@ function VRHand:SetGripCurl(grip_strength)
 	self.GripPressure = grip_strength
 	self:SetAnimTimeScale("Grip", grip_strength)
 end
-local function object_pickup_criteria(part)
-	-- grip point will be false if our/another player isn't holding
-	for _, child in pairs(part:GetChildren()) do
-		if child.Name == "GripPoint" and child.Visible == false then
-			return true
-		end
-	end
-	return false
-end
 
-local function find_object_can_pickup(region)
-	local list = region:FindPartsInRegion3WithWhiteList(Workspace.physics:GetDescendants())
-	for _, v in pairs(list) do
-		local matches_criteria = object_pickup_criteria(v)
-		if matches_criteria then
-			return v.Parent, v
-		end
-	end
-end
 
--- when item is grabbed
--- stick to hand at the position of grip
-local function glue(hand_part, grip_point, glue_config)
-	return Physics.PointSolver:new(hand_part, grip_point, glue_config)
-end
-
+-- TODO: move these to their own helper module
 local function is_model_collision_group(model, group)
 	for _, obj in pairs(model:GetDescendants()) do
 		if obj:IsA("BasePart") then
 			if PhysicsService:CollisionGroupContainsPart(group, obj) == false then
-
 				return false
 			end
 		end
@@ -177,7 +183,7 @@ local function is_model_collision_group(model, group)
 	return true
 end
 
----
+-- TODO: move these to their own helper module
 local function set_model_collision_group(model, group)
 	for _, obj in pairs(model:GetDescendants()) do
 		if obj:IsA("BasePart") then
@@ -188,86 +194,91 @@ end
 
 ---
 function VRHand:Grab()
-	--- find something to pick up within our palm region
-	-- TODO: make this the palm area of real hand
-	local reported_pos = self.HandModel.PrimaryPart.CFrame
-	local palm_radius = 0.25
-	local region = RotatedRegion3.new(
-		reported_pos,
-		Vector3.new(palm_radius,palm_radius,palm_radius)
-	)
-	
-	-- compare objects in list against critera
-	-- matched object or nil
-	local item_pickup, part = find_object_can_pickup(region)
-	
-	if item_pickup == nil then return end
-	-- if you make it here, then we found our item
+	local part = self:GetClosestInteractive()
+
+	if part == nil then return end -- exit early if nothing to grab
+	local item_model = part.Parent
+
 
 	-- tell server what we're up to (picking something up)
 	local notify_server_grab = Networking.GetNetHook("ClientGrab")
-	notify_server_grab:FireServer(item_pickup, part, self.Handedness)
+	notify_server_grab:FireServer(item_model, part, self.Handedness)
 
-	part.GripPoint.Visible = true
+	part.GripPoint.Grabbed.Value = true
 
-	self.HoldingObject = item_pickup
+	self.HoldingObject = item_model
 	self.GripPoint = part
 
-	local grip_config = {-- ! do not change
-		follower_offset = part.CFrame:inverse() * self.HandModel.PrimaryPart.CFrame,
-		rot_responsiveness = 100,
-		rot_max_torque = 250,
-		pos_max_force = 40000,
-		pos_is_rigid = false,
-		rot_is_reactive = true,
-	}
+	local collision_filter  = Instance.new("NoCollisionConstraint")
+	collision_filter.Parent = self.HandModel.PrimaryPart
+	collision_filter.Part0  = self.HandModel.PrimaryPart
+	collision_filter.Part1  = part
+
+	self._CollisionMask = collision_filter
+	
+	local hold_offset_cf = part.CFrame:inverse() * self.HandModel.PrimaryPart.CFrame
 
 	-- object's Model.Name is used to search.
 	-- using metadata to configure how hand welds to model
-	local obj_meta = ItemMetadata[item_pickup.Name]
+	local obj_meta = ItemMetadata[item_model.Name]
 
 	-- found no metadata -> assume default properties
 	-- (most likely non-functional prop or scenery, needs no custom anim or grip style)
 	if obj_meta then
 		-- grip_data table contains def 
 		if obj_meta.grip_data then
-
 			-- class is optional value
 			-- defines item functionality
 			if obj_meta.class then
-				local inst = ItemInstances.GetClassInstance(item_pickup)
+				local inst = ItemInstances.GetClassInstance(item_model)
 				if not inst then
-					inst = ItemInstances.CreateClassInstance(item_pickup, obj_meta.class)
+					inst = ItemInstances.CreateClassInstance(item_model, obj_meta.class)
 				end
 				self.ItemInstance = inst
 				inst:OnGrab(self, part)
 			end
 			-- if grip data is missing for this
 			-- piece, assume "Anywhere" grip style
-			if obj_meta.grip_data[part.Name] then
-				grip_config = obj_meta.grip_data[part.Name]:ToWeldConfiguration()
+			local gripinformation = obj_meta.grip_data[part.Name]
+
+			if gripinformation then
+				hold_offset_cf = gripinformation.Offset
+
+
+				if gripinformation:isA("GripPoint") then
+					self.HandModel.PrimaryPart.CFrame = part.CFrame
+				end
 			end
 		end
 	end
+	-- correct attachment CFrame
+	part.GripPoint.CFrame = hold_offset_cf
 
-	-- collision group..
-	local other = (self.Handedness == "Left") and "Right" or "Left" --! giant weiner
-	local is_not_yet = is_model_collision_group(item_pickup, "Interactives")
+
+	-------------------------------------------------
+	-- collision group solving?
+	local is_not_yet = is_model_collision_group(item_model, "Interactives")
 
 	-- one is already attached
-	if is_not_yet then
+	--[[if is_not_yet then
 		print("Grabbed"..self.Handedness)
-		set_model_collision_group(item_pickup, "Grabbed"..self.Handedness)
+		set_model_collision_group(item_model, "Grabbed"..self.Handedness)
 	else
 		print("GrabbedBoth")
-		set_model_collision_group(item_pickup, "GrabbedBoth")
-	end
+		set_model_collision_group(item_model, "GrabbedBoth")
+	end]]
+	-------------------------------------------------
 
-	-- firstly, disable hand->handmodel softweld.
-	-----------------------------------------------------------------------
-	-- ITEM WEIGHT CODE --
-	self._GrabbedObjectWeld = glue(self.HandModel.PrimaryPart, part, grip_config)
+	-- last step, weld together
+	local weld = Instance.new("WeldConstraint") do
+		weld.Part1 = part
+		weld.Part0 = self.HandModel.PrimaryPart
+		weld.Parent = part
+	end
+	self._GrabbedObjectWeld = weld
 end
+
+
 
 --- fired when hand grip goes below certain threshold
 function VRHand:Release(forced) 
@@ -277,7 +288,7 @@ function VRHand:Release(forced)
 	if self.HoldingObject == nil then return end
 	-- we are no longer holding
 
-	self.GripPoint.GripPoint.Visible = false
+	self.GripPoint.GripPoint.Grabbed.Value = false
 	local obj = self.HoldingObject
 	local object_meta = ItemMetadata[obj.Name]
 
@@ -292,7 +303,12 @@ function VRHand:Release(forced)
 	-- async wait .25 seconds, must delay so hand and object's collisions don't 
 	-- immediately get the two stuck inside each other, then reset the collision mask on the held object
 	delay(0.25, function() 
-		local is_us = is_model_collision_group(obj, "Grabbed"..self.Handedness)
+
+		self._CollisionMask:Destroy()
+
+	-- COLLISION GROUP METHOD: DO NOT LIKE!
+
+	--[[	local is_us = is_model_collision_group(obj, "Grabbed"..self.Handedness)
 		local is_both  = is_model_collision_group(obj, "GrabbedBoth")
 
 		-- one is already attached
@@ -305,7 +321,7 @@ function VRHand:Release(forced)
 		elseif is_us then
 			print("last grip")
 			set_model_collision_group(obj, "Interactives")
-		end
+		end]]
 
 	end)
 	if self._GrabbedObjectWeld then
@@ -322,14 +338,47 @@ function VRHand:Release(forced)
 	self.GripPoint = nil
 end
 
-function VRHand:DoNearbyCheck()
 
-	
+
+
+function VRHand:GetClosestInteractive(min_distance)
+	local closest_part = nil
+	local closest_dist = math.huge
+	min_distance = min_distance or 1
+
+	for _, part in pairs(Workspace.Physical:GetDescendants()) do
+		if part:FindFirstChild("GripPoint") then
+			local dist = (part.Position - self.HandModel.PrimaryPart.Position).magnitude
+			if dist < min_distance and dist < closest_dist then
+				closest_part = part
+			end
+		end
+	end
+	return closest_part
+end
+
+function VRHand:HighlightSphere(part)
+	-- reset
+	if part == nil then
+		self.HighlightPart.CFrame = CFrame.new(0, 9999999, 0)
+		return
+	end
+
+	self.HighlightPart.CFrame = CFrame.new(part.Position)
+
+	local largest_axis = math.max(part.Size.X, part.Size.Y, part.Size.Z)
+	self.HighlightPart.Size = Vector3.new(largest_axis+0.1, largest_axis+0.1, largest_axis+0.1)
 end
 
 ---
 function VRHand:Update(dt)
-	self:DoNearbyCheck()
+	local closest = self:GetClosestInteractive()
+
+
+	-- highlight closest manipulatable object
+	self:HighlightSphere(closest)
+	--end
+
 
 	self.RelativeCFrame = VRService:GetUserCFrame(self.UserCFrameEnum)
 

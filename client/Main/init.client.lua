@@ -1,6 +1,10 @@
 --[[
 	StarterPlayer/StarterPlayerScripts/Main
-	Client game loop. Handles input and local rendering
+	Client game loop.
+	Local UI
+	Kinematics
+	Input
+	Profiling
 ]]--
 require(game.ReplicatedStorage.Lovecraft.Lovecraft)
 
@@ -121,15 +125,15 @@ local ik_shoulder_width = 1.2
 local ik_shoulder_height = 0.7
 
 local ik_leftarm_chain = Kinematics.Chain:new({
-	Kinematics.Joint:new(nil, ik_upper_arm_bone_len),
+	Kinematics.Joint:new(nil, 1),
 	Kinematics.Joint:new(nil, ik_lower_arm_bone_len),
-	Kinematics.Joint:new(nil, 1)
+	Kinematics.Joint:new(nil, ik_upper_arm_bone_len),
 })
 
 local ik_rightarm_chain = Kinematics.Chain:new({
-	Kinematics.Joint:new(nil, ik_upper_arm_bone_len),
+	Kinematics.Joint:new(nil, 1),
 	Kinematics.Joint:new(nil, ik_lower_arm_bone_len),
-	Kinematics.Joint:new(nil, 1)
+	Kinematics.Joint:new(nil, ik_upper_arm_bone_len),
 })
 
 local function line_to_cframe(vec1, vec2)
@@ -144,11 +148,17 @@ local function kinematics(base_cf)
 	local lefthand_goal_cf  = left_hand.GoalCFrame--base_cf * left_hand:GetRelativeCFrame()
 	local righthand_goal_cf = right_hand.GoalCFrame--base_cf * right_hand:GetRelativeCFrame()
 
-	ik_leftarm_chain.origin   = base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)
-	ik_rightarm_chain.origin  = base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)
+	--ik_leftarm_chain.origin   = base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)
+	--ik_rightarm_chain.origin  = base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)
 
-	ik_leftarm_chain.target  = (lefthand_goal_cf  * CFrame.new(0, 0, 0.5)).Position
-	ik_rightarm_chain.target = (righthand_goal_cf * CFrame.new(0, 0, 0.5)).Position
+	ik_leftarm_chain.origin = left_hand.HandModel.PrimaryPart.CFrame
+	ik_rightarm_chain.origin = right_hand.HandModel.PrimaryPart.CFrame
+
+
+	ik_leftarm_chain.target  = (game.Workspace.CurrentCamera.CFrame * left_hand.DebugCFrame:inverse()).Position
+	--(base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)).Position--(lefthand_goal_cf  * CFrame.new(0, 0, 0.5)).Position
+	ik_rightarm_chain.target = (game.Workspace.CurrentCamera.CFrame * right_hand.DebugCFrame:inverse()).Position
+	--(base_cf * CFrame.new(-ik_shoulder_width,  -ik_shoulder_height, 0)* right_hand.RelativeCFrame).Position--(righthand_goal_cf * CFrame.new(0, 0, 0.5)).Position
 
 	-- this many not be nessecary?
 	ik_leftarm_chain.joints[1].vec  = ik_leftarm_chain.origin.p
@@ -158,27 +168,29 @@ local function kinematics(base_cf)
 	Kinematics.Solver.Solve(ik_rightarm_chain)
 	-- pull solved position back out.
 	local lhand_constrained_goal = (
-        CFrame.new(ik_leftarm_chain.joints[3].vec) *
+        CFrame.new(ik_leftarm_chain.joints[1].vec) *
         CFrame.Angles(lefthand_goal_cf:ToEulerAnglesXYZ())
         * CFrame.new(0, 0.1, -0.5)
 	)
 	
 	local rhand_constrained_goal = (
-        CFrame.new(ik_rightarm_chain.joints[3].vec) *
+        CFrame.new(ik_rightarm_chain.joints[1].vec) *
         CFrame.Angles(righthand_goal_cf:ToEulerAnglesXYZ()) 
         * CFrame.new(0, 0.1, -0.5)
     ) 
 
 	-- set hand goals to constrained position
-	left_hand.SolvedGoalCFrame = lhand_constrained_goal
-	right_hand.SolvedGoalCFrame = rhand_constrained_goal
+	left_hand.SolvedGoalCFrame = left_hand.GoalCFrame--lhand_constrained_goal
+	right_hand.SolvedGoalCFrame = right_hand.GoalCFrame--rhand_constrained_goal
 
 	-- BODY PARTS --
 	-- TODO: once body is fully connected, this'll change
-	ch_leftupper.CFrame = line_to_cframe(ik_leftarm_chain.joints[1].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_leftlower.CFrame = line_to_cframe(ik_leftarm_chain.joints[2].vec, ik_leftarm_chain.joints[3].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_rightupper.CFrame = line_to_cframe(ik_rightarm_chain.joints[1].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_rightlower.CFrame = line_to_cframe(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[3].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_leftupper.CFrame = line_to_cframe(ik_leftarm_chain.joints[3].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_leftlower.CFrame = line_to_cframe(ik_leftarm_chain.joints[2].vec, ik_leftarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_rightupper.CFrame = line_to_cframe(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_rightlower.CFrame = line_to_cframe(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
+
+
 
 end
 ------------------------
@@ -211,36 +223,7 @@ end
 local hud = ReplicatedStorage.HUD:Clone()
 hud.Parent = game.Workspace
 ------------------------------------------------------------------------------------------------
--- SPHERE HIGHLIGHT --
--- Add a visual indicator to manipulatable objects that are close to hands.
-local highlight_left = Instance.new("Part") do
-	highlight_left.Size = Vector3.new(0.5, 0.5, 0.5)
-	highlight_left.Shape = Enum.PartType.Ball
-	highlight_left.Parent = Workspace
-	highlight_left.Anchored = true
-	highlight_left.CanCollide = false
-	highlight_left.Color = Color3.new(1, 1, 1)
-	highlight_left.Transparency = 0.5
-end
 
-local highlight_right = highlight_left:Clone() do
-	highlight_right.Parent = Workspace
-end
-
-local function run_grabbable_highlight(hand, hl)
-	for _, part in pairs(Workspace.physics:GetDescendants()) do
-		if part:FindFirstChild("GripPoint") then
-
-			local dist = (part.Position - hand.HandModel.PrimaryPart.Position).magnitude
-
-			if dist < 1 then
-				hl.CFrame = CFrame.new(part.Position)
-			else
-				hl.CFrame = CFrame.new(0, 9999999, 0)
-			end
-		end
-	end
-end
 -----------------------------------------------------------------------
 local function calculate_camera_cframe()
 	if DEV_vrkeyboard then
@@ -259,10 +242,7 @@ end
 local function on_renderstep(delta)
 	profile(delta)
 
-	run_grabbable_highlight(left_hand, highlight_left)
-	run_grabbable_highlight(right_hand, highlight_right)
-
-	cl_manual_translation = CFrame.new(cl_character.HumanoidRootPart.Position)
+	cl_manual_translation = CFrame.new(cl_character.HumanoidRootPart.CFrame.Position)
 
 	local cam_cf = calculate_camera_cframe()
 
@@ -270,26 +250,30 @@ local function on_renderstep(delta)
 
 	local headset_relative_cf = VRService:GetUserCFrame(Enum.UserCFrame.Head)
 
-	--return 
 	-- set headmodel to coorrect world pos
 	local head_world_cf = cam_cf * headset_relative_cf
 	head_model.CFrame = head_world_cf
 
-	hud.CFrame = cl_camera.CFrame * CFrame.new(0, 0, -1) -- hud offset
-
-	-- TODO: hands not exactly lining up in VR mode
-	left_hand.GoalCFrame  = head_world_cf * left_hand.RelativeCFrame * left_hand.DebugCFrame
-	right_hand.GoalCFrame = head_world_cf * right_hand.RelativeCFrame * right_hand.DebugCFrame
+	-- TODO: enable when HUD is ready
+	--hud.CFrame = cl_camera.CFrame * CFrame.new(0, 0, -1) -- hud offset
 
 	if not DEV_nokinematics then
 		kinematics(head_world_cf)
 	end
 
 	if DEV_vrkeyboard then
+
+		-- TODO: hands not exactly lining up in VR mode
+		left_hand.GoalCFrame  = cam_cf * left_hand.RelativeCFrame *  left_hand.RecoilCorrectionCFrame * left_hand.DebugCFrame
+		right_hand.GoalCFrame = cam_cf * right_hand.RelativeCFrame * right_hand.RecoilCorrectionCFrame * right_hand.DebugCFrame
+
 		DEV_override_mouse = DEV_override_mouse + (
 			UserInputService:GetMouseDelta()
 			* math.rad(DEV_override_mouse_lookspeed)
 		)
+	else
+		left_hand.GoalCFrame  = cam_cf * left_hand.RelativeCFrame * left_hand.RecoilCorrectionCFrame
+		right_hand.GoalCFrame = cam_cf * right_hand.RelativeCFrame  *  right_hand.RecoilCorrectionCFrame
 	end
 end
 
@@ -304,7 +288,7 @@ local function stop_parts_floating_away()
 	cl_character.RightUpperArm.Velocity = Vector3.new(0, 0, 0)
 end
 
-local function on_physicsstep(delta)
+local function on_physicsstep(total, delta)
 	if DEV_vrkeyboard then
 		-- position hands with fake inputs
 		left_hand.DebugCFrame = left_hand.DebugCFrame * 
@@ -320,7 +304,7 @@ local function on_physicsstep(delta)
 	left_hand:Update(delta)
 	right_hand:Update(delta)
 
-	cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
+	--cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
 
 	stop_parts_floating_away()
 
@@ -367,6 +351,7 @@ end
 -------------------------------------------------------
 -- OCULUS HARDWARE INPUT FUNCTIONS --
 local function oculus_input_changed(inp)
+	if DEV_lockstate then return end
 	if inp.UserInputType == Enum.UserInputType.Gamepad1 then
 		if inp.KeyCode == Enum.KeyCode.Thumbstick2 then -- left joystick
 			right_joystick_state(inp.Position)
@@ -411,6 +396,7 @@ end
 ------------------------------------------------
 -- VALVE INDEX HARDWARE INPUT FUNCS --
 local function index_input_begin(input)
+	if DEV_lockstate then return end
 	if input.KeyCode == l_grip_sensor then
 
 		left_hand:Grab()
@@ -422,6 +408,7 @@ local function index_input_begin(input)
 end
 
 local function index_input_end(input)
+	if DEV_lockstate then return end
 	if input.KeyCode == l_grip_sensor then
 
 		left_hand:Release()
@@ -462,14 +449,26 @@ local function on_input_changed(input)
 	--end
 end
 
+local gravity_control = Networking.GetNetHook("SetServerGravity")
+
 local function on_input_begin(input)
+
+	if input.KeyCode == Enum.KeyCode.Eight then
+		gravity_control:FireServer(100)
+	end
+
+	if input.KeyCode == Enum.KeyCode.Seven then
+		gravity_control:FireServer(25)
+	end
+
+	if input.KeyCode == Enum.KeyCode.Six then
+		gravity_control:FireServer(1)
+	end
+
 	if input.KeyCode == Enum.KeyCode.Nine then
 		DEV_lockstate = not DEV_lockstate
 		print("Hand Locking "..(DEV_lockstate and "On" or "Off"))
 	end
-
-	if DEV_lockstate then return end
-
 
 	if DEV_vrkeyboard then
 
@@ -479,7 +478,11 @@ local function on_input_begin(input)
 	
 		if input.KeyCode == Enum.KeyCode.Left  then manual_rotate_left()  end
 		if input.KeyCode == Enum.KeyCode.Right then manual_rotate_right() end
-	
+
+
+		-- Testing Tool : Hand Lock State
+		if DEV_lockstate then return end
+
 		if input.KeyCode == Enum.KeyCode.LeftShift then
 			left_hand:Grab()
 			left_hand:SetGripCurl(1)
@@ -495,8 +498,9 @@ local function on_input_begin(input)
 		end
 	
 		if input.KeyCode == Enum.KeyCode.RightControl then
-		   right_hand:SetIndexFingerCurl(1)
+		right_hand:SetIndexFingerCurl(1)
 		end
+
 
 		-- mouse locking
 		if input.KeyCode == Enum.KeyCode.Space then

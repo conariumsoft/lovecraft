@@ -5,12 +5,6 @@ local BaseInteractive = require(script.Parent.BaseInteractive)
 local BaseFirearm = BaseInteractive:subclass("BaseFirearm") do
     BaseFirearm.TriggerStiffness = 0.95
     BaseFirearm.RateOfFire = 850
-    BaseFirearm.MuzzleFlipMax = 1500
-    BaseFirearm.MuzzleFlipMin = 50
-    BaseFirearm.YShakeMin = -15
-    BaseFirearm.YShakeMax = 15
-    BaseFirearm.ZShakeMin = -10
-    BaseFirearm.ZShakeMax = 10
     BaseFirearm.RecoilRecoverySpeed = 2
     BaseFirearm.BoltTravelDistance = 0.2
     BaseFirearm.BarrelComponent = nil
@@ -18,6 +12,20 @@ local BaseFirearm = BaseInteractive:subclass("BaseFirearm") do
     BaseFirearm.BoltComponent = nil
     BaseFirearm.MagazineType = nil
     BaseFirearm.Automatic = false
+    BaseFirearm.Recoil = {
+        XMoveMax = 0.05,
+        XMoveMin = -0.05,
+        YMoveMin = 0,
+        YMoveMax = 0,
+        ZMoveMin = 0,
+        ZMoveMax = 0,
+        XTiltMin = 0,
+        XTiltMax = 0,
+        YTiltMin = 0,
+        YTiltMax = 0,
+        ZTiltMin = 0,
+        ZTiltMax = 0,
+    }
 end
 
 -- this blows, but we just need to get guns working for now.
@@ -26,10 +34,10 @@ local animation_track = nil
 
 function BaseFirearm:__ctor(...)
     BaseInteractive.__ctor(self, ...)
-    self.Timer = 0
+    self.Timer = 1
     self.RoundInChamber = true
     self.MagazineInserted = true
-    self.MagazineRoundCount = 30
+    self.MagazineRoundCount = 999-- put back to nominal values later
     self.BoltGrabbed = false
     self.TriggerPressed = false
 end
@@ -130,6 +138,8 @@ function BaseFirearm:Fire(hand, grip_point)
     self.Model.Fire.TimePosition = 0.05
     self.Model.Fire:Play()
 
+    barrel.PointLight.Enabled = true
+
     -- bolt anim
     animation_track:Stop()
     animation_track:Play()
@@ -137,21 +147,26 @@ function BaseFirearm:Fire(hand, grip_point)
     animation_track:AdjustSpeed(1)
 
     if self.RoundInChamber == false then
+        
         animation_track:AdjustSpeed(0)
         animation_track.TimePosition = (animation_track.Length * 0.25)
     end
     --
 
-    self.Model:SetPrimaryPartCFrame(
+    --[[self.Model:SetPrimaryPartCFrame(
         self.Model:GetPrimaryPartCFrame() * CFrame.new(0, 0, 2)
-    )
-   -- self:ApplyRecoilImpulse(hand, grip_point)
+    )]]
+    self:ApplyRecoilImpulse(hand, grip_point)
     self:FireProjectile(hand, grip_point)
 
     barrel.BillboardGui.Enabled = true
     barrel.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
     delay(1/20, function()
+        
         barrel.BillboardGui.Enabled = false
+    end)
+    delay(1/10, function()
+        barrel.PointLight.Enabled = false
     end)
 end
 
@@ -159,33 +174,41 @@ function BaseFirearm:ClientFireEffects(hand, grip_point)
 
 end
 
+local scale = 1000
 function BaseFirearm:ApplyRecoilImpulse(hand, grip_point)
-    local barrel = self.Model[self.BarrelComponent]
-    -- TODO: Backwards recoil!
-    local recoil_impulse = barrel.RecoilImpulse
+    local recoil = self.Recoil -- recoil profile
+    local xmove = math.random(recoil.XMoveMin*scale, recoil.XMoveMax*scale)/scale
+    local ymove = math.random(recoil.YMoveMin*scale, recoil.YMoveMax*scale)/scale
+    local zmove = math.random(recoil.ZMoveMin*scale, recoil.ZMoveMax*scale)/scale
+    local xtilt = math.random(recoil.XTiltMin*scale, recoil.XTiltMax*scale)/scale -- Pitch
+    local ytilt = math.random(recoil.YTiltMin*scale, recoil.YTiltMax*scale)/scale -- Yaw
+    local ztilt = math.random(recoil.ZTiltMin*scale, recoil.ZTiltMax*scale)/scale -- Roll
+    hand.RecoilCorrectionCFrame = hand.RecoilCorrectionCFrame 
+     
+     * CFrame.new(xmove, ymove, zmove)
+     * CFrame.Angles(math.rad(xtilt), math.rad(ytilt), math.rad(ztilt)) 
 
-    --muzzle_flip.Force = Vector3.new(0, 0, 50)
-    recoil_impulse.Force = Vector3.new(
-        -math.max(  self.MuzzleFlipMin, self.MuzzleFlipMax), 
-        math.random(self.YShakeMin,     self.YShakeMax    ), 
-        math.random(self.ZShakeMin,     self.ZShakeMax    )
-    )
 
-    delay(1/self.RecoilRecoverySpeed, function()
-        recoil_impulse.Force = Vector3.new(0, 0, 0)
-    end)
+    local cam_rattle = math.random(recoil.CamRattle*scale, recoil.CamRattle*scale)/scale
+    local cam_jolt   = math.random(-recoil.CamJolt*scale, recoil.CamJolt*scale)/scale
+    local cam_kick   = math.random(recoil.MinKick*scale, recoil.MaxKick*scale)/scale
+
+    game.Workspace.CurrentCamera.CFrame = game.Workspace.CurrentCamera.CFrame 
+     * CFrame.new(cam_kick, 0, 0) 
+     * CFrame.Angles(math.rad(cam_jolt), 0, math.rad(cam_rattle))
 end
 
 function BaseFirearm:TriggerDown(hand, dt, grip_point)
+    print("trigger", dt)
+
     
     if self.Automatic ~= true then
         if self.TriggerPressed then return end
-        self.Timer = 1/self:GetCycleTime()
+        --self.Timer = 1/self:GetCycleTime()
     end
-
-    self.Timer = self.Timer + dt
     if self.Timer >= (1/self:GetCycleTime()) and self.RoundInChamber then
-        self.Timer = self.Timer - (1/self:GetCycleTime())
+        --self.Timer = self.Timer - (1/self:GetCycleTime())
+        self.Timer = 0
 
         self.MagazineRoundCount = self.MagazineRoundCount - 1
 
@@ -242,7 +265,6 @@ function BaseFirearm:OnGrab(hand, grip_point)
 end
 
 function BaseFirearm:OnRelease(hand, grip_point)
-    print("Stinky part 300 and 34")
     local gp = grip_point.Name
     if     gp == "Handle"         then self:HandleOnRelease(hand)
     elseif gp == "Magazine"       then self:MagazineOnRelease(hand)
@@ -262,6 +284,10 @@ function BaseFirearm:OnSimulationStep(hand, dt, grip_point)
     end
 
     if grip_point.Name == "Handle" then
+        self.Timer = self.Timer + dt
+        
+        hand.RecoilCorrectionCFrame = hand.RecoilCorrectionCFrame:Lerp(CFrame.new(0, 0, 0), 1/self.RecoilRecoverySpeed)
+
         if hand.IndexFingerPressure > self.TriggerStiffness then
             self:TriggerDown(hand, dt, grip_point)
             self.TriggerPressed = true

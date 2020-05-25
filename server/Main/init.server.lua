@@ -10,6 +10,13 @@ _G.using "RBX.Workspace"
 _G.using "RBX.PhysicsService"
 _G.using "RBX.RunService"
 
+
+local testing_mode = RunService:IsStudio()
+
+Workspace.Gravity = 100-- default 196.2
+
+
+
 -------------------------------------------------------------------
 -- Create remotes
 Networking.Initialize()
@@ -18,11 +25,16 @@ local on_client_grab_object      = Networking.GenerateAsyncNetHook("ClientGrab")
 local on_client_release_object   = Networking.GenerateAsyncNetHook("ClientRelease")
 local on_client_shoot            = Networking.GenerateAsyncNetHook("ClientShoot")
 local on_client_hit              = Networking.GenerateAsyncNetHook("ClientHit")
------------------------------------------------------------------------------
+local set_client_highlight       = Networking.GenerateAsyncNetHook("SetClientHighlight")
+local dev_gravity_control        = Networking.GenerateAsyncNetHook("SetServerGravity")
+
+-------------------------------------------------------------------
 -- Physically interactive objects are set into appropriate collision group
-for _, inst in pairs(Workspace.physics:GetDescendants()) do
+for _, inst in pairs(Workspace.Physical:GetDescendants()) do
     if inst:IsA("BasePart") then
-        inst:SetNetworkOwner(nil)
+        if inst.Anchored == false then
+            inst:SetNetworkOwner(nil)
+        end
         PhysicsService:SetPartCollisionGroup(inst, "Interactives")
     end
 end
@@ -53,9 +65,10 @@ local function on_plr_grab_object(player, object, grabbed, handstr)
         return
     end
 
-    if grabbed.Anchored == true then return end
+   -- if grabbed.Anchored == true then return end
     if not grabbed:FindFirstChild("GripPoint") then return end
-    if grabbed.GripPoint.Value == true then return end
+    --if grabbed.GripPoint.Value == true then return end
+    -- TODO: Make new hand exclusion system
 
     local entry = itemownerlist.GetEntry(object, true)
 
@@ -72,14 +85,14 @@ local function on_plr_grab_object(player, object, grabbed, handstr)
 
         Ownership.SetModelNetworkOwner(object, player)
         data_highlight(player, object, true)
-        grabbed.GripPoint.Value = true
+        --grabbed.GripPoint.Value = true
     end
 end
 
 local function on_plr_drop_object(player, object_ref, grabbed_part, handstr)
     if grabbed_part.Anchored                        then return end
     if not grabbed_part:FindFirstChild("GripPoint") then return end
-    if not grabbed_part.GripPoint.Value             then return end
+   -- if not grabbed_part.GripPoint.Value             then return end
 
     local entry = itemownerlist.GetEntry(object_ref, false)
 
@@ -99,7 +112,7 @@ local function on_plr_drop_object(player, object_ref, grabbed_part, handstr)
         end)
     end
 
-    grabbed_part.GripPoint.Value = false
+   -- grabbed_part.GripPoint.Value = false
     
 end
 -----------------------------------------------------------------
@@ -169,11 +182,17 @@ local function server_update(server_run_time, tick_dt)
 
 end
 
+local function on_gravity_change(player, value)
+    Workspace.Gravity = value
+end
+
 on_client_grab_object.OnServerEvent:Connect(on_plr_grab_object)
 on_client_release_object.OnServerEvent:Connect(on_plr_drop_object)
+dev_gravity_control.OnServerEvent:Connect(on_gravity_change)
 on_client_request_vr_state.OnServerInvoke = OnClientRequestVRState
 
 RunService.Stepped:Connect(server_update)
+
 game.Players.PlayerAdded:Connect(function(plr)
     local c = plr.Character or plr.CharacterAdded:Wait()
     c.HeadJ.BillboardGui.TextLabel.Text = plr.Name

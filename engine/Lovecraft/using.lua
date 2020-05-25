@@ -41,7 +41,7 @@ local module_database = {
     },
     ["Game.Data.ItemMetadata"] = {
         identifier = "ItemMetadata",
-        reference = game.ReplicatedStorage.ItemMetadata,
+        reference = game.ReplicatedStorage.Data.ItemMetadata,
     },
 
 }
