@@ -62,7 +62,7 @@ else
 end
 ---------------------------------------------------------------------------------
 -- Local Client objects and data -- 
-local camera_follow_speed = 0.9
+local camera_follow_speed = 0.8
 local cl_camera = Workspace.CurrentCamera
 local cl_player = game.Players.LocalPlayer
 local cl_manual_rotation = 0
@@ -151,14 +151,11 @@ local function kinematics(base_cf)
 	--ik_leftarm_chain.origin   = base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)
 	--ik_rightarm_chain.origin  = base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)
 
-	ik_leftarm_chain.origin = left_hand.HandModel.PrimaryPart.CFrame
-	ik_rightarm_chain.origin = right_hand.HandModel.PrimaryPart.CFrame
+	ik_leftarm_chain.origin = left_hand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6)
+	ik_rightarm_chain.origin = right_hand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6)
 
-
-	ik_leftarm_chain.target  = (game.Workspace.CurrentCamera.CFrame * left_hand.DebugCFrame:inverse()).Position
-	--(base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)).Position--(lefthand_goal_cf  * CFrame.new(0, 0, 0.5)).Position
-	ik_rightarm_chain.target = (game.Workspace.CurrentCamera.CFrame * right_hand.DebugCFrame:inverse()).Position
-	--(base_cf * CFrame.new(-ik_shoulder_width,  -ik_shoulder_height, 0)* right_hand.RelativeCFrame).Position--(righthand_goal_cf * CFrame.new(0, 0, 0.5)).Position
+	ik_leftarm_chain.target  = (base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)).Position--(lefthand_goal_cf  * CFrame.new(0, 0, 0.5)).Position
+	ik_rightarm_chain.target = (base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)).Position--(righthand_goal_cf * CFrame.new(0, 0, 0.5)).Position
 
 	-- this many not be nessecary?
 	ik_leftarm_chain.joints[1].vec  = ik_leftarm_chain.origin.p
@@ -183,14 +180,13 @@ local function kinematics(base_cf)
 	left_hand.SolvedGoalCFrame = left_hand.GoalCFrame--lhand_constrained_goal
 	right_hand.SolvedGoalCFrame = right_hand.GoalCFrame--rhand_constrained_goal
 
+
 	-- BODY PARTS --
 	-- TODO: once body is fully connected, this'll change
 	ch_leftupper.CFrame = line_to_cframe(ik_leftarm_chain.joints[3].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
 	ch_leftlower.CFrame = line_to_cframe(ik_leftarm_chain.joints[2].vec, ik_leftarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
 	ch_rightupper.CFrame = line_to_cframe(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
 	ch_rightlower.CFrame = line_to_cframe(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
-
-
 
 end
 ------------------------
@@ -223,8 +219,6 @@ end
 local hud = ReplicatedStorage.HUD:Clone()
 hud.Parent = game.Workspace
 ------------------------------------------------------------------------------------------------
-
------------------------------------------------------------------------
 local function calculate_camera_cframe()
 	if DEV_vrkeyboard then
 		return cl_manual_translation *
@@ -304,7 +298,7 @@ local function on_physicsstep(total, delta)
 	left_hand:Update(delta)
 	right_hand:Update(delta)
 
-	--cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
+	cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
 
 	stop_parts_floating_away()
 

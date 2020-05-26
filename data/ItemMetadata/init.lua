@@ -77,9 +77,9 @@ end
 local Skorpion = require(script.Skorpion)
 local Hecate   = require(script.Hecate)
 local Saiga    = require(script.Saiga)
-
-local marker_grip_animation
-local skorpion_grip_animation
+local Glock17  = require(script.Glock17)
+local Tec9	   = require(script.Tec9)
+local Glock18  = require(script.Glock18)
 
 -- setup code finished. --
 local ItemMetadata = {
@@ -90,7 +90,6 @@ local ItemMetadata = {
 			DoorHandle = GripPoint:new()
 		}
 	},
-	
 	---------------------------------------------------------------------
 	-- @section Guns --
 	["Skorpion"] = {
@@ -104,13 +103,43 @@ local ItemMetadata = {
 		},
 		class = Skorpion,
 	},
+	["Tec9"] = {
+		name = "Tec9",
+		grip_type = "GripPoint",
+		class = Tec9,
+		grip_data = {
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)*CFrame.Angles(0, -math.rad(90), -math.rad(90))),
+			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+		},
+	},
+	["Glock17"] = {
+		name = "Glock17",
+		grip_type = "GripPoint",
+		grip_data = {
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			Slide = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+		},
+		class = Glock17,
+	},
+	["Glock18"] = {
+		name = "Glock18",
+		grip_type = "GripPoint",
+		grip_data = {
+			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			Slide = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+		},
+		class = Glock18,
+	},
 	["Saiga"] = {
 		name = "Saiga",
 		grip_type = "GripPoint",
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.Angles(0, math.rad(180), 0), 100000, 400, true, math.huge),-- * CFrame.Angles(0, -math.rad(180), 0)),
 			BarrelGrip = GripPoint:new(nil, CFrame.new(0, 0, 0), 15000, 0, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
-			Magazine = GripPoint:new(),
+			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 		},
 		class = Saiga,
 	},
@@ -121,7 +150,7 @@ local ItemMetadata = {
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0), 10000, 1500, true, 50000),-- * CFrame.Angles(0, -math.rad(180), 0)),
 			BarrelShroud = GripPoint:new(nil, CFrame.new(0, 0, 0), 1000, 25, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
-			Magazine = GripPoint:new(),
+			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 		},
 	},
 	---------------------------------------------------------------------
@@ -130,14 +159,14 @@ local ItemMetadata = {
 		name = "Magazine",
 		grip_type = "Anywhere",
 		grip_data = {
-			Magazine = GripPoint:new()
+			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0))
 		}
 	},
 	["LightSaber"] = {
 		name = "LightSaber",
 		grip_type = "GripPoint",
 		grip_data = {
-			MeshPart = GripPoint:new()
+			MeshPart = GripPoint:new(nil, CFrame.new(0, 0, 0))
 		}
 	},
 	---------------------------------------------------------------------
@@ -152,7 +181,7 @@ local ItemMetadata = {
 		name = "Marker",
 		grip_type = "GripPoint",
 		grip_data = {
-			MarkerBase = GripPoint:new(),
+			MarkerBase = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 		}
 	},
 }
