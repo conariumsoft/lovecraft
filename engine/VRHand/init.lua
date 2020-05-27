@@ -152,6 +152,12 @@ function VRHand:Grab()
 	local part = self:GetClosestInteractive()
 
 	if part == nil then return end -- exit early if nothing to grab
+
+	local ray = Ray.new(self.HandModel.PrimaryPart.Position, (part.Position - self.HandModel.PrimaryPart.Position).unit) -- look at part from point of hand
+
+	local hit, pos, sfnormal = Workspace:FindPartOnRayWithWhitelist(ray, {part})
+	if hit ~= part then return end
+
 	local item_model = part.Parent
 
 	local notify_server_grab = Networking.GetNetHook("ClientGrab") -- tell server what we're up to (picking something up)
@@ -183,24 +189,16 @@ function VRHand:Grab()
 		inst:OnGrab(self, part)
 	end
 
-	-- grab weld cframe
-	local hold_offset_cf = part.CFrame:inverse() * self.HandModel.PrimaryPart.CFrame
+	self.HandModel.PrimaryPart.CFrame = CFrame.new(pos)*(self.HandModel.PrimaryPart.CFrame - self.HandModel.PrimaryPart.CFrame.Position)
+
 	if obj_meta and obj_meta.grip_data then
 		-- look for custom cframe
 		local gripinformation = obj_meta.grip_data[part.Name]
 
-		if gripinformation then
-			hold_offset_cf = gripinformation.Offset
-
-			if gripinformation:isA("GripPoint") then
-				-- TODO: raycast to part...
-				self.HandModel.PrimaryPart.CFrame = part.CFrame --?
-			end
+		if gripinformation and gripinformation:isA("GripPoint") and gripinformation.Offset then
+			self.HandModel.PrimaryPart.CFrame = part.CFrame * gripinformation.Offset
 		end
 	end
-	
-	part.GripPoint.CFrame = hold_offset_cf -- correct attachment CFrame
-	
 	local weld = Instance.new("WeldConstraint") do -- last step, weld together
 		weld.Part1 = part
 		weld.Part0 = self.HandModel.PrimaryPart
@@ -245,13 +243,17 @@ end
 function VRHand:GetClosestInteractive(min_distance)
 	local closest_part = nil
 	local closest_dist = math.huge
-	min_distance = min_distance or 1
+	min_distance = min_distance or 3
 
 	for _, part in pairs(Workspace.Physical:GetDescendants()) do
 		if part:FindFirstChild("GripPoint") then
 			local dist = (part.Position - self.HandModel.PrimaryPart.Position).magnitude
 			if dist < min_distance and dist < closest_dist then
-				closest_part = part
+				local ray = Ray.new(self.HandModel.PrimaryPart.Position, self.HandModel.PrimaryPart.CFrame.rightVector)
+				local hit, pos, sfnormal = Workspace:FindPartOnRayWithWhitelist(ray, {part})
+				if hit and hit == part then
+					closest_part = part
+				end
 			end
 		end
 	end
