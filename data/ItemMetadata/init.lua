@@ -97,9 +97,9 @@ local ItemMetadata = {
 		grip_type = "GripPoint",
 		grip_data = {
 				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
-			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0),   80000,     350,   true,   math.huge),
-			Magazine       = GripPoint:new(nil, CFrame.new(0,0,0),     15000,       0,   false,  math.huge),
-			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0),   500, 		0,   false), 
+			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			Magazine       = GripPoint:new(nil),
+			ChargingHandle = GripPoint:new(nil), 
 		},
 		class = Skorpion,
 	},
@@ -119,7 +119,7 @@ local ItemMetadata = {
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
-			Slide = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			Slide = GripSurface:new(nil, CFrame.new(0, 0, 0)),
 		},
 		class = Glock17,
 	},
