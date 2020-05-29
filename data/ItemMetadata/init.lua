@@ -98,8 +98,8 @@ local ItemMetadata = {
 		grip_data = {
 				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
 			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0)),
-			Magazine       = GripPoint:new(nil),
-			ChargingHandle = GripPoint:new(nil), 
+			--Magazine       = GripPoint:new(nil, CFrame.Angles(0, math.rad(180), 0)),
+			--ChargingHandle = GripPoint:new(nil), 
 		},
 		class = Skorpion,
 	},
@@ -109,8 +109,8 @@ local ItemMetadata = {
 		class = Tec9,
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)*CFrame.Angles(0, -math.rad(90), -math.rad(90))),
-			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
-			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			--Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			--ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 		},
 	},
 	["Glock17"] = {
@@ -137,8 +137,8 @@ local ItemMetadata = {
 		name = "Saiga",
 		grip_type = "GripPoint",
 		grip_data = {
-			Handle = GripPoint:new(nil, CFrame.Angles(0, math.rad(180), 0), 100000, 400, true, math.huge),-- * CFrame.Angles(0, -math.rad(180), 0)),
-			BarrelGrip = GripPoint:new(nil, CFrame.new(0, 0, 0), 15000, 0, false, math.huge),-- * CFrame.Angles(0, 0, -math.rad(180))),
+			Handle = GripPoint:new(nil, CFrame.Angles(0, math.rad(0), 0)),-- * CFrame.Angles(0, -math.rad(180), 0)),
+			BarrelGrip = GripPoint:new(nil, CFrame.new(0, 0, 0)),-- * CFrame.Angles(0, 0, -math.rad(180))),
 			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 		},
 		class = Saiga,

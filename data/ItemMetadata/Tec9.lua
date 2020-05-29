@@ -5,7 +5,7 @@ local Tec9 = BaseFirearm:subclass("Tec9")
 --[[
     
 ]]
-
+Tec9.Cartridge = "9mm Parabellum"
 Tec9.TriggerStiffness = 0.5
 Tec9.RateOfFire = 1500
 Tec9.Recoil = {

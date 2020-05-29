@@ -11,7 +11,6 @@ function UIModule.DisableDefaultRobloxCrap()
         StarterGui:SetCore("VRLaserPointerMode", 0)
         StarterGui:SetCore("VREnableControllerModels", false)
         StarterGui:SetCore("TopbarEnabled", false)
-        
 
         --?
         spawn(function()

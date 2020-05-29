@@ -2,8 +2,6 @@ local BaseFirearm = require(script.Parent.BaseFirearm)
 
 local Hecate = BaseFirearm:subclass("Hecate")
 
-
-
 Hecate.TriggerStiffness = 0.95
 Hecate.RateOfFire = 60
 Hecate.Recoil = {
@@ -24,6 +22,8 @@ Hecate.Recoil = {
     MinKick = 1,
     MaxKick = 3,
 }
+
+Hecate.Cartridge = ".50 BMG"
 Hecate.RecoilRecoverySpeed = 20 -- smaller values -> slower recoil recovery
 Hecate.BarrelComponent = "Barrel"
 Hecate.MagazineComponent = "Magazine"

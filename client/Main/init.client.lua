@@ -23,6 +23,7 @@ _G.using "Lovecraft.Kinematics"
 _G.using "Game.Data.ItemMetadata"
 
 
+
 local ui = require(script.ui)
 
 -- debugging tools
@@ -44,12 +45,6 @@ local headset_list = {
 ---------------------------------------------------------------------------------
 local is_vr_mode = UserInputService.VREnabled
 
-require(script.highlighter)
-
-local hardware = "oculus"
-
-local no_button_scale = true
-
 -- later on: make non-vr players go into spectator mode for deathmatch
 -- if doing game testing, start in keyboard mode
 -- when game is live, make so this will error & kick the playe
@@ -69,7 +64,6 @@ local cl_manual_rotation = 0
 local cl_manual_translation = CFrame.new(0,0,0)
 
 local cl_character = cl_player.Character or cl_player.CharacterAdded:wait()
-
 
 -- client is ready to start
 -- send request for server-side init
@@ -144,13 +138,6 @@ end
 local function kinematics(base_cf)
 	-- pass in reported VR hand position
 
-	-- ! hand goal base should most likely be head cframe.
-	local lefthand_goal_cf  = left_hand.GoalCFrame--base_cf * left_hand:GetRelativeCFrame()
-	local righthand_goal_cf = right_hand.GoalCFrame--base_cf * right_hand:GetRelativeCFrame()
-
-	--ik_leftarm_chain.origin   = base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)
-	--ik_rightarm_chain.origin  = base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)
-
 	ik_leftarm_chain.origin = left_hand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6)
 	ik_rightarm_chain.origin = right_hand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6)
 
@@ -163,33 +150,104 @@ local function kinematics(base_cf)
 
 	Kinematics.Solver.Solve(ik_leftarm_chain)
 	Kinematics.Solver.Solve(ik_rightarm_chain)
-	-- pull solved position back out.
-	local lhand_constrained_goal = (
-        CFrame.new(ik_leftarm_chain.joints[1].vec) *
-        CFrame.Angles(lefthand_goal_cf:ToEulerAnglesXYZ())
-        * CFrame.new(0, 0.1, -0.5)
-	)
-	
-	local rhand_constrained_goal = (
-        CFrame.new(ik_rightarm_chain.joints[1].vec) *
-        CFrame.Angles(righthand_goal_cf:ToEulerAnglesXYZ()) 
-        * CFrame.new(0, 0.1, -0.5)
-    ) 
 
 	-- set hand goals to constrained position
 	left_hand.SolvedGoalCFrame = left_hand.GoalCFrame--lhand_constrained_goal
 	right_hand.SolvedGoalCFrame = right_hand.GoalCFrame--rhand_constrained_goal
-
-
+	
 	-- BODY PARTS --
 	-- TODO: once body is fully connected, this'll change
 	ch_leftupper.CFrame = line_to_cframe(ik_leftarm_chain.joints[3].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
 	ch_leftlower.CFrame = line_to_cframe(ik_leftarm_chain.joints[2].vec, ik_leftarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
 	ch_rightupper.CFrame = line_to_cframe(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
 	ch_rightlower.CFrame = line_to_cframe(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
-
 end
-------------------------
+
+local function manual_rotate_left()
+	cl_manual_rotation = cl_manual_rotation - 45
+end
+local function manual_rotate_right()
+	cl_manual_rotation = cl_manual_rotation + 45
+end
+
+-----------------------------------------------------------------------
+-- VR Keyboard methods --
+local kb_mode = {}
+
+function kb_mode.uis_inp_began(input)
+
+	-- mouse locking
+	if input.KeyCode == Enum.KeyCode.Space then
+		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		else
+			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+		end
+	end
+
+	if input.KeyCode == Enum.KeyCode.KeypadFive then
+		cl_character.Humanoid.Jump = true
+	end
+
+	if input.KeyCode == Enum.KeyCode.Left  then manual_rotate_left()  end
+	if input.KeyCode == Enum.KeyCode.Right then manual_rotate_right() end
+
+
+	-- Testing Tool : Hand Lock State
+	if DEV_lockstate then return end
+
+	if input.KeyCode == Enum.KeyCode.LeftShift then
+		left_hand:Grab()
+		left_hand:SetGripCurl(1)
+	end
+
+	if input.KeyCode == Enum.KeyCode.LeftControl then
+		left_hand:SetIndexFingerCurl(1)
+	end
+
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		right_hand:Grab()
+		right_hand:SetGripCurl(1)
+	end
+
+	if input.KeyCode == Enum.KeyCode.RightControl then
+		right_hand:SetIndexFingerCurl(1)
+	end
+end
+
+function kb_mode.uis_inp_ended(input)
+	if input.KeyCode == Enum.KeyCode.LeftShift then
+		left_hand:Release()
+		left_hand:SetGripCurl(0)
+	end
+
+	if input.KeyCode == Enum.KeyCode.LeftControl then
+		left_hand:SetIndexFingerCurl(0)
+	end
+
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		right_hand:Release()
+		right_hand:SetGripCurl(0)
+	end
+
+	if input.KeyCode == Enum.KeyCode.RightControl then
+		right_hand:SetIndexFingerCurl(0)
+	end
+end
+
+function kb_mode.controls()
+
+	-- position hands with fake inputs
+	left_hand.DebugCFrame = left_hand.DebugCFrame * 
+		DebugBoard.GetLeftHandDeltaCFrame()
+
+	right_hand.DebugCFrame = right_hand.DebugCFrame *
+		DebugBoard.GetRightHandDeltaCFrame()
+
+	local movement_delta = DebugBoard.GetMovementDeltaVec2()
+	cl_character.Humanoid:Move(Vector3.new(movement_delta.Y, 0, movement_delta.X), true)
+end
+---------------------------------------------------------------------------------
 
 VRService:RecenterUserHeadCFrame()
 
@@ -230,6 +288,9 @@ local function calculate_camera_cframe()
 			CFrame.Angles(0, math.rad(cl_manual_rotation), 0)
 	end
 end
+
+-- Player death
+
 
 ------------------------------------------------------------------------------------------------
 -- RENDERSTEP --
@@ -283,17 +344,7 @@ local function stop_parts_floating_away()
 end
 
 local function on_physicsstep(total, delta)
-	if DEV_vrkeyboard then
-		-- position hands with fake inputs
-		left_hand.DebugCFrame = left_hand.DebugCFrame * 
-			DebugBoard.GetLeftHandDeltaCFrame()
-
-		right_hand.DebugCFrame = right_hand.DebugCFrame *
-			DebugBoard.GetRightHandDeltaCFrame()
-
-		local movement_delta = DebugBoard.GetMovementDeltaVec2()
-		cl_character.Humanoid:Move(Vector3.new(movement_delta.Y, 0, movement_delta.X), true)
-	end
+	if DEV_vrkeyboard then kb_mode.controls() end
 
 	left_hand:Update(delta)
 	right_hand:Update(delta)
@@ -301,16 +352,8 @@ local function on_physicsstep(total, delta)
 	cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
 
 	stop_parts_floating_away()
-
-	
 end
 
-local function manual_rotate_left()
-	cl_manual_rotation = cl_manual_rotation - 45
-end
-local function manual_rotate_right()
-	cl_manual_rotation = cl_manual_rotation + 45
-end
 
 ---------------------------------------------------------------------------------------------
 -- left joystick movement --
@@ -328,7 +371,7 @@ local function right_joystick_state(jstick_vec)
 	local accur_x = jstickleft.X
 
 	if accur_x > 0.8 and flicked == false then
-		manual_rotate_left()
+		manual_rotate_right()
 		flicked = true
 	end
 	
@@ -342,105 +385,54 @@ local function right_joystick_state(jstick_vec)
 		flicked = false
 	end
 end
--------------------------------------------------------
--- OCULUS HARDWARE INPUT FUNCTIONS --
-local function oculus_input_changed(inp)
-	if DEV_lockstate then return end
-	if inp.UserInputType == Enum.UserInputType.Gamepad1 then
-		if inp.KeyCode == Enum.KeyCode.Thumbstick2 then -- left joystick
-			right_joystick_state(inp.Position)
-		end
-		if inp.KeyCode == Enum.KeyCode.Thumbstick1 then -- right joystick
-			left_joystick_state(inp.Position)
-		end
-	end
 
-	-- palm grip
-	if inp.KeyCode == r_grip_sensor then 
-		right_hand:SetGripCurl(inp.Position.Z)
-
-		if inp.Position.Z < 0.95 then
-			right_hand:Release()
-		end
-	end	
-	if inp.KeyCode == l_grip_sensor then 
-		left_hand:SetGripCurl(inp.Position.Z) 
-
-		if inp.Position.Z < 0.95 then
-			left_hand:Release()
-		end
-	end
-	
-	-- index finger
-	if inp.KeyCode == r_indx_sensor then 
-		right_hand:SetIndexFingerCurl(inp.Position.Z) 
-	end
-	if inp.KeyCode == l_indx_sensor then 
-		left_hand:SetIndexFingerCurl(inp.Position.Z) 
-	end
-end
-
-local function oculus_input_begin(input)
-
-end
-
-local function oculus_input_end(input)
-
-end
-------------------------------------------------
--- VALVE INDEX HARDWARE INPUT FUNCS --
-local function index_input_begin(input)
-	if DEV_lockstate then return end
-	if input.KeyCode == l_grip_sensor then
-
-		left_hand:Grab()
-	end
-	if input.KeyCode == r_grip_sensor then
-
-		right_hand:Grab()
-	end
-end
-
-local function index_input_end(input)
-	if DEV_lockstate then return end
-	if input.KeyCode == l_grip_sensor then
-
-		left_hand:Release()
-	end
-
-	if input.KeyCode == r_grip_sensor then
-
-		right_hand:Release()
-	end
-end
-
-local function index_input_changed(input)
-
-end
-------------------------------------------------------
-local function wmr_input_begin(input)
-
-end
-
-local function wmr_input_end(input)
-
-
-end
-
-local function wmr_input_changed(input)
-
-end
 -------------------------------------------------------
 
 local function on_input_changed(input)
 	if DEV_lockstate then return end
-	--if hardware == "oculus" then
-	oculus_input_changed(input)
-	--elseif hardware == "index" then
-	index_input_changed(input)
-	--elseif hardware == "wmr" then
-	wmr_input_changed(input)
-	--end
+	
+	-- Joystick flicking
+	if input.UserInputType == Enum.UserInputType.Gamepad1 then
+		if input.KeyCode == Enum.KeyCode.Thumbstick2 then -- left joystick
+			right_joystick_state(input.Position)
+		end
+		if input.KeyCode == Enum.KeyCode.Thumbstick1 then -- right joystick
+			left_joystick_state(input.Position)
+		end
+	end
+
+	-- palm grip
+	if input.KeyCode == r_grip_sensor then 
+		right_hand:SetGripCurl(input.Position.Z)
+
+		if input.Position.Z < 0.95 then
+			right_hand:Release()
+		end
+		if input.Position.Z > 0.75 then
+
+			right_hand:Grab()
+		end
+	end	
+	if input.KeyCode == l_grip_sensor then 
+		left_hand:SetGripCurl(input.Position.Z) 
+
+		if input.Position.Z < 0.95 then
+			left_hand:Release()
+		end
+		if input.Position.Z > 0.75 then
+			left_hand:Grab()
+		end
+	end
+	
+	-- index finger
+	if input.KeyCode == r_indx_sensor then 
+		right_hand:SetIndexFingerCurl(input.Position.Z) 
+	end
+	if input.KeyCode == l_indx_sensor then 
+		left_hand:SetIndexFingerCurl(input.Position.Z) 
+	end
+
+	if DEV_lockstate then return end
 end
 
 local gravity_control = Networking.GetNetHook("SetServerGravity")
@@ -465,87 +457,16 @@ local function on_input_begin(input)
 	end
 
 	if DEV_vrkeyboard then
-
-		if input.KeyCode == Enum.KeyCode.KeypadFive then
-			cl_character.Humanoid.Jump = true
-		end
-	
-		if input.KeyCode == Enum.KeyCode.Left  then manual_rotate_left()  end
-		if input.KeyCode == Enum.KeyCode.Right then manual_rotate_right() end
-
-
-		-- Testing Tool : Hand Lock State
-		if DEV_lockstate then return end
-
-		if input.KeyCode == Enum.KeyCode.LeftShift then
-			left_hand:Grab()
-			left_hand:SetGripCurl(1)
-		end
-	
-		if input.KeyCode == Enum.KeyCode.LeftControl then
-			left_hand:SetIndexFingerCurl(1)
-		end
-	
-		if input.KeyCode == Enum.KeyCode.RightShift then
-			right_hand:Grab()
-			right_hand:SetGripCurl(1)
-		end
-	
-		if input.KeyCode == Enum.KeyCode.RightControl then
-		right_hand:SetIndexFingerCurl(1)
-		end
-
-
-		-- mouse locking
-		if input.KeyCode == Enum.KeyCode.Space then
-			if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
-				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-			else
-				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-			end
-		end
-		--DebugBoard.InputBegan(input, left_hand, right_hand, my_camera_head)
+		kb_mode.uis_inp_began(input)
 	end
-
---	if hardware == "oculus" then
-		oculus_input_begin(input)
---	elseif hardware == "index" then
-		index_input_begin(input)
---  elseif hardware == "wmr" then
-		wmr_input_begin(input)
---	end
 end
 
 local function on_input_end(input)
 	if DEV_lockstate then return end
-	if DEV_vrkeyboard then
-		if input.KeyCode == Enum.KeyCode.LeftShift then
-			left_hand:Release()
-			left_hand:SetGripCurl(0)
-		end
-	
-		if input.KeyCode == Enum.KeyCode.LeftControl then
-			left_hand:SetIndexFingerCurl(0)
-		end
-	
-		if input.KeyCode == Enum.KeyCode.RightShift then
-			right_hand:Release()
-			right_hand:SetGripCurl(0)
-		end
-	
-		if input.KeyCode == Enum.KeyCode.RightControl then
-			right_hand:SetIndexFingerCurl(0)
-		end
-	end
+	if DEV_vrkeyboard then kb_mode.uis_inp_ended(input) end
 
---	if hardware == "oculus" then
-		oculus_input_end(input)
-	--elseif hardware == "index" then
-		index_input_end(input)
---	elseif hardware == "wmr" then
-		wmr_input_end(input)
---	end
 end
+
 
 -----------------------------------------------------------------------
 local function on_server_reflect_gunshot_effects(shooter, gun)

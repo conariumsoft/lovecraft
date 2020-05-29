@@ -36,7 +36,7 @@ Glock17.RecoilRecoverySpeed = 6
 Glock17.BarrelComponent = "Rifling"
 Glock17.MagazineComponent = "Magazine"
 Glock17.BoltComponent = "Slide"
-Glock17.MagazineType = "Glock17Mag"
+Glock17.MagazineType = "GlockMag"
 Glock17.Automatic = false
 
 return Glock17

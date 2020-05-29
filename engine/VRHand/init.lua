@@ -49,6 +49,7 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self.IsGripped = true
 	self.IndexFingerPressure = 0
 	self.GripPressure = 0
+	self.Grabbing = false
 
 	local hgp = hand_attachment_part()
 	local hgp_attachment = Instance.new("Attachment")
@@ -69,15 +70,9 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self.Animator = self.HandModel.Animator
 	self:_LoadAnimationTracks()
 
-	local highlight = Instance.new("Part") do
-		highlight.Size = Vector3.new(0.3, 0.3, 0.3)
-		highlight.Shape = Enum.PartType.Ball
-		highlight.Parent = Workspace
-		highlight.Anchored = true
-		highlight.CanCollide = false
-		highlight.Color = Color3.new(0.25, 0.25, 1)
-		highlight.Material = Enum.Material.ForceField
-		highlight.Transparency = 0
+	local highlight = Instance.new("SelectionSphere") do
+		highlight.SurfaceTransparency = 0.75
+		highlight.Transparency = 1
 	end
 
 	self.HighlightPart = highlight
@@ -149,6 +144,62 @@ function VRHand:SetGripCurl(grip_strength)
 end
 
 function VRHand:Grab()
+	self.Grabbing = true
+end
+
+--- fired when hand grip goes below certain threshold
+function VRHand:Release()
+	self.Grabbing = false
+	--- drop any object currently in the hand & must check if holding an item
+	if self.HoldingObject == nil then return end
+	-- we are no longer holding
+	self.GripPoint.GripPoint.Grabbed.Value = false
+
+	-- if class definition exists run OnRelease callback
+	if self.ItemInstance then
+		self.ItemInstance:OnRelease(self, self.GripPoint)
+		self.ItemInstance = nil
+	end
+
+	delay(0.25, function() self._CollisionMask:Destroy() end) -- delay a bit so physics dont spaz
+
+	if self._GrabbedObjectWeld then
+		self._GrabbedObjectWeld:Destroy()
+		self._GrabbedObjectWeld = nil
+	end
+
+	-- inform server of our actions
+	local crelease = Networking.GetNetHook("ClientRelease")
+	crelease:FireServer(self.HoldingObject, self.GripPoint, self.Handedness)
+	self.HoldingObject = nil -- reset our fields
+	self.GripPoint = nil
+end
+
+function VRHand:GetClosestInteractive(min_distance)
+	local closest_part = nil
+	local closest_dist = math.huge
+	min_distance = min_distance or 3
+
+	for _, part in pairs(Workspace.Physical:GetDescendants()) do
+		if part:FindFirstChild("GripPoint") then
+			local dist = (part.Position - self.HandModel.PrimaryPart.Position).magnitude
+			if dist < min_distance and dist < closest_dist then
+
+				-- vector must be flipped for right hand
+				local flip = (self.Handedness == "Left") and 1 or -1
+
+				local ray = Ray.new(self.HandModel.PrimaryPart.Position, flip*self.HandModel.PrimaryPart.CFrame.rightVector)
+				local hit, pos, sfnormal = Workspace:FindPartOnRayWithWhitelist(ray, {part})
+				if hit and hit == part then
+					closest_part = part
+				end
+			end
+		end
+	end
+	return closest_part
+end
+
+function VRHand:ItemGrab()
 	local part = self:GetClosestInteractive()
 
 	if part == nil then return end -- exit early if nothing to grab
@@ -207,70 +258,15 @@ function VRHand:Grab()
 	self._GrabbedObjectWeld = weld
 end
 
---- fired when hand grip goes below certain threshold
-function VRHand:Release() 
-
-	--- drop any object currently in the hand & must check if holding an item
-	if self.HoldingObject == nil then return end
-	-- we are no longer holding
-
-	self.GripPoint.GripPoint.Grabbed.Value = false
-	local obj = self.HoldingObject
-
-	-- if class definition exists run OnRelease callback
-	if self.ItemInstance then
-		self.ItemInstance:OnRelease(self, self.GripPoint)
-		self.ItemInstance = nil
-	end
-
-	-- delay a bit so physics dont spaz
-	delay(0.25, function() self._CollisionMask:Destroy() end)
-
-	if self._GrabbedObjectWeld then
-		self._GrabbedObjectWeld:Destroy()
-		self._GrabbedObjectWeld = nil
-	end
-
-	-- inform server of our actions
-	local crelease = Networking.GetNetHook("ClientRelease")
-	crelease:FireServer(self.HoldingObject, self.GripPoint, self.Handedness)
-
-	-- reset our fields
-	self.HoldingObject = nil
-	self.GripPoint = nil
-end
-
-function VRHand:GetClosestInteractive(min_distance)
-	local closest_part = nil
-	local closest_dist = math.huge
-	min_distance = min_distance or 3
-
-	for _, part in pairs(Workspace.Physical:GetDescendants()) do
-		if part:FindFirstChild("GripPoint") then
-			local dist = (part.Position - self.HandModel.PrimaryPart.Position).magnitude
-			if dist < min_distance and dist < closest_dist then
-				local ray = Ray.new(self.HandModel.PrimaryPart.Position, self.HandModel.PrimaryPart.CFrame.rightVector)
-				local hit, pos, sfnormal = Workspace:FindPartOnRayWithWhitelist(ray, {part})
-				if hit and hit == part then
-					closest_part = part
-				end
-			end
-		end
-	end
-	return closest_part
-end
-
 function VRHand:HighlightSphere(part)
 	-- reset
 	if part == nil then
-		self.HighlightPart.CFrame = CFrame.new(0, 9999999, 0)
+		self.HighlightPart.Parent = nil
 		return
 	end
 
-	self.HighlightPart.CFrame = CFrame.new(part.Position)
-
-	local largest_axis = math.max(part.Size.X, part.Size.Y, part.Size.Z)
-	self.HighlightPart.Size = Vector3.new(largest_axis+0.1, largest_axis+0.1, largest_axis+0.1)
+	self.HighlightPart.Adornee = part
+	self.HighlightPart.Parent = part
 end
 
 ---
@@ -279,6 +275,11 @@ function VRHand:Update(dt)
 	self.RelativeCFrame = VRService:GetUserCFrame(self.UserCFrameEnum)
 
 	if self.ItemInstance then self.ItemInstance:OnSimulationStep(self, dt, self.GripPoint) end
+
+	if self.Grabbing == true and self.HoldingObject == nil then
+		self:ItemGrab()
+	end
+
 
 	self.HandGoalPart.CFrame = self.SolvedGoalCFrame
 	local vrhand_goal_cframe = self.SolvedGoalCFrame

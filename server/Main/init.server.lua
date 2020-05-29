@@ -13,10 +13,7 @@ _G.using "RBX.RunService"
 
 local testing_mode = RunService:IsStudio()
 
-Workspace.Gravity = 100-- default 196.2
-
-
-
+Workspace.Gravity = 30-- default 196.2
 -------------------------------------------------------------------
 -- Create remotes
 Networking.Initialize()
@@ -44,12 +41,27 @@ require(script.loadanims)()
 
 ------------------------------------------------------------
 -- server modules
-local givehands = require(script.givehands)
 local itemownerlist = require(script.itemownerlist)
-local data_highlight = require(script.datahighlight)
 
 -- Player Object Control --
 
+local function on_player_join(player)
+
+end
+
+local function on_player_leave(player)
+
+end
+
+local function on_char_spawn(character)
+
+
+end
+
+local function on_char_death(character)
+
+
+end
 
 local function on_plr_grab_object(player, object, grabbed, handstr)
     if not object then
@@ -84,8 +96,6 @@ local function on_plr_grab_object(player, object, grabbed, handstr)
         itemownerlist.SetEntryState(object, handstr, true)
 
         Ownership.SetModelNetworkOwner(object, player)
-        data_highlight(player, object, true)
-        --grabbed.GripPoint.Value = true
     end
 end
 
@@ -106,7 +116,6 @@ local function on_plr_drop_object(player, object_ref, grabbed_part, handstr)
         -- ! oh asynchronous lua
         delay(3, function()
             if entry.owner == nil then
-                data_highlight(player, object_ref, false)
                 Ownership.SetModelNetworkOwner(object_ref, nil)
             end
         end)
@@ -141,25 +150,34 @@ local function OnClientRequestVRState(player)
     for _, name in pairs(auxiliary_parts) do
         local part = player.Character:FindFirstChild(name)
         if part then
-
             PhysicsService:SetPartCollisionGroup(part, "Body")
             part:SetNetworkOwner(player)
-            --part.CanCollide = false
-            --part.Anchored = true
-            --.CanCollide = false
         end
     end
 
-    -- create hand models for player
+
+    local plr_left = player.Character:WaitForChild("LHand")
+    local plr_right = player.character:WaitForChild("RHand")
+
+    plr_left.PrimaryPart.Anchored = false
+    plr_right.PrimaryPart.Anchored = false
+
     -- assign networkownership
-    -- set collision groups
+    plr_left.PrimaryPart:SetNetworkOwner(player)
+    plr_right.PrimaryPart:SetNetworkOwner(player)
+
     -- create animator 
-    givehands(player)
+    local left_a = Instance.new("Animator")
+    left_a.Parent = plr_left.Animator
+
+    local right_a = Instance.new("Animator")
+    right_a.Parent = plr_right.Animator
+
+    -- set collision groups
+    CollisionMasking.SetModelGroup(plr_left, "LeftHand")
+    CollisionMasking.SetModelGroup(plr_right, "RightHand")
     return true
 end
-
-
-
 
 
 local function client_reflect_gunshot(client, weapon)
@@ -170,12 +188,11 @@ end
 -- yes. this is bad. extremely bad.
 -- don't worry, hit verification will be implemented before
 -- public testing.
-local function client_hit_enemy(client, enemy, weapon)
-
+local function client_hit_enemy(client, enemy, damage)
+    --! WARNING: SERIOUSLY DUMB. NO SANITY CHECKING YET. DO NOT RELEASE IN THIS STATE
+    enemy.Humanoid:TakeDamage(damage)
 end
 
-on_client_shoot.OnServerEvent:Connect(client_reflect_gunshot)
-on_client_hit.OnServerEvent:Connect(client_hit_enemy)
 
 
 local function server_update(server_run_time, tick_dt)
@@ -186,6 +203,9 @@ local function on_gravity_change(player, value)
     Workspace.Gravity = value
 end
 
+
+on_client_shoot.OnServerEvent:Connect(client_reflect_gunshot)
+on_client_hit.OnServerEvent:Connect(client_hit_enemy)
 on_client_grab_object.OnServerEvent:Connect(on_plr_grab_object)
 on_client_release_object.OnServerEvent:Connect(on_plr_drop_object)
 dev_gravity_control.OnServerEvent:Connect(on_gravity_change)

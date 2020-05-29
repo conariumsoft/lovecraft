@@ -2,231 +2,8 @@ _G.using "Lovecraft.Networking"
 _G.using "RBX.Debris"
 
 local BaseInteractive = require(script.Parent.BaseInteractive)
+local Cartridges = require(script.Parent.Cartridges)
 
-local cartridges = {
-    [".22LR"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    ["FN 5.7x28mm"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    ["7.62mm Tokarev"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    ["9mm Parabellum"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".357 Magnum"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".44 Magnum"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".45 ACP"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".454 Casull"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".308"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".30-06"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    ["7.62x39mm"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".410 bore"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    ["12 Gauge"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    
-    ["7.92mm Mauser"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".45-70 Government"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".50 AE"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-    [".50 BMG"] = {
-        BoreDiameter = 0.22,
-        Fullname = ".22LR",
-        Damage = 0,
-        DamageFalloff = 0, -- percent per stud
-        HeadMul = 0,
-        ArmMul = 0,
-        ChestMul = 0,
-        AbdomenMul = 0,
-        LegMul = 0,
-        PenetrationLoss = 0, -- Decrease in damage per stud (bullet stops penetrating when damage reaches 0)
-        Shredding = 0, -- How violently the bullet tumbles through soft materials (higher = more blood splatter)
-    },
-}
 
 local BF = BaseInteractive:subclass("BaseFirearm") do
     BF.TriggerStiffness = 0.95
@@ -266,6 +43,7 @@ function BF:__ctor(...) -- TODO pass in the model?
     self.MagazineRoundCount = self.MagazineSize-- put back to nominal values later
     self.BoltGrabbed = false
     self.TriggerPressed = false
+    self.HandleStepDebounce = false
 end
 
 ------------------------------------------------
@@ -294,39 +72,63 @@ function BF:ChargingHandleOnRelease(hand)
         -- TODO: sound fx and remove charginghandle grip point
     end
 end
+
+function BF:BloodSplatter(hit)
+    local bloodpart = Instance.new("Part")
+    bloodpart.Color = Color3.new(1, 0.5, 0)
+    bloodpart.Anchored = false
+    bloodpart.CanCollide = false
+    bloodpart.Size = Vector3.new(0.1, 0.1, 0.1)
+    bloodpart.Transparency = 0.25
+    bloodpart.Position = hit.Position
+    bloodpart.Parent = game.Workspace
+    bloodpart.Velocity = Vector3.new(math.random(-15, 15), math.random(-15, 15), math.random(-15, 15))
+    Debris:AddItem(bloodpart, 0.5)
+end
+
 --------------------------------------------------------------
-function BF:FireProjectile(hand, grip_point)
+
+function BF:FireProjectile()
+
     local barrel = self.Model[self.BarrelComponent]
     local coach_ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
 
-    local cartridge = cartridges[self.Cartridge]
+    local cartridge = Cartridges[self.Cartridge]
 
     local hit, pos, surfacenormal, material = game.Workspace:FindPartOnRay(coach_ray, self.Model)
 
     if not hit then return end
     local isPlayer = false
 
-    -- TODO: 
-
-    if isPlayer then
+    -- gotta hit
+    if hit.Parent:FindFirstChild("Humanoid") then
         local resultant_damage = cartridge.Damage
-        if hit.Name == "Head" then
-
+        if hit.Name == "Head" or hit.Name == "HeadJ" then
+            print("Headshot!")
+            resultant_damage = resultant_damage * cartridge.HeadMul
         end
 
         if hit.Name == "LeftUpperArm" or hit.Name == "LeftLowerArm" or hit.Name == "RightUpperArm" or hit.Name == "RightLowerArm" then
-
+            resultant_damage = resultant_damage * cartridge.ArmMul
         end
 
+        for i = 1, resultant_damage/2 do
+            self:BloodSplatter(hit)
+        end
+
+        local hit_reflect = Networking.GetNetHook("ClientHit")
+        hit_reflect:FireServer(hit.Parent, resultant_damage)
+        hit.Parent.Humanoid:TakeDamage(resultant_damage)
+        -- TODO: hitreg?
     end
 
     if hit.Anchored then
-
         local bullet_impact = Instance.new("Part") do
-            bullet_impact.Color = Color3.new(0, 0, 0)
+            bullet_impact.Color = Color3.new(1, 1, 1)
+            bullet_impact.Material = Enum.Material.Neon
             bullet_impact.Shape = Enum.PartType.Ball
             bullet_impact.Transparency = 0.25
-            local impact_size = cartridge.BoreDiameter/12
+            local impact_size = cartridge.BoreDiameter/2
             bullet_impact.Size = Vector3.new(impact_size, impact_size, impact_size)
             bullet_impact.Anchored = true
             bullet_impact.CanCollide = false
@@ -406,8 +208,9 @@ function BF:TriggerDown(hand, dt, grip_point)
         if self.MagazineRoundCount == 0 then
             self.RoundInChamber = false
         end
-
+        hand:SetRumble(1)
         self:Fire(hand, grip_point)
+        delay(0.1, function() hand:SetRumble(0) end)
     end
 end
 
@@ -431,7 +234,7 @@ function BF:OnMagazineRemove(hand)
     hand:Release(true)
     self.MagazineInserted = false
 
-    self.Model.Magazine.GripPoint:Destroy() -- TODO: do not destroy, break the weld instead stoopid
+    self.Model.Magazine.GripPoint.Grabbed.Value = false -- TODO: do not destroy, break the weld instead stoopid
     self.Model.Magazine.Transparency = 1
 end
 
@@ -478,12 +281,8 @@ function BF:MagStep(handinst, dt, magpart)
     end
 end
 
-function BF:BoltStep(handinst, dt, boltpart)
+function BF:BoltStep(handinst, dt, boltpart) end
 
-end
-
-local function mag_reload() end
-local function shell_reload() end
 
 function BF:OnSimulationStep(hand, dt, grip_point)
     local magazine = self.Model[self.MagazineComponent]
