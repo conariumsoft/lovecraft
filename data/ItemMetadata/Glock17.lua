@@ -39,4 +39,31 @@ Glock17.BoltComponent = "Slide"
 Glock17.MagazineType = "GlockMag"
 Glock17.Automatic = false
 
+
+function Glock17:BoltCycle()
+    local prism = self.Model[self.BoltComponent].PrismaticConstraint
+
+    prism.TargetPosition = 0.5
+
+    if self.RoundInChamber == false then
+        prism.TargetPosition = 0.35
+
+    else
+        delay(0.1, function()
+            prism.TargetPosition = 0.2
+        end)
+    end
+end
+
+function Glock17:ChargingHandleOnRelease(hand)
+    local prism = self.Model[self.BoltComponent].PrismaticConstraint
+
+    if self.MagazineInserted and self.RoundInChamber == false then
+        self.RoundInChamber = true
+        self.MagazineRoundCount = self.MagazineRoundCount - 1
+
+        prism.TargetPosition = 0
+    end
+end
+
 return Glock17

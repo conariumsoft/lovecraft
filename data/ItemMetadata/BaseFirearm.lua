@@ -1,4 +1,5 @@
 _G.using "Lovecraft.Networking"
+_G.using "Lovecraft.ItemInstances"
 _G.using "RBX.Debris"
 
 local BaseInteractive = require(script.Parent.BaseInteractive)
@@ -89,16 +90,14 @@ end
 --------------------------------------------------------------
 
 function BF:FireProjectile()
-
     local barrel = self.Model[self.BarrelComponent]
     local coach_ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
 
     local cartridge = Cartridges[self.Cartridge]
 
-    local hit, pos, surfacenormal, material = game.Workspace:FindPartOnRay(coach_ray, self.Model)
+    local hit, pos = game.Workspace:FindPartOnRay(coach_ray, self.Model)
 
     if not hit then return end
-    local isPlayer = false
 
     -- gotta hit
     if hit.Parent:FindFirstChild("Humanoid") then
@@ -146,13 +145,23 @@ function BF:Fire(hand, grip_point)
     local barrel = self.Model[self.BarrelComponent]
     local bolt = self.Model[self.BoltComponent]
 
-    self.Model.Fire:Stop()
-    self.Model.Fire.TimePosition = 0.05
-    self.Model.Fire:Play()
+    barrel.Fire:Stop()
+    barrel.Fire:Play()
 
     barrel.PointLight.Enabled = true
 
-    -- bolt anim
+    self:BoltCycle()
+    self:ApplyRecoilImpulse(hand, grip_point)
+    self:FireProjectile(hand, grip_point)
+
+    barrel.BillboardGui.Enabled = true
+    barrel.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
+
+    delay(1/20, function() barrel.BillboardGui.Enabled = false end)
+    delay(1/10, function() barrel.PointLight.Enabled = false end)
+end
+
+function BF:BoltCycle()
     animation_track:Stop()
     animation_track:Play()
     animation_track.TimePosition = 0
@@ -162,14 +171,6 @@ function BF:Fire(hand, grip_point)
         animation_track:AdjustSpeed(0)
         animation_track.TimePosition = (animation_track.Length * 0.25)
     end
-    self:ApplyRecoilImpulse(hand, grip_point)
-    self:FireProjectile(hand, grip_point)
-
-    barrel.BillboardGui.Enabled = true
-    barrel.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
-
-    delay(1/20, function() barrel.BillboardGui.Enabled = false end)
-    delay(1/10, function() barrel.PointLight.Enabled = false end)
 end
 
 function BF:ClientFireEffects(hand, grip_point)
@@ -219,7 +220,13 @@ function BF:OnMagazineInsert(magazine)
     self.MagazineInserted = true
     self.MagazineRoundCount = self.MagazineSize
 
-    self.Model.Magazine.Transparency = 0
+    local magweld = Instance.new("WeldConstraint")
+
+    magweld.Name = "MagWeld"
+    magweld.Parent = magazine.Magazine
+
+
+    --[[self.Model.Magazine.Transparency = 0
     magazine.Parent = nil
 
     if self.Model.Magazine:FindFirstChild("GripPoint") == nil then
@@ -227,11 +234,11 @@ function BF:OnMagazineInsert(magazine)
             mag_gp.Name = "GripPoint"
             mag_gp.Parent = self.Model.Magazine
         end
-    end
+    end]]
 end
 
 function BF:OnMagazineRemove(hand)
-    hand:Release(true)
+    --hand:Release(true)
     self.MagazineInserted = false
 
     self.Model.Magazine.GripPoint.Grabbed.Value = false -- TODO: do not destroy, break the weld instead stoopid

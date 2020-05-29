@@ -9,12 +9,17 @@ _G.using "Lovecraft.Lib.RotatedRegion3"
 _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
 _G.using "Lovecraft.ItemInstances"
+_G.using "RBX.RunService"
 
 local function hand_attachment_part()
 	local hgp = Instance.new("Part") do
 		hgp.Anchored = true
 		hgp.CanCollide = false
-		hgp.Transparency = 0.25
+		if RunService:IsStudio() then
+			hgp.Transparency = 0.25
+		else
+			hgp.Transparency = 1
+		end
 		hgp.Color = Color3.new(0, 1, 1)
 		hgp.Size = Vector3.new(0.1, 0.1, 0.1)
 		hgp.Parent = game.Workspace
@@ -61,9 +66,9 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self._HandModelSoftWeld = Physics.PointSolver:new(hgp_attachment, self.HandModel.PrimaryPart.Attachment, {
 		pos_responsiveness = 100,
 		rot_responsiveness = 100,
-		pos_max_force      = 5000,
+		pos_max_force      = 3000,
 		rot_max_torque     = 3000,
-		pos_max_velocity   = 100000,
+		pos_max_velocity   = 5000,
 	})
 
 	-- confirm replication of Animator (or else animations will not replicate back to server)
