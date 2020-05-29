@@ -1,10 +1,9 @@
 _G.using "Lovecraft.Networking"
-_G.using "Lovecraft.ItemInstances"
 _G.using "RBX.Debris"
+_G.using "Lovecraft.ItemInstances"
 
 local BaseInteractive = require(script.Parent.BaseInteractive)
 local Cartridges = require(script.Parent.Cartridges)
-
 
 local BF = BaseInteractive:subclass("BaseFirearm") do
     BF.TriggerStiffness = 0.95
@@ -12,7 +11,6 @@ local BF = BaseInteractive:subclass("BaseFirearm") do
     BF.RecoilRecoverySpeed = 2
     BF.BoltTravelDistance = 0.2
     BF.BarrelComponent = nil
-    BF.MagazineComponent = nil
     BF.BoltComponent = nil
     BF.MagazineType = nil
     BF.Automatic = false
@@ -32,6 +30,7 @@ local BF = BaseInteractive:subclass("BaseFirearm") do
         ZTiltMax = 0,
     }
     BF.Cartridge = ".22LR"
+    BF.MagazineCFrame = CFrame.new(0, 0, 0)
 end
 
 local animation_track = nil
@@ -40,11 +39,23 @@ function BF:__ctor(...) -- TODO pass in the model?
     BaseInteractive.__ctor(self, ...)
     self.Timer = 1
     self.RoundInChamber = true
-    self.MagazineInserted = true
+    self.MagazineInserted = false
     self.MagazineRoundCount = self.MagazineSize-- put back to nominal values later
     self.BoltGrabbed = false
     self.TriggerPressed = false
     self.HandleStepDebounce = false
+    self.BoltForward = true
+
+    self:SummonMag()
+end
+
+-- will get a mag from replicated storage and auto-chamber first round
+function BF:SummonMag()
+    local mymag = game.ReplicatedStorage.Content.Magazines[self.MagazineType]:Clone()
+
+    mymag.Parent = game.Workspace.Physical
+
+    self:OnMagazineInsert(mymag)
 end
 
 ------------------------------------------------
@@ -60,11 +71,16 @@ function BF:HandleOnGrab(hand)
 end
 
 function BF:HandleOnRelease(hand) end
-function BF:MagazineOnGrab(hand) end
-function BF:MagazineOnRelease(hand) end
-function BF:ChargingHandleOnGrab(hand) self.BoltGrabbed = true end
+
+function BF:ChargingHandleOnGrab(hand) 
+
+    self.BoltGrabbed = true 
+end
 
 function BF:ChargingHandleOnRelease(hand)
+
+
+
     if self.MagazineInserted and self.RoundInChamber == false then
         self.RoundInChamber = true
         self.MagazineRoundCount = self.MagazineRoundCount - 1
@@ -146,6 +162,7 @@ function BF:Fire(hand, grip_point)
     local bolt = self.Model[self.BoltComponent]
 
     barrel.Fire:Stop()
+    barrel.Fire.TimePosition = 0.1
     barrel.Fire:Play()
 
     barrel.PointLight.Enabled = true
@@ -216,30 +233,38 @@ function BF:TriggerDown(hand, dt, grip_point)
 end
 
 function BF:OnMagazineInsert(magazine)
+
+    local inst = ItemInstances.GetClassInstance(magazine)
+
+    if inst == nil then
+        local pop = require(script.Parent.Magazine)
+        inst = ItemInstances.CreateClassInstance(magazine, pop)
+    end
+
+    if inst.BeingGripped == true then return end
+    
+    inst:OnInsert(self)
+
     print("Magazine Inserted")
     self.MagazineInserted = true
     self.MagazineRoundCount = self.MagazineSize
 
+    magazine:SetPrimaryPartCFrame(self.Model:GetPrimaryPartCFrame() * self.MagazineCFrame)
     local magweld = Instance.new("WeldConstraint")
 
     magweld.Name = "MagWeld"
-    magweld.Parent = magazine.Magazine
+    magweld.Parent = magazine.PrimaryPart
+    magweld.Part1 = magazine.PrimaryPart
+    magweld.Part0 = self.Model.PrimaryPart
 
-
-    --[[self.Model.Magazine.Transparency = 0
-    magazine.Parent = nil
-
-    if self.Model.Magazine:FindFirstChild("GripPoint") == nil then
-        local mag_gp = Instance.new("BoolValue") do
-            mag_gp.Name = "GripPoint"
-            mag_gp.Parent = self.Model.Magazine
-        end
-    end]]
+    
+    
 end
 
 function BF:OnMagazineRemove(hand)
-    --hand:Release(true)
     self.MagazineInserted = false
+
+    self.MagazineRoundCount = 0
 
     self.Model.Magazine.GripPoint.Grabbed.Value = false -- TODO: do not destroy, break the weld instead stoopid
     self.Model.Magazine.Transparency = 1
@@ -256,14 +281,12 @@ function BF:OnGrab(hand, grip_point)
 
     local g = grip_point.Name
     if g == "Handle"         then self:HandleOnGrab(hand)         end 
-    if g == "Magazine"       then self:MagazineOnGrab(hand)       end
     if g == "ChargingHandle" then self:ChargingHandleOnGrab(hand) end
 end
 
 function BF:OnRelease(hand, grip_point)
     local gp = grip_point.Name
     if gp == "Handle"         then self:HandleOnRelease(hand)         end
-    if gp == "Magazine"       then self:MagazineOnRelease(hand)       end
     if gp == "ChargingHandle" then self:ChargingHandleOnRelease(hand) end
 end
 
@@ -282,17 +305,10 @@ function BF:HandleStep(handinst, dt, handlepart)
     end
 end
 
-function BF:MagStep(handinst, dt, magpart)
-    if self.MagazineInserted and handinst.IndexFingerPressure > 0.95 then
-        self:OnMagazineRemove(handinst)
-    end
-end
-
 function BF:BoltStep(handinst, dt, boltpart) end
 
 
 function BF:OnSimulationStep(hand, dt, grip_point)
-    local magazine = self.Model[self.MagazineComponent]
 
     -- magazine insertion
     local mag_well = self.Model.MagazineCorrect -- TODO: hardcoded not good
@@ -304,7 +320,6 @@ function BF:OnSimulationStep(hand, dt, grip_point)
     end
 
     if grip_point.Name == "Handle"         then self:HandleStep(hand, dt, grip_point) end
-    if grip_point.Name == "Magazine"       then self:MagStep(hand, dt, grip_point)    end
     if grip_point.Name == "ChargingHandle" then self:BoltStep(hand, dt, grip_point)   end
 end
 

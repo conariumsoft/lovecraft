@@ -20,9 +20,10 @@ _G.using "Lovecraft.VRHand"
 _G.using "Lovecraft.DebugBoard"
 _G.using "Lovecraft.Networking"
 _G.using "Lovecraft.Kinematics"
+
 _G.using "Game.Data.ItemMetadata"
 
-
+_G.log("Got all Usings 2")
 
 local ui = require(script.ui)
 

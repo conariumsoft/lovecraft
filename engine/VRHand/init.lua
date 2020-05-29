@@ -1,3 +1,4 @@
+
 _G.using "RBX.ReplicatedStorage"
 _G.using "RBX.ReplicatedFirst"
 _G.using "RBX.Workspace"
@@ -7,9 +8,11 @@ _G.using "RBX.PhysicsService"
 _G.using "Lovecraft.Physics"
 _G.using "Lovecraft.Lib.RotatedRegion3"
 _G.using "Lovecraft.Networking"
+
 _G.using "Game.Data.ItemMetadata"
 _G.using "Lovecraft.ItemInstances"
 _G.using "RBX.RunService"
+
 
 local function hand_attachment_part()
 	local hgp = Instance.new("Part") do

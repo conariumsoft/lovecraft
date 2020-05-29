@@ -80,6 +80,7 @@ local Saiga    = require(script.Saiga)
 local Glock17  = require(script.Glock17)
 local Tec9	   = require(script.Tec9)
 local Glock18  = require(script.Glock18)
+local Magazine = require(script.Magazine)
 
 -- setup code finished. --
 local ItemMetadata = {
@@ -160,8 +161,20 @@ local ItemMetadata = {
 		grip_type = "Anywhere",
 		grip_data = {
 			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0))
-		}
+		},
+		class = Magazine,
 	},
+	["GlockMag"] = {
+		name = "GlockMag",
+		class = Magazine,
+	},
+	["Tec9Mag"] = {
+		name = "Tec9Mag",
+		class = Magazine,
+	},
+	
+	---------------------------------------------------------------------
+	-- @section Not Guns --
 	["LightSaber"] = {
 		name = "LightSaber",
 		grip_type = "GripPoint",
@@ -169,8 +182,6 @@ local ItemMetadata = {
 			MeshPart = GripPoint:new(nil, CFrame.new(0, 0, 0))
 		}
 	},
-	---------------------------------------------------------------------
-	-- @section Guns --
 	["Eraser"] = {
 		name = "Eraser",
 		grip_type = "Anywhere",

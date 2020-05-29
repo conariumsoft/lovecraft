@@ -1,5 +1,3 @@
-_G.using "Game.Data.ItemMetadata"
-
 local item_db = {}
 
 local Module = {}

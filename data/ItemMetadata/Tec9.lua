@@ -33,5 +33,6 @@ Tec9.BoltComponent = "ChargingHandle"
 Tec9.MagazineType = "Tec9Mag"
 Tec9.Automatic = true
 Tec9.MagazineSize = 50
+Tec9.MagazineCFrame = CFrame.new(0.4, -0.01, -0.1)
 
 return Tec9

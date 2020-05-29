@@ -38,6 +38,7 @@ Glock17.MagazineComponent = "Magazine"
 Glock17.BoltComponent = "Slide"
 Glock17.MagazineType = "GlockMag"
 Glock17.Automatic = false
+Glock17.MagazineCFrame = CFrame.new(0.162 , 0, -0.05) * CFrame.Angles(math.rad(90), 0, 0)
 
 
 function Glock17:BoltCycle()
