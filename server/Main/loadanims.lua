@@ -18,31 +18,31 @@ local right_hand_animation_defs = {
   
 }
 
-return function()
-    local anims_folder = Instance.new("Folder")
-    anims_folder.Name = "Animations"
-    anims_folder.Parent = ReplicatedStorage
-    local lf = Instance.new("Folder")
-        lf.Name = "Left"
-        lf.Parent = anims_folder
-    local rf = Instance.new("Folder")
-        rf.Name = "Right"
-        rf.Parent = anims_folder
+local anims_folder = Instance.new("Folder")
+anims_folder.Name = "Animations"
+anims_folder.Parent = ReplicatedStorage
+local lf = Instance.new("Folder")
+    lf.Name = "Left"
+    lf.Parent = anims_folder
+local rf = Instance.new("Folder")
+    rf.Name = "Right"
+    rf.Parent = anims_folder
 
-    local function LoadAnimation(folder, name, id)
-        local anim = Instance.new("Animation")
-        anim.AnimationId = id
-        anim.Name = name
-        anim.Parent = folder
-        return anim
-    end
-
-    -- load sets
-    for _, data in pairs(left_hand_animation_defs) do
-        LoadAnimation(lf, data[1], data[2])
-    end
-
-    for _, data in pairs(right_hand_animation_defs) do
-        LoadAnimation(rf, data[1], data[2])
-    end
+local function LoadAnimation(folder, name, id)
+    local anim = Instance.new("Animation")
+    anim.AnimationId = id
+    anim.Name = name
+    anim.Parent = folder
+    return anim
 end
+
+-- load sets
+for _, data in pairs(left_hand_animation_defs) do
+    LoadAnimation(lf, data[1], data[2])
+end
+
+for _, data in pairs(right_hand_animation_defs) do
+    LoadAnimation(rf, data[1], data[2])
+end
+
+return true

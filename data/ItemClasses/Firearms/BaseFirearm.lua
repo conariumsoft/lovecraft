@@ -2,10 +2,11 @@ _G.using "Lovecraft.Networking"
 _G.using "RBX.Debris"
 _G.using "Lovecraft.ItemInstances"
 
-local BaseInteractive = require(script.Parent.BaseInteractive)
-local Cartridges = require(script.Parent.Cartridges)
 
-local BF = BaseInteractive:subclass("BaseFirearm") do
+local BaseItem = require(script.Parent.Parent.BaseItem)
+local Cartridges = require(script.Parent.Parent.Parent.Cartridges)
+
+local BF = BaseItem:subclass("BaseFirearm") do
     BF.TriggerStiffness = 0.95
     BF.RateOfFire = 850
     BF.RecoilRecoverySpeed = 2
@@ -36,7 +37,7 @@ end
 local animation_track = nil
 
 function BF:__ctor(...) -- TODO pass in the model?
-    BaseInteractive.__ctor(self, ...)
+    BaseItem.__ctor(self, ...)
     self.Timer = 1
     self.RoundInChamber = true
     self.MagazineInserted = false
@@ -134,6 +135,7 @@ function BF:FireProjectile()
         local hit_reflect = Networking.GetNetHook("ClientHit")
         hit_reflect:FireServer(hit.Parent, resultant_damage)
         hit.Parent.Humanoid:TakeDamage(resultant_damage)
+
         -- TODO: hitreg?
     end
 
@@ -266,13 +268,12 @@ function BF:OnMagazineRemove(hand)
 
     self.MagazineRoundCount = 0
 
-    self.Model.Magazine.GripPoint.Grabbed.Value = false -- TODO: do not destroy, break the weld instead stoopid
-    self.Model.Magazine.Transparency = 1
 end
 
 ---------------------------------
 -- External API-Hook methods
 function BF:OnGrab(hand, grip_point)
+    BaseItem.OnGrab(self, hand, grip_point)
     if not self.Model:FindFirstChild("Data") then
         local folder = Instance.new("Folder")
         folder.Name = "Data"
@@ -285,6 +286,7 @@ function BF:OnGrab(hand, grip_point)
 end
 
 function BF:OnRelease(hand, grip_point)
+    BaseItem.OnRelease(self, hand, grip_point)
     local gp = grip_point.Name
     if gp == "Handle"         then self:HandleOnRelease(hand)         end
     if gp == "ChargingHandle" then self:ChargingHandleOnRelease(hand) end

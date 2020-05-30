@@ -2,7 +2,7 @@ local BaseInteractive = require(script.Parent.BaseInteractive)
 
 local Mag = BaseInteractive:subclass("Magazine")
 
--- TODO: prevent mag latching while holding the mag...
+-- TODO: Contain round count within magazine
 
 function Mag:__ctor(...)
     BaseInteractive.__ctor(self, ...)

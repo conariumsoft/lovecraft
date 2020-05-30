@@ -20,9 +20,10 @@ Networking.Initialize()
 local on_client_request_vr_state = Networking.GenerateNetHook     ("ClientRequestVRState")
 local on_client_grab_object      = Networking.GenerateAsyncNetHook("ClientGrab")
 local on_client_release_object   = Networking.GenerateAsyncNetHook("ClientRelease")
-local on_client_shoot            = Networking.GenerateAsyncNetHook("ClientShoot")
-local on_client_hit              = Networking.GenerateAsyncNetHook("ClientHit")
-local set_client_highlight       = Networking.GenerateAsyncNetHook("SetClientHighlight")
+
+
+local on_client_request_inst  = Networking.GenerateNetHook     ("ClientRequestNewInst")
+
 local dev_gravity_control        = Networking.GenerateAsyncNetHook("SetServerGravity")
 
 -------------------------------------------------------------------
@@ -37,7 +38,8 @@ for _, inst in pairs(Workspace.Physical:GetDescendants()) do
 end
 ---------------------------------------------------------------------------
 -- load animations for hand models
-require(script.loadanims)()
+require(script.loadanims) -- download and setup all animations
+require(script.combat) -- combat manager
 
 ------------------------------------------------------------
 -- server modules
@@ -161,6 +163,8 @@ local auxiliary_parts = {
     "RightUpperLeg", "HumanoidRootPart"
 }
 
+local GIVE_PLAYER_ALL_OWNERSHIP = false
+
 -- fired by client (presumably) when ready to start VR game
 -- load in hand models and setup animations
 local function OnClientRequestVRState(player)
@@ -204,19 +208,6 @@ local function OnClientRequestVRState(player)
 end
 
 
-local function client_reflect_gunshot(client, weapon)
-    on_client_shoot:FireAllClients(client, weapon)
-end
-
--- ? no hit verification?
--- yes. this is bad. extremely bad.
--- don't worry, hit verification will be implemented before
--- public testing.
-local function client_hit_enemy(client, enemy, damage)
-    --! WARNING: SERIOUSLY DUMB. NO SANITY CHECKING YET. DO NOT RELEASE IN THIS STATE
-    enemy.Humanoid:TakeDamage(damage)
-end
-
 local function server_update(server_run_time, tick_dt)
     for player, data in pairs(PlayerSessionStats) do
         data.PlayTime = data.PlayTime + tick_dt
@@ -228,8 +219,6 @@ local function on_gravity_change(player, value)
 end
 
 
-on_client_shoot.OnServerEvent:Connect(client_reflect_gunshot)
-on_client_hit.OnServerEvent:Connect(client_hit_enemy)
 on_client_grab_object.OnServerEvent:Connect(on_plr_grab_object)
 on_client_release_object.OnServerEvent:Connect(on_plr_drop_object)
 dev_gravity_control.OnServerEvent:Connect(on_gravity_change)
@@ -239,6 +228,3 @@ RunService.Stepped:Connect(server_update)
 
 game.Players.PlayerAdded:Connect(on_player_join)
 game.Players.PlayerRemoving:Connect(on_player_leave)
-
-
-require(script.Parent.gm_deathmatch)

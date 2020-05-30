@@ -72,6 +72,13 @@ function GripSurface:__ctor()
 
 end
 
+--[[
+	-- thanks to DevLuke
+	transform.rotation = rotOffset * Quaternion.LookRotation(reverseSecondaryAim ? 
+	(primaryGrip.EquippedHand.lastControllerPos - (secondaryGrip.EquippedHand.lastControllerPos)) : 
+	((secondaryGrip.EquippedHand.lastControllerPos) - primaryGrip.EquippedHand.lastControllerPos), 
+	primaryGrip.EquippedHand.lastControllerRot * Vector3.forward) * recoilOffset;
+]]
 
 --------------------------------------------------------------------------
 local Skorpion = require(script.Skorpion)
@@ -81,6 +88,7 @@ local Glock17  = require(script.Glock17)
 local Tec9	   = require(script.Tec9)
 local Glock18  = require(script.Glock18)
 local Magazine = require(script.Magazine)
+
 
 -- setup code finished. --
 local ItemMetadata = {
@@ -108,6 +116,7 @@ local ItemMetadata = {
 		name = "Tec9",
 		grip_type = "GripPoint",
 		class = Tec9,
+		
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)*CFrame.Angles(0, -math.rad(90), -math.rad(90))),
 			--Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
