@@ -53,11 +53,9 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self.HoldingObject      = nil -- if grabbed something
 	self.GripPoint          = nil -- which point on an object did we grab?
 	self.IsGripped = true
-	self.IndexFingerPressure = 0
-	self.GripStrength = 0
+	self.PointerState = 0
+	self.GripState = 0
 	self.Grabbing = false
-
-	self.AssumeSecondaryPivot = false
 
 	local hgp = hand_attachment_part()
 	local hgp_attachment = Instance.new("Attachment")
@@ -85,6 +83,7 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 
 	self.HighlightPart = highlight
 end
+
 
 function VRHand:_LoadAnimationTracks()
 	for _, anim in pairs(ReplicatedStorage.Animations[self.Handedness]:GetChildren()) do
@@ -137,18 +136,9 @@ function VRHand:SetAnimTimeScale(anim_name, timescale)
 	end
 end
 
-function VRHand:SetIndexFingerCurl(grip_strength)
-	self.IndexFingerPressure = grip_strength
-	self:SetAnimTimeScale("Index", grip_strength)
 
-	if self.HoldingObject and self.ItemInstance then
-		self.ItemInstance:OnTriggerState(self, grip_strength, self.GripPoint)
-	end
-end
+function VRHand:PickupItem(item)
 
-function VRHand:SetGripStrength(grip_strength)
-	self.GripStrength = grip_strength
-	self:SetAnimTimeScale("Grip", grip_strength)
 end
 
 function VRHand:Grab()
@@ -159,23 +149,15 @@ end
 function VRHand:Release()
 	self.Grabbing = false
 	--- drop any object currently in the hand & must check if holding an item
-	if self.HoldingObject == nil then return end
-	-- we are no longer holding
-	self.GripPoint.GripPoint.Grabbed.Value = false
-
+	
+	if not self.HoldingObject then return end
+	
+	delay(0.25, function() self._CollisionMask:Destroy() end) -- delay a bit so physics dont spaz
 	-- if class definition exists run OnRelease callback
 	if self.ItemInstance then
-
-		-- Ugly hack
-		if self.GripPoint.Name == "Handle" then
-			self.ItemInstance.PrimaryControl = false
-		end
-
 		self.ItemInstance:OnRelease(self, self.GripPoint)
 		self.ItemInstance = nil
 	end
-
-	delay(0.25, function() self._CollisionMask:Destroy() end) -- delay a bit so physics dont spaz
 
 	if self._GrabbedObjectWeld then
 		self._GrabbedObjectWeld:Destroy()
@@ -246,7 +228,6 @@ function VRHand:ItemGrab()
 
 	-- if found no metadata -> assume default properties
 	-- (most likely non-functional prop or scenery, needs no custom anim or grip style)
-	local weld_override = false
 	if obj_meta and  obj_meta.class then 
 		local inst = ItemInstances.GetClassInstance(item_model) or
 			ItemInstances.CreateClassInstance(item_model, obj_meta.class)
@@ -267,14 +248,13 @@ function VRHand:ItemGrab()
 			self.HandModel.PrimaryPart.CFrame = part.CFrame * gripinformation.Offset
 		end
 	end
-	if self.AssumeSecondaryPivot == false then
-		local weld = Instance.new("WeldConstraint") do -- last step, weld together
-			weld.Part1 = part
-			weld.Part0 = self.HandModel.PrimaryPart
-			weld.Parent = part
-		end
-		self._GrabbedObjectWeld = weld
+	
+	local weld = Instance.new("WeldConstraint") do -- last step, weld together
+		weld.Part1 = part
+		weld.Part0 = self.HandModel.PrimaryPart
+		weld.Parent = part
 	end
+	self._GrabbedObjectWeld = weld
 end
 
 function VRHand:HighlightSphere(part)
@@ -287,9 +267,13 @@ function VRHand:HighlightSphere(part)
 	self.HighlightPart.Adornee = part
 	self.HighlightPart.Parent = part
 end
-
 ---
 function VRHand:Update(dt)
+
+	self:SetAnimTimeScale("Grip", self.GripState)
+	self:SetAnimTimeScale("Index", self.PointerState)
+	-- TODO: thumb
+
 	self:HighlightSphere(self:GetClosestInteractive()) -- highlight closest manipulatable object
 	self.RelativeCFrame = VRService:GetUserCFrame(self.UserCFrameEnum)
 
@@ -309,7 +293,6 @@ function VRHand:Update(dt)
 	else
 		self:SetRumble(0)
 	end
-	
 end
 
 return VRHand

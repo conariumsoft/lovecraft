@@ -10,7 +10,7 @@ CollisionMasks are not obvious, no helpful info...
 Item Ownership still sucks
 
 Things I want to add:
-	Thumb Joint Control
+	NO Thumb Joint Control
 	Reflection of effects and shit.
 	ECS for items? (Fully represent items as data, and just have system implementations)
 	Synchronization for guns and magazines (chamber state, round count)
@@ -24,37 +24,44 @@ Things I want to add:
 	Inventory system (?)
 	Gesture system?
 	VRClient class?
-	VRInteraction System:
-		Currently all we have is Hand-> Objects
+
+    Camera wrapper class?
+    Controller wrapper class?
+    Hardware Relevant shit
+        Currently no way to detect. We're just gonna have to ask the player the first time they join.
+        Along with calibrating floor level and body height. (I'll be able to datamine manlets LUL)
+    
 
 Things I want to remove:
 
+start -> grab by barrel (normal grip)
+next -> grab the handle (direction grip)
+next -> release the barrel (back to normal grip)
+next -> release the handle ()
+
+handle = {
+    priority = true,
+}
+
 Questions:
-	Keep _G.using semantic? Allow passing table?
-	Weird mixture of OO and procedural? Lean more toward OO perhaps?
 	Use Humanoid at all? (Don't like it that much!)
 
 
+Essentials of client main:
+    Kinematics on body
+    Input (Both keyboard and VRController buttons)
+    Camera
 
-root/
-    Client.lua
-    Server.lua
-    engine/ <- this shouldn't b left in replstor, but dont want to fragment codebase :(
-    data/
-    itemscripts/
+Essentials of VRHand:
+    Reads UserCFrame for hand controller
+    Handles object grabbing and releasing
+        Object highlighting
+        Object grab search
+        Obj metadata parsing
+        Weld creation and maintenance
+    Runs animations on hand model to match IRL
+    Provides haptic feedback (rumble)
 
 
-root/
-    cli/
-        script/
-        eng/
-        main.lua
-    ser/
-        script/
-        eng/
-        main.lua
-    rep/
-        gamemodes?/
-        itemscripts/
-        eng/
-        data/
+TODO:
+    Client taking damage indicator

@@ -80,13 +80,16 @@ end
 ]]
 
 --------------------------------------------------------------------------
-local Skorpion = require(script.Skorpion)
-local Hecate   = require(script.Hecate)
-local Saiga    = require(script.Saiga)
-local Glock17  = require(script.Glock17)
-local Tec9	   = require(script.Tec9)
-local Glock18  = require(script.Glock18)
-local Magazine = require(script.Magazine)
+local Skorpion = require(script.Parent.ItemClasses.Firearms.Skorpion)
+local Hecate   = require(script.Parent.ItemClasses.Firearms.Hecate)
+local Saiga    = require(script.Parent.ItemClasses.Firearms.Saiga)
+local Glock17  = require(script.Parent.ItemClasses.Firearms.Glock17)
+local Tec9	   = require(script.Parent.ItemClasses.Firearms.Tec9)
+local Glock18  = require(script.Parent.ItemClasses.Firearms.Glock18)
+local Magazine = require(script.Parent.ItemClasses.Magazine)
+
+
+
 
 -- setup code finished. --
 local ItemMetadata = {
@@ -186,19 +189,6 @@ local ItemMetadata = {
 		grip_type = "GripPoint",
 		grip_data = {
 			MeshPart = GripPoint:new(nil, CFrame.new(0, 0, 0))
-		}
-	},
-	["Eraser"] = {
-		name = "Eraser",
-		grip_type = "Anywhere",
-		class = require(script.Eraser),
-	},
-	["Marker"] = {
-		class = require(script.Marker),
-		name = "Marker",
-		grip_type = "GripPoint",
-		grip_data = {
-			MarkerBase = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 		}
 	},
 }

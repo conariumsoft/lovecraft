@@ -100,6 +100,7 @@ function BF:BloodSplatter(hit)
     bloodpart.Transparency = 0.25
     bloodpart.Position = hit.Position
     bloodpart.Parent = game.Workspace
+    -- Math3D.RandomVec3
     bloodpart.Velocity = Vector3.new(math.random(-15, 15), math.random(-15, 15), math.random(-15, 15))
     Debris:AddItem(bloodpart, 0.5)
 end
@@ -241,7 +242,7 @@ function BF:OnMagazineInsert(magazine)
     local inst = ItemInstances.GetClassInstance(magazine)
 
     if inst == nil then
-        local pop = require(script.Parent.Magazine)
+        local pop = require(script.Parent.Parent.Magazine)
         inst = ItemInstances.CreateClassInstance(magazine, pop)
     end
 
@@ -294,12 +295,12 @@ function BF:HandleStep(handinst, dt, handlepart)
         
     handinst.RecoilCorrectionCFrame = handinst.RecoilCorrectionCFrame:Lerp(CFrame.new(0, 0, 0), 1/self.RecoilRecoverySpeed)
 
-    if handinst.IndexFingerPressure > self.TriggerStiffness then
+    if handinst.PointerState > self.TriggerStiffness then
         self:TriggerDown(handinst, dt, handlepart)
         self.TriggerPressed = true
     end
     
-    if handinst.IndexFingerPressure < 0.25 then
+    if handinst.PointerState < 0.25 then
         self.TriggerPressed = false
     end
 end
@@ -321,8 +322,4 @@ function BF:OnSimulationStep(hand, dt, grip_point)
     if grip_point.Name == "Handle"         then self:HandleStep(hand, dt, grip_point) end
     if grip_point.Name == "ChargingHandle" then self:BoltStep(hand, dt, grip_point)   end
 end
-
-function BF:OnTriggerState(hand, finger_pressure, grip_point)
-end
-
 return BF

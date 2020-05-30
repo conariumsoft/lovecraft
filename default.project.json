@@ -20,10 +20,6 @@
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
         "$path": "client"
-      },
-      "StarterCharacterScripts": {
-        "$className": "StarterCharacterScripts",
-        "$path": "char"
       }
     },
     "Workspace": {

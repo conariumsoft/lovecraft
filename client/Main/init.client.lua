@@ -21,8 +21,8 @@ _G.using "Lovecraft.DebugBoard"
 _G.using "Lovecraft.Networking"
 _G.using "Lovecraft.Kinematics"
 _G.using "Game.Data.ItemMetadata"
+_G.using "Lovecraft.Math3D"
 
-_G.log("Got all Usings 2")
 
 local ui = require(script.ui)
 
@@ -69,6 +69,8 @@ local cl_character = cl_player.Character or cl_player.CharacterAdded:wait()
 -- send request for server-side init
 local vr_state_hook = Networking.GetNetHook("ClientRequestVRState")
 vr_state_hook:InvokeServer()
+
+-- wanna be able to notify hands of state changes
 
 ---------------------------------------------------------------------------------
 --- Camera Configuration
@@ -125,11 +127,6 @@ local ik_rightarm_chain = Kinematics.Chain:new({
 	Kinematics.Joint:new(nil, ik_upper_arm_bone_len),
 })
 
-local function line_to_cframe(vec1, vec2)
-	local v = (vec2-vec1)
-	return CFrame.new(vec1 + (v/2), vec2)
-end
-
 local function solve_chain(chain, origin, goal)
 	chain.origin = origin
 	chain.target = goal
@@ -159,10 +156,10 @@ local function kinematics(base_cf)
 
 	-- BODY PARTS --
 	-- TODO: once body is fully connected, this'll change
-	ch_leftupper.CFrame = line_to_cframe(ik_leftarm_chain.joints[3].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_leftlower.CFrame = line_to_cframe(ik_leftarm_chain.joints[2].vec, ik_leftarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_rightupper.CFrame = line_to_cframe(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_rightlower.CFrame = line_to_cframe(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_leftupper.CFrame =  Math3D.LineToCFrame(ik_leftarm_chain.joints[3].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_leftlower.CFrame =  Math3D.LineToCFrame(ik_leftarm_chain.joints[2].vec, ik_leftarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_rightupper.CFrame = Math3D.LineToCFrame(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
+	ch_rightlower.CFrame = Math3D.LineToCFrame(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
 end
 -----------------------------------------------------------
 -- Input Actions --
@@ -191,11 +188,11 @@ end
 
 local function act_hand_grab(hand)
 	hand:Grab()
-	hand:SetGripStrength(1)
+	hand.GripState = 0.99
 end
 local function act_hand_release(hand)
 	hand:Release()
-	hand:SetGripStrength(0)
+	hand.GripState = 0
 end
 -----------------------------------------------------------------------
 -- Keyboard methods --
@@ -210,17 +207,17 @@ local function kb_key_pressed(input)
 
 	if DEV_lockstate then return end -- Testing Tool : Hand Lock State
 
-	if input.KeyCode == Enum.KeyCode.LeftShift    then act_hand_grab(lhand)         end
-	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand:SetIndexFingerCurl(1)  end
-	if input.KeyCode == Enum.KeyCode.RightShift   then act_hand_grab(rhand)         end
-	if input.KeyCode == Enum.KeyCode.RightControl then rhand:SetIndexFingerCurl(1)  end
+	if input.KeyCode == Enum.KeyCode.LeftShift    then act_hand_grab(lhand)   end
+	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand.PointerState = 1 end
+	if input.KeyCode == Enum.KeyCode.RightShift   then act_hand_grab(rhand)   end
+	if input.KeyCode == Enum.KeyCode.RightControl then rhand.PointerState = 1 end
 end
 
 local function kb_key_release(input)
 	if input.KeyCode == Enum.KeyCode.LeftShift  then act_hand_release(lhand) end
 	if input.KeyCode == Enum.KeyCode.RightShift then act_hand_release(rhand) end
-	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand:SetIndexFingerCurl(0) end
-	if input.KeyCode == Enum.KeyCode.RightControl then rhand:SetIndexFingerCurl(0) end
+	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand.PointerState = 0 end
+	if input.KeyCode == Enum.KeyCode.RightControl then rhand.PointerState = 0 end
 end
 
 local function kb_hand_controls()
@@ -248,7 +245,6 @@ local r_indx_sensor = Enum.KeyCode.ButtonR2
 local l_grip_sensor = Enum.KeyCode.ButtonL1 -- middle finger anim
 local l_indx_sensor = Enum.KeyCode.ButtonL2
 local flicked = false
-
 
 ------------------------------------------------------------------------------------------------
 -- HEADS-UP-DISPLAY --
@@ -287,20 +283,34 @@ local function on_renderstep(delta)
 		kinematics(head_world_cf)
 	end
 
-	if DEV_vrkeyboard then
+	DEV_override_mouse = DEV_override_mouse + (
+		UserInputService:GetMouseDelta()
+		* math.rad(DEV_override_mouse_lookspeed)
+	)
 
-		-- TODO: hands not exactly lining up in VR mode
-		lhand.GoalCFrame  = cam_cf * lhand.RelativeCFrame *  lhand.RecoilCorrectionCFrame * lhand.DebugCFrame
-		rhand.GoalCFrame = cam_cf * rhand.RelativeCFrame * rhand.RecoilCorrectionCFrame * rhand.DebugCFrame
+	local rcf = (DEV_vrkeyboard) and rhand.DebugCFrame or rhand.RelativeCFrame
+	local lcf = (DEV_vrkeyboard) and lhand.DebugCFrame or lhand.RelativeCFrame
 
-		DEV_override_mouse = DEV_override_mouse + (
-			UserInputService:GetMouseDelta()
-			* math.rad(DEV_override_mouse_lookspeed)
-		)
-	else
-		lhand.GoalCFrame  = cam_cf * lhand.RelativeCFrame * lhand.RecoilCorrectionCFrame
-		rhand.GoalCFrame = cam_cf * rhand.RelativeCFrame  *  rhand.RecoilCorrectionCFrame
-	end
+	local lobj = lhand.ItemInstance
+	local robj = rhand.ItemInstance
+	if robj and lobj then
+
+		-- TODO: make hand-agnostic
+		-- TODO: code as data so I don't have to hardcode it
+		if (robj.Name == "Tec9" and lobj.Name == "Tec9Mag") or 
+		   (robj.Name == "Skorpion" and lobj.Name == "SkorpionMagazine") or
+		   (robj.Name == "Glock17" and lobj.Name == "GlockMag") then
+
+				rhand.GoalCFrame = cam_cf * CFrame.new(rcf.Position, lcf.Position) * rhand.RecoilCorrectionCFrame
+				lhand._HandModelSoftWeld:Disable()
+				return
+		end
+	end	
+	
+	lhand._HandModelSoftWeld:Enable()
+
+	lhand.GoalCFrame = cam_cf * lcf * lhand.RecoilCorrectionCFrame
+	rhand.GoalCFrame = cam_cf * rcf * rhand.RecoilCorrectionCFrame
 end
 
 local function stop_parts_floating_away()
@@ -373,7 +383,7 @@ local function on_input_changed(input)
 
 	-- palm grip
 	if input.KeyCode == r_grip_sensor then 
-		rhand:SetGripStrength(input.Position.Z)
+		rhand.GripState = input.Position.Z
 
 		if input.Position.Z < 0.95 then
 			rhand:Release()
@@ -384,7 +394,7 @@ local function on_input_changed(input)
 		end
 	end	
 	if input.KeyCode == l_grip_sensor then 
-		lhand:SetGripStrength(input.Position.Z) 
+		lhand.GripState = input.Position.Z
 
 		if input.Position.Z < 0.95 then
 			lhand:Release()
@@ -396,10 +406,10 @@ local function on_input_changed(input)
 	
 	-- index finger
 	if input.KeyCode == r_indx_sensor then 
-		rhand:SetIndexFingerCurl(input.Position.Z) 
+		rhand.PointerState = input.Position.Z
 	end
 	if input.KeyCode == l_indx_sensor then 
-		lhand:SetIndexFingerCurl(input.Position.Z) 
+		lhand.PointerState = input.Position.Z
 	end
 
 	if DEV_lockstate then return end

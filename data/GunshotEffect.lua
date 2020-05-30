@@ -1,5 +1,4 @@
 return function (gun)
-
 	gun.Rifling.Fire:Stop()
 	gun.Rifling.Fire.TimePosition = 0.1
 	gun.Rifling.Fire:Play()

@@ -4,7 +4,7 @@ _G.using "RBX.Debris"
 local BaseFirearm = require(script.Parent.BaseFirearm)
 
 local Saiga = BaseFirearm:subclass("Saiga")
-local Cartridges = require(script.Parent.Cartridges)
+local Cartridges = require(game.ReplicatedStorage.Data.Cartridges)
 --[[
     Saiga-12 Automatic Combat Shotgun
     https://en.wikipedia.org/wiki/Saiga-12

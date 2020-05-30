@@ -1,4 +1,4 @@
-local BaseInteractive = require(script.Parent.BaseInteractive)
+local BaseInteractive = require(script.Parent.BaseItem)
 
 local Mag = BaseInteractive:subclass("Magazine")
 
@@ -30,7 +30,7 @@ end
 
 function Mag:OnSimulationStep(handinst, dt, grip_pt)
 
-    if handinst.IndexFingerPressure > 0.95 then
+    if handinst.PointerState > 0.95 then
         self.LatchedGun:OnMagazineRemove()
         self:OnRemove()
         self.Model.PrimaryPart.MagWeld:Destroy()
