@@ -1,4 +1,3 @@
-
 _G.using "RBX.ReplicatedStorage"
 _G.using "RBX.ReplicatedFirst"
 _G.using "RBX.Workspace"
@@ -8,7 +7,6 @@ _G.using "RBX.PhysicsService"
 _G.using "Lovecraft.Physics"
 _G.using "Lovecraft.Lib.RotatedRegion3"
 _G.using "Lovecraft.Networking"
-
 _G.using "Game.Data.ItemMetadata"
 _G.using "Lovecraft.ItemInstances"
 _G.using "RBX.RunService"
@@ -56,8 +54,10 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self.GripPoint          = nil -- which point on an object did we grab?
 	self.IsGripped = true
 	self.IndexFingerPressure = 0
-	self.GripPressure = 0
+	self.GripStrength = 0
 	self.Grabbing = false
+
+	self.AssumeSecondaryPivot = false
 
 	local hgp = hand_attachment_part()
 	local hgp_attachment = Instance.new("Attachment")
@@ -146,8 +146,8 @@ function VRHand:SetIndexFingerCurl(grip_strength)
 	end
 end
 
-function VRHand:SetGripCurl(grip_strength)
-	self.GripPressure = grip_strength
+function VRHand:SetGripStrength(grip_strength)
+	self.GripStrength = grip_strength
 	self:SetAnimTimeScale("Grip", grip_strength)
 end
 
@@ -165,6 +165,12 @@ function VRHand:Release()
 
 	-- if class definition exists run OnRelease callback
 	if self.ItemInstance then
+
+		-- Ugly hack
+		if self.GripPoint.Name == "Handle" then
+			self.ItemInstance.PrimaryControl = false
+		end
+
 		self.ItemInstance:OnRelease(self, self.GripPoint)
 		self.ItemInstance = nil
 	end
@@ -240,12 +246,15 @@ function VRHand:ItemGrab()
 
 	-- if found no metadata -> assume default properties
 	-- (most likely non-functional prop or scenery, needs no custom anim or grip style)
+	local weld_override = false
 	if obj_meta and  obj_meta.class then 
 		local inst = ItemInstances.GetClassInstance(item_model) or
 			ItemInstances.CreateClassInstance(item_model, obj_meta.class)
 
 		self.ItemInstance = inst
 		inst:OnGrab(self, part)
+
+		-- Special condition for foregrip guns
 	end
 
 	self.HandModel.PrimaryPart.CFrame = CFrame.new(pos)*(self.HandModel.PrimaryPart.CFrame - self.HandModel.PrimaryPart.CFrame.Position)
@@ -258,12 +267,14 @@ function VRHand:ItemGrab()
 			self.HandModel.PrimaryPart.CFrame = part.CFrame * gripinformation.Offset
 		end
 	end
-	local weld = Instance.new("WeldConstraint") do -- last step, weld together
-		weld.Part1 = part
-		weld.Part0 = self.HandModel.PrimaryPart
-		weld.Parent = part
+	if self.AssumeSecondaryPivot == false then
+		local weld = Instance.new("WeldConstraint") do -- last step, weld together
+			weld.Part1 = part
+			weld.Part0 = self.HandModel.PrimaryPart
+			weld.Parent = part
+		end
+		self._GrabbedObjectWeld = weld
 	end
-	self._GrabbedObjectWeld = weld
 end
 
 function VRHand:HighlightSphere(part)
@@ -287,8 +298,6 @@ function VRHand:Update(dt)
 	if self.Grabbing == true and self.HoldingObject == nil then
 		self:ItemGrab()
 	end
-
-
 	self.HandGoalPart.CFrame = self.SolvedGoalCFrame
 	local vrhand_goal_cframe = self.SolvedGoalCFrame
 
