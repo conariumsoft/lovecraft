@@ -103,7 +103,6 @@ function BF:BloodSplatter(hit)
     bloodpart.Velocity = Vector3.new(math.random(-15, 15), math.random(-15, 15), math.random(-15, 15))
     Debris:AddItem(bloodpart, 0.5)
 end
-
 --------------------------------------------------------------
 
 function BF:FireProjectile()
@@ -157,11 +156,15 @@ function BF:FireProjectile()
     end
 end
 
+local GunshotEffect = require(script.Parent.Parent.Parent.GunshotEffect)
+
 function BF:Fire(hand, grip_point)
     local cf_reflect = Networking.GetNetHook("ClientShoot")
     cf_reflect:FireServer(self.Model)
     local barrel = self.Model[self.BarrelComponent]
     local bolt = self.Model[self.BoltComponent]
+
+    GunshotEffect(self.Model)
 
     barrel.Fire:Stop()
     barrel.Fire.TimePosition = 0.1
@@ -220,7 +223,6 @@ function BF:ApplyRecoilImpulse(hand, grip_point)
 end
 
 function BF:TriggerDown(hand, dt, grip_point)
-    
     if self.Automatic ~= true and self.TriggerPressed then return end
     if self.Timer >= (1/self:GetCycleTime()) and self.RoundInChamber then
         self.Timer = 0
@@ -258,16 +260,11 @@ function BF:OnMagazineInsert(magazine)
     magweld.Parent = magazine.PrimaryPart
     magweld.Part1 = magazine.PrimaryPart
     magweld.Part0 = self.Model.PrimaryPart
-
-    
-    
 end
 
 function BF:OnMagazineRemove(hand)
     self.MagazineInserted = false
-
     self.MagazineRoundCount = 0
-
 end
 
 ---------------------------------

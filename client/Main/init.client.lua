@@ -20,7 +20,6 @@ _G.using "Lovecraft.VRHand"
 _G.using "Lovecraft.DebugBoard"
 _G.using "Lovecraft.Networking"
 _G.using "Lovecraft.Kinematics"
-
 _G.using "Game.Data.ItemMetadata"
 
 _G.log("Got all Usings 2")
@@ -84,33 +83,28 @@ local ch_leftlower  = cl_character.LeftLowerArm
 local ch_rightlower = cl_character.RightLowerArm
 local ch_rightupper = cl_character.RightUpperArm
 local head_model 	   = cl_character:WaitForChild("HeadJ")
-local left_hand_model  = cl_character:WaitForChild("LHand")
-local right_hand_model = cl_character:WaitForChild("RHand")
+local lhand_model  = cl_character:WaitForChild("LHand")
+local rhand_model = cl_character:WaitForChild("RHand")
 head_model.Transparency = 1
 head_model.BillboardGui.Enabled = false
 
 -- VRHand class instances
--- TODO: detect avalible haptic motors
-local left_hand = VRHand:new{
+local lhand = VRHand:new{
 	Handedness = "Left",
 	VREnum = Enum.UserCFrame.LeftHand,
-	HapticMotorList = {
-		Enum.VibrationMotor.LeftTrigger, Enum.VibrationMotor.LeftHand
-	},
-	Model = left_hand_model,
+	HapticMotorList = { Enum.VibrationMotor.LeftTrigger, Enum.VibrationMotor.LeftHand },
+	Model = lhand_model,
 }
 
-local right_hand = VRHand:new{
+local rhand = VRHand:new{
 	Handedness = "Right",
 	VREnum = Enum.UserCFrame.RightHand,
-	HapticMotorList = {
-		Enum.VibrationMotor.RightTrigger, Enum.VibrationMotor.RightHand
-	},
-	Model = right_hand_model
+	HapticMotorList = { Enum.VibrationMotor.RightTrigger, Enum.VibrationMotor.RightHand },
+	Model = rhand_model
 }
 
-left_hand:Teleport( cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)) -- Bring models to player 
-right_hand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0,  2))
+lhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)) -- Bring models to player 
+rhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0,  2))
 
 ----------------------------------------------------------------------------------------
 -- ? BODY KINEMATICS DATA --
@@ -136,26 +130,33 @@ local function line_to_cframe(vec1, vec2)
 	return CFrame.new(vec1 + (v/2), vec2)
 end
 
+local function solve_chain(chain, origin, goal)
+	chain.origin = origin
+	chain.target = goal
+	chain.joints[1].vec = chain.origin.p
+	Kinematics.Solver.Solve(chain)
+end
+
 local function kinematics(base_cf)
-	-- pass in reported VR hand position
+	-- we are solving backwards. from hand to shoulder
 
-	ik_leftarm_chain.origin = left_hand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6)
-	ik_rightarm_chain.origin = right_hand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6)
+	solve_chain(
+		ik_leftarm_chain, -- joints
+		lhand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6), -- origin 
+		(base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)).Position -- goal
+	)
 
-	ik_leftarm_chain.target  = (base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)).Position--(lefthand_goal_cf  * CFrame.new(0, 0, 0.5)).Position
-	ik_rightarm_chain.target = (base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)).Position--(righthand_goal_cf * CFrame.new(0, 0, 0.5)).Position
-
-	-- this many not be nessecary?
-	ik_leftarm_chain.joints[1].vec  = ik_leftarm_chain.origin.p
-	ik_rightarm_chain.joints[1].vec = ik_rightarm_chain.origin.p
-
-	Kinematics.Solver.Solve(ik_leftarm_chain)
-	Kinematics.Solver.Solve(ik_rightarm_chain)
+	solve_chain(
+		ik_rightarm_chain,
+		rhand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6),
+		(base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)).Position
+	)
 
 	-- set hand goals to constrained position
-	left_hand.SolvedGoalCFrame = left_hand.GoalCFrame--lhand_constrained_goal
-	right_hand.SolvedGoalCFrame = right_hand.GoalCFrame--rhand_constrained_goal
+	lhand.SolvedGoalCFrame = lhand.GoalCFrame
+	rhand.SolvedGoalCFrame = rhand.GoalCFrame
 	
+
 	-- BODY PARTS --
 	-- TODO: once body is fully connected, this'll change
 	ch_leftupper.CFrame = line_to_cframe(ik_leftarm_chain.joints[3].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
@@ -163,91 +164,78 @@ local function kinematics(base_cf)
 	ch_rightupper.CFrame = line_to_cframe(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
 	ch_rightlower.CFrame = line_to_cframe(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
 end
+-----------------------------------------------------------
+-- Input Actions --
+-- Define Actions that can be invoked in various ways
 
-local function manual_rotate_left()
+local function act_rotate_left()
 	cl_manual_rotation = cl_manual_rotation - 45
 end
-local function manual_rotate_right()
+local function act_rotate_right()
 	cl_manual_rotation = cl_manual_rotation + 45
 end
 
+local function act_toggle_mouse_lock()
+	UserInputService.MouseBehavior = (UserInputService.MouseBehavior == Enum.MouseBehavior.Default) and
+		Enum.MouseBehavior.LockCenter or Enum.MouseBehavior.Default
+end
+
+local function act_toggle_grip_lock()
+	DEV_lockstate = not DEV_lockstate
+	_G.log("Hand Locking "..(DEV_lockstate and "On" or "Off"))
+end
+
+local function act_jump()
+	cl_character.Humanoid.Jump = true
+end
+
+local function act_hand_grab(hand)
+	hand:Grab()
+	hand:SetGripStrength(1)
+end
+local function act_hand_release(hand)
+	hand:Release()
+	hand:SetGripStrength(0)
+end
 -----------------------------------------------------------------------
--- VR Keyboard methods --
-local kb_mode = {}
+-- Keyboard methods --
 
-function kb_mode.uis_inp_began(input)
+local function kb_key_pressed(input)
 
-	-- mouse locking
-	if input.KeyCode == Enum.KeyCode.Space then
-		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
-			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-		else
-			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-		end
-	end
+	if input.KeyCode == Enum.KeyCode.Nine       then act_toggle_grip_lock()  end
+	if input.KeyCode == Enum.KeyCode.Space      then act_toggle_mouse_lock() end
+	if input.KeyCode == Enum.KeyCode.KeypadFive then act_jump()              end
+	if input.KeyCode == Enum.KeyCode.Left       then act_rotate_left()       end
+	if input.KeyCode == Enum.KeyCode.Right      then act_rotate_right()      end
 
-	if input.KeyCode == Enum.KeyCode.KeypadFive then
-		cl_character.Humanoid.Jump = true
-	end
+	if DEV_lockstate then return end -- Testing Tool : Hand Lock State
 
-	if input.KeyCode == Enum.KeyCode.Left  then manual_rotate_left()  end
-	if input.KeyCode == Enum.KeyCode.Right then manual_rotate_right() end
-
-
-	-- Testing Tool : Hand Lock State
-	if DEV_lockstate then return end
-
-	if input.KeyCode == Enum.KeyCode.LeftShift then
-		left_hand:Grab()
-		left_hand:SetGripCurl(1)
-	end
-
-	if input.KeyCode == Enum.KeyCode.LeftControl then
-		left_hand:SetIndexFingerCurl(1)
-	end
-
-	if input.KeyCode == Enum.KeyCode.RightShift then
-		right_hand:Grab()
-		right_hand:SetGripCurl(1)
-	end
-
-	if input.KeyCode == Enum.KeyCode.RightControl then
-		right_hand:SetIndexFingerCurl(1)
-	end
+	if input.KeyCode == Enum.KeyCode.LeftShift    then act_hand_grab(lhand)         end
+	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand:SetIndexFingerCurl(1)  end
+	if input.KeyCode == Enum.KeyCode.RightShift   then act_hand_grab(rhand)         end
+	if input.KeyCode == Enum.KeyCode.RightControl then rhand:SetIndexFingerCurl(1)  end
 end
 
-function kb_mode.uis_inp_ended(input)
-	if input.KeyCode == Enum.KeyCode.LeftShift then
-		left_hand:Release()
-		left_hand:SetGripCurl(0)
-	end
-
-	if input.KeyCode == Enum.KeyCode.LeftControl then
-		left_hand:SetIndexFingerCurl(0)
-	end
-
-	if input.KeyCode == Enum.KeyCode.RightShift then
-		right_hand:Release()
-		right_hand:SetGripCurl(0)
-	end
-
-	if input.KeyCode == Enum.KeyCode.RightControl then
-		right_hand:SetIndexFingerCurl(0)
-	end
+local function kb_key_release(input)
+	if input.KeyCode == Enum.KeyCode.LeftShift  then act_hand_release(lhand) end
+	if input.KeyCode == Enum.KeyCode.RightShift then act_hand_release(rhand) end
+	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand:SetIndexFingerCurl(0) end
+	if input.KeyCode == Enum.KeyCode.RightControl then rhand:SetIndexFingerCurl(0) end
 end
 
-function kb_mode.controls()
+local function kb_hand_controls()
 
 	-- position hands with fake inputs
-	left_hand.DebugCFrame = left_hand.DebugCFrame * 
+	lhand.DebugCFrame = lhand.DebugCFrame * 
 		DebugBoard.GetLeftHandDeltaCFrame()
 
-	right_hand.DebugCFrame = right_hand.DebugCFrame *
+	rhand.DebugCFrame = rhand.DebugCFrame *
 		DebugBoard.GetRightHandDeltaCFrame()
 
 	local movement_delta = DebugBoard.GetMovementDeltaVec2()
 	cl_character.Humanoid:Move(Vector3.new(movement_delta.Y, 0, movement_delta.X), true)
 end
+
 ---------------------------------------------------------------------------------
 
 VRService:RecenterUserHeadCFrame()
@@ -261,17 +249,6 @@ local l_grip_sensor = Enum.KeyCode.ButtonL1 -- middle finger anim
 local l_indx_sensor = Enum.KeyCode.ButtonL2
 local flicked = false
 
--- will be combined with the VRHeadset CFrame to move the humanoid.
-
-------------------------------------------------------------------------------------------------
--- PROFILING --
-local prof_renderframes  = 0
-local prof_rendertime    = 0
-
-local function profile(delta)
-	prof_renderframes = prof_renderframes + 1
-	prof_rendertime = prof_rendertime + delta
-end
 
 ------------------------------------------------------------------------------------------------
 -- HEADS-UP-DISPLAY --
@@ -290,13 +267,9 @@ local function calculate_camera_cframe()
 	end
 end
 
--- Player death
-
-
 ------------------------------------------------------------------------------------------------
 -- RENDERSTEP --
 local function on_renderstep(delta)
-	profile(delta)
 
 	cl_manual_translation = CFrame.new(cl_character.HumanoidRootPart.CFrame.Position)
 
@@ -310,9 +283,6 @@ local function on_renderstep(delta)
 	local head_world_cf = cam_cf * headset_relative_cf
 	head_model.CFrame = head_world_cf
 
-	-- TODO: enable when HUD is ready
-	--hud.CFrame = cl_camera.CFrame * CFrame.new(0, 0, -1) -- hud offset
-
 	if not DEV_nokinematics then
 		kinematics(head_world_cf)
 	end
@@ -320,16 +290,16 @@ local function on_renderstep(delta)
 	if DEV_vrkeyboard then
 
 		-- TODO: hands not exactly lining up in VR mode
-		left_hand.GoalCFrame  = cam_cf * left_hand.RelativeCFrame *  left_hand.RecoilCorrectionCFrame * left_hand.DebugCFrame
-		right_hand.GoalCFrame = cam_cf * right_hand.RelativeCFrame * right_hand.RecoilCorrectionCFrame * right_hand.DebugCFrame
+		lhand.GoalCFrame  = cam_cf * lhand.RelativeCFrame *  lhand.RecoilCorrectionCFrame * lhand.DebugCFrame
+		rhand.GoalCFrame = cam_cf * rhand.RelativeCFrame * rhand.RecoilCorrectionCFrame * rhand.DebugCFrame
 
 		DEV_override_mouse = DEV_override_mouse + (
 			UserInputService:GetMouseDelta()
 			* math.rad(DEV_override_mouse_lookspeed)
 		)
 	else
-		left_hand.GoalCFrame  = cam_cf * left_hand.RelativeCFrame * left_hand.RecoilCorrectionCFrame
-		right_hand.GoalCFrame = cam_cf * right_hand.RelativeCFrame  *  right_hand.RecoilCorrectionCFrame
+		lhand.GoalCFrame  = cam_cf * lhand.RelativeCFrame * lhand.RecoilCorrectionCFrame
+		rhand.GoalCFrame = cam_cf * rhand.RelativeCFrame  *  rhand.RecoilCorrectionCFrame
 	end
 end
 
@@ -345,10 +315,10 @@ local function stop_parts_floating_away()
 end
 
 local function on_physicsstep(total, delta)
-	if DEV_vrkeyboard then kb_mode.controls() end
+	if DEV_vrkeyboard then kb_hand_controls() end
 
-	left_hand:Update(delta)
-	right_hand:Update(delta)
+	lhand:Update(delta)
+	rhand:Update(delta)
 
 	cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
 
@@ -372,12 +342,12 @@ local function right_joystick_state(jstick_vec)
 	local accur_x = jstickleft.X
 
 	if accur_x > 0.8 and flicked == false then
-		manual_rotate_right()
+		act_rotate_right()
 		flicked = true
 	end
 	
 	if accur_x < -0.8 and flicked == false then
-		manual_rotate_left()
+		act_rotate_left()
 		flicked = true
 	end
 
@@ -390,7 +360,6 @@ end
 -------------------------------------------------------
 
 local function on_input_changed(input)
-	if DEV_lockstate then return end
 	
 	-- Joystick flicking
 	if input.UserInputType == Enum.UserInputType.Gamepad1 then
@@ -404,91 +373,57 @@ local function on_input_changed(input)
 
 	-- palm grip
 	if input.KeyCode == r_grip_sensor then 
-		right_hand:SetGripCurl(input.Position.Z)
+		rhand:SetGripStrength(input.Position.Z)
 
 		if input.Position.Z < 0.95 then
-			right_hand:Release()
+			rhand:Release()
 		end
 		if input.Position.Z > 0.75 then
 
-			right_hand:Grab()
+			rhand:Grab()
 		end
 	end	
 	if input.KeyCode == l_grip_sensor then 
-		left_hand:SetGripCurl(input.Position.Z) 
+		lhand:SetGripStrength(input.Position.Z) 
 
 		if input.Position.Z < 0.95 then
-			left_hand:Release()
+			lhand:Release()
 		end
 		if input.Position.Z > 0.75 then
-			left_hand:Grab()
+			lhand:Grab()
 		end
 	end
 	
 	-- index finger
 	if input.KeyCode == r_indx_sensor then 
-		right_hand:SetIndexFingerCurl(input.Position.Z) 
+		rhand:SetIndexFingerCurl(input.Position.Z) 
 	end
 	if input.KeyCode == l_indx_sensor then 
-		left_hand:SetIndexFingerCurl(input.Position.Z) 
+		lhand:SetIndexFingerCurl(input.Position.Z) 
 	end
 
 	if DEV_lockstate then return end
 end
 
-local gravity_control = Networking.GetNetHook("SetServerGravity")
-
 local function on_input_begin(input)
-
-	if input.KeyCode == Enum.KeyCode.Eight then
-		gravity_control:FireServer(100)
-	end
-
-	if input.KeyCode == Enum.KeyCode.Seven then
-		gravity_control:FireServer(25)
-	end
-
-	if input.KeyCode == Enum.KeyCode.Six then
-		gravity_control:FireServer(1)
-	end
-
-	if input.KeyCode == Enum.KeyCode.Nine then
-		DEV_lockstate = not DEV_lockstate
-		print("Hand Locking "..(DEV_lockstate and "On" or "Off"))
-	end
-
-	if DEV_vrkeyboard then
-		kb_mode.uis_inp_began(input)
-	end
+	kb_key_pressed(input)
 end
 
 local function on_input_end(input)
 	if DEV_lockstate then return end
-	if DEV_vrkeyboard then kb_mode.uis_inp_ended(input) end
-
+	kb_key_release(input)
 end
 
 
------------------------------------------------------------------------
-local function on_server_reflect_gunshot_effects(shooter, gun)
-	if shooter ~= cl_player then
-		-- TODO: shoot gun
-
-		gun.Fire:Stop()
-		gun.Fire.TimePosition = 0.05
-		gun.Fire:Play()
-
-		gun.Rifling.BillboardGui.Enabled = true
-		gun.Rifling.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
-		delay(1/20, function()
-			gun.Rifling.BillboardGui.Enabled = false
-		end)
-	end
-end
 ------------------------------------------------------------------------
+local GunshotEffect = require(game.ReplicatedStorage.Data.GunshotEffect)
 
 local client_gunshot = Networking.GetNetHook("ClientShoot")
-client_gunshot.OnClientEvent:Connect(on_server_reflect_gunshot_effects)
+client_gunshot.OnClientEvent:Connect(function(player, gun)
+	if player ~= cl_player then
+		GunshotEffect(gun)
+	end
+end)
 -----------------------
 RunService.RenderStepped:Connect(        on_renderstep   )
 RunService.Stepped:Connect(              on_physicsstep  )

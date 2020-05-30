@@ -60,7 +60,6 @@ function GripLine:__ctor(Animation, Offset, AlignmentForce)
 	
 end
 
-
 --
 local GripSocket = GripPoint:subclass("GripSocket")
 function GripSocket:__ctor(props)
@@ -89,7 +88,6 @@ local Tec9	   = require(script.Tec9)
 local Glock18  = require(script.Glock18)
 local Magazine = require(script.Magazine)
 
-
 -- setup code finished. --
 local ItemMetadata = {
 	---------------------------------------------------------------------
@@ -116,7 +114,6 @@ local ItemMetadata = {
 		name = "Tec9",
 		grip_type = "GripPoint",
 		class = Tec9,
-		
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)*CFrame.Angles(0, -math.rad(90), -math.rad(90))),
 			--Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),

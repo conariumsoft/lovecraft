@@ -1,0 +1,60 @@
+Current Codebase Problems:
+The gripping system is a monolith. I want to make it easy to add, remove, or modify a variety of grip locking types.
+No facility for communication between item scripts.
+Reading Metadata is too ugly
+ItemInstance system sucks. (<- Elaborate)
+Need MUCH more possible information for items.
+
+BaseItem functionality is vauge and unhelpful.
+CollisionMasks are not obvious, no helpful info...
+Item Ownership still sucks
+
+Things I want to add:
+	Thumb Joint Control
+	Reflection of effects and shit.
+	ECS for items? (Fully represent items as data, and just have system implementations)
+	Synchronization for guns and magazines (chamber state, round count)
+	Proper Hitreg.
+	Items able to communicate data.
+	At least a basic nonintrusive anticheat.
+	More robust IK & fullbody IK.
+	3d Math Utility Module(s)
+	Allow the 2-point directional grip system.
+	Attachment (support) system for guns.
+	Inventory system (?)
+	Gesture system?
+	VRClient class?
+	VRInteraction System:
+		Currently all we have is Hand-> Objects
+
+Things I want to remove:
+
+Questions:
+	Keep _G.using semantic? Allow passing table?
+	Weird mixture of OO and procedural? Lean more toward OO perhaps?
+	Use Humanoid at all? (Don't like it that much!)
+
+
+
+root/
+    Client.lua
+    Server.lua
+    engine/ <- this shouldn't b left in replstor, but dont want to fragment codebase :(
+    data/
+    itemscripts/
+
+
+root/
+    cli/
+        script/
+        eng/
+        main.lua
+    ser/
+        script/
+        eng/
+        main.lua
+    rep/
+        gamemodes?/
+        itemscripts/
+        eng/
+        data/
