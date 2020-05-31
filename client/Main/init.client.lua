@@ -21,8 +21,6 @@ _G.using "Lovecraft.DebugBoard"
 _G.using "Lovecraft.Networking"
 _G.using "Lovecraft.Kinematics"
 _G.using "Game.Data.ItemMetadata"
-_G.using "Lovecraft.Math3D"
-
 
 local ui = require(script.ui)
 
@@ -55,6 +53,22 @@ else
 	DEV_vrkeyboard = true
 	_G.log("VR is not enabled, assuming Keyboard mode...")
 end
+
+--[[
+	TODO:
+	Items able to communicate data.
+
+	At least a basic nonintrusive anticheat.
+
+	More robust IK & fullbody IK.
+
+	3d Math Utility Module(s) Done
+	Allow the 2-point directional grip system. Done
+	Attachment (support) system for guns.
+	Inventory system (?)
+	Gesture system? 
+	VRClient class?
+]]
 ---------------------------------------------------------------------------------
 -- Local Client objects and data -- 
 local camera_follow_speed = 0.8
@@ -80,12 +94,9 @@ cl_camera.CameraType    = Enum.CameraType.Scriptable
 UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 --------------------------------------------------------------
 -- BODY PARTS --
-local ch_leftupper  = cl_character.LeftUpperArm
-local ch_leftlower  = cl_character.LeftLowerArm
-local ch_rightlower = cl_character.RightLowerArm
-local ch_rightupper = cl_character.RightUpperArm
-local head_model 	   = cl_character:WaitForChild("HeadJ")
-local lhand_model  = cl_character:WaitForChild("LHand")
+local ik = require(script.ik)
+local head_model  = cl_character:WaitForChild("HeadJ")
+local lhand_model = cl_character:WaitForChild("LHand")
 local rhand_model = cl_character:WaitForChild("RHand")
 head_model.Transparency = 1
 head_model.BillboardGui.Enabled = false
@@ -108,59 +119,6 @@ local rhand = VRHand:new{
 lhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)) -- Bring models to player 
 rhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0,  2))
 
-----------------------------------------------------------------------------------------
--- ? BODY KINEMATICS DATA --
-local ik_upper_arm_bone_len = 1
-local ik_lower_arm_bone_len = 1
-local ik_shoulder_width = 1.2
-local ik_shoulder_height = 0.7
-
-local ik_leftarm_chain = Kinematics.Chain:new({
-	Kinematics.Joint:new(nil, 1),
-	Kinematics.Joint:new(nil, ik_lower_arm_bone_len),
-	Kinematics.Joint:new(nil, ik_upper_arm_bone_len),
-})
-
-local ik_rightarm_chain = Kinematics.Chain:new({
-	Kinematics.Joint:new(nil, 1),
-	Kinematics.Joint:new(nil, ik_lower_arm_bone_len),
-	Kinematics.Joint:new(nil, ik_upper_arm_bone_len),
-})
-
-local function solve_chain(chain, origin, goal)
-	chain.origin = origin
-	chain.target = goal
-	chain.joints[1].vec = chain.origin.p
-	Kinematics.Solver.Solve(chain)
-end
-
-local function kinematics(base_cf)
-	-- we are solving backwards. from hand to shoulder
-
-	solve_chain(
-		ik_leftarm_chain, -- joints
-		lhand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6), -- origin 
-		(base_cf * CFrame.new(-ik_shoulder_width, -ik_shoulder_height, 0)).Position -- goal
-	)
-
-	solve_chain(
-		ik_rightarm_chain,
-		rhand.HandModel.PrimaryPart.CFrame * CFrame.new(0, 0, 0.6),
-		(base_cf * CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)).Position
-	)
-
-	-- set hand goals to constrained position
-	lhand.SolvedGoalCFrame = lhand.GoalCFrame
-	rhand.SolvedGoalCFrame = rhand.GoalCFrame
-	
-
-	-- BODY PARTS --
-	-- TODO: once body is fully connected, this'll change
-	ch_leftupper.CFrame =  Math3D.LineToCFrame(ik_leftarm_chain.joints[3].vec, ik_leftarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_leftlower.CFrame =  Math3D.LineToCFrame(ik_leftarm_chain.joints[2].vec, ik_leftarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_rightupper.CFrame = Math3D.LineToCFrame(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
-	ch_rightlower.CFrame = Math3D.LineToCFrame(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)
-end
 -----------------------------------------------------------
 -- Input Actions --
 -- Define Actions that can be invoked in various ways
@@ -190,15 +148,32 @@ local function act_hand_grab(hand)
 	hand:Grab()
 	hand.GripState = 0.99
 end
-local function act_hand_release(hand)
+local function act_hand_drop(hand)
 	hand:Release()
 	hand.GripState = 0
 end
+
+-- controls
+local r_grip_sensor = Enum.KeyCode.ButtonR1 -- grabbing anim
+local r_indx_sensor = Enum.KeyCode.ButtonR2
+local l_grip_sensor = Enum.KeyCode.ButtonL1 -- middle finger anim
+local l_indx_sensor = Enum.KeyCode.ButtonL2
+
+local flicked = false
+
 -----------------------------------------------------------------------
 -- Keyboard methods --
 
 local function kb_key_pressed(input)
 
+	-- vr controllers that don't pass input.Position
+	-- AKA INDEX REEEEEEEEE
+	if input.KeyCode == r_grip_sensor then act_hand_grab(rhand) end
+	if input.KeyCode == l_grip_sensor then act_hand_grab(lhand) end
+	if input.KeyCode == r_indx_sensor then rhand.PointerState = 1 end
+	if input.KeyCode == l_indx_sensor then lhand.PointerState = 1 end
+	
+	-- keyboard
 	if input.KeyCode == Enum.KeyCode.Nine       then act_toggle_grip_lock()  end
 	if input.KeyCode == Enum.KeyCode.Space      then act_toggle_mouse_lock() end
 	if input.KeyCode == Enum.KeyCode.KeypadFive then act_jump()              end
@@ -214,8 +189,15 @@ local function kb_key_pressed(input)
 end
 
 local function kb_key_release(input)
-	if input.KeyCode == Enum.KeyCode.LeftShift  then act_hand_release(lhand) end
-	if input.KeyCode == Enum.KeyCode.RightShift then act_hand_release(rhand) end
+	-- vr controllers that don't pass input.Position
+	if input.KeyCode == r_grip_sensor then act_hand_drop(rhand) end
+	if input.KeyCode == l_grip_sensor then act_hand_drop(lhand) end
+	if input.KeyCode == r_indx_sensor then rhand.PointerState = 0 end
+	if input.KeyCode == l_indx_sensor then rhand.PointerState = 0 end
+
+	-- keyboard shit
+	if input.KeyCode == Enum.KeyCode.LeftShift  then act_hand_drop(lhand) end
+	if input.KeyCode == Enum.KeyCode.RightShift then act_hand_drop(rhand) end
 	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand.PointerState = 0 end
 	if input.KeyCode == Enum.KeyCode.RightControl then rhand.PointerState = 0 end
 end
@@ -223,28 +205,15 @@ end
 local function kb_hand_controls()
 
 	-- position hands with fake inputs
-	lhand.DebugCFrame = lhand.DebugCFrame * 
-		DebugBoard.GetLeftHandDeltaCFrame()
-
-	rhand.DebugCFrame = rhand.DebugCFrame *
-		DebugBoard.GetRightHandDeltaCFrame()
+	lhand.DebugCFrame = lhand.DebugCFrame * DebugBoard.GetLeftHandDeltaCFrame()
+	rhand.DebugCFrame = rhand.DebugCFrame * DebugBoard.GetRightHandDeltaCFrame()
 
 	local movement_delta = DebugBoard.GetMovementDeltaVec2()
 	cl_character.Humanoid:Move(Vector3.new(movement_delta.Y, 0, movement_delta.X), true)
 end
 
----------------------------------------------------------------------------------
-
+-- whats this doing?
 VRService:RecenterUserHeadCFrame()
-
--- CONSIDER: create VRController class?
-local jstickleft  = Vector2.new(0, 0) -- vr controller joysticks
-local jstickright = Vector2.new(0, 0)
-local r_grip_sensor = Enum.KeyCode.ButtonR1 -- grabbing anim
-local r_indx_sensor = Enum.KeyCode.ButtonR2
-local l_grip_sensor = Enum.KeyCode.ButtonL1 -- middle finger anim
-local l_indx_sensor = Enum.KeyCode.ButtonL2
-local flicked = false
 
 ------------------------------------------------------------------------------------------------
 -- HEADS-UP-DISPLAY --
@@ -279,9 +248,12 @@ local function on_renderstep(delta)
 	local head_world_cf = cam_cf * headset_relative_cf
 	head_model.CFrame = head_world_cf
 
-	if not DEV_nokinematics then
-		kinematics(head_world_cf)
-	end
+	-- TODO: no longer nessecary
+	-- set hand goals to constrained position
+	lhand.SolvedGoalCFrame = lhand.GoalCFrame
+	rhand.SolvedGoalCFrame = rhand.GoalCFrame
+
+	if not DEV_nokinematics then ik.RenderStep(head_world_cf) end
 
 	DEV_override_mouse = DEV_override_mouse + (
 		UserInputService:GetMouseDelta()
@@ -291,15 +263,19 @@ local function on_renderstep(delta)
 	local rcf = (DEV_vrkeyboard) and rhand.DebugCFrame or rhand.RelativeCFrame
 	local lcf = (DEV_vrkeyboard) and lhand.DebugCFrame or lhand.RelativeCFrame
 
-	local lobj = lhand.ItemInstance
-	local robj = rhand.ItemInstance
+	local lobj = lhand.HoldingObject
+	local linst = lhand.ItemInstance
+	local robj = rhand.HoldingObject
+	local rinst = rhand.ItemInstance
 	if robj and lobj then
-
 		-- TODO: make hand-agnostic
 		-- TODO: code as data so I don't have to hardcode it
 		if (robj.Name == "Tec9" and lobj.Name == "Tec9Mag") or 
 		   (robj.Name == "Skorpion" and lobj.Name == "SkorpionMagazine") or
-		   (robj.Name == "Glock17" and lobj.Name == "GlockMag") then
+		   (robj.Name == "Glock17" and lobj.Name == "GlockMag") or
+		   (robj.Name == "Tec9" and lobj.Name == "Tec9" and linst ~= rinst) or 
+		   (robj.Name == "Skorpion" and lobj.Name == "Skorpion" and linst ~= rinst)or
+		   (robj.Name == "Glock17" and lobj.Name == "Glock17" and linst ~= rinst) then
 
 				rhand.GoalCFrame = cam_cf * CFrame.new(rcf.Position, lcf.Position) * rhand.RecoilCorrectionCFrame
 				lhand._HandModelSoftWeld:Disable()
@@ -330,6 +306,7 @@ local function on_physicsstep(total, delta)
 	lhand:Update(delta)
 	rhand:Update(delta)
 
+	-- TODO: spine IK
 	cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
 
 	stop_parts_floating_away()
@@ -339,17 +316,12 @@ end
 ---------------------------------------------------------------------------------------------
 -- left joystick movement --
 local function left_joystick_state(jstick_vec)
-	jstickright = jstick_vec
-
-	--- PLAY WITH MOVEMENT
-	cl_character.Humanoid:Move(Vector3.new(jstickright.X, 0, -jstickright.Y), true)
+	cl_character.Humanoid:Move(Vector3.new(jstick_vec.X, 0, -jstick_vec.Y), true)
 end
 
 -- right joystick rotation --
 local function right_joystick_state(jstick_vec)
-	jstickleft = jstick_vec
-
-	local accur_x = jstickleft.X
+	local accur_x = jstick_vec.X
 
 	if accur_x > 0.8 and flicked == false then
 		act_rotate_right()
@@ -423,7 +395,6 @@ local function on_input_end(input)
 	if DEV_lockstate then return end
 	kb_key_release(input)
 end
-
 
 ------------------------------------------------------------------------
 local GunshotEffect = require(game.ReplicatedStorage.Data.GunshotEffect)

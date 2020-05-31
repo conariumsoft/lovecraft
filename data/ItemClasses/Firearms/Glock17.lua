@@ -1,3 +1,5 @@
+
+
 local BaseFirearm = require(script.Parent.BaseFirearm)
 
 local Glock17 = BaseFirearm:subclass("Glock17")

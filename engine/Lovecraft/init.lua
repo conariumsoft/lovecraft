@@ -19,6 +19,12 @@ end
 local function newclass(cname)
     return baseclass:subclass(cname)
 end
+local function matches(inst, t)
+    for _, v in pairs(t) do
+        if inst == v then return true end
+    end
+    return false
+end
 
 
 local function log(fmt, ...)
@@ -33,6 +39,7 @@ _G.newclass = newclass
 _G.ripairs = ripairs
 _G.baseclass = baseclass
 _G.log = log
+_G.matches = matches
 
 
 return {}

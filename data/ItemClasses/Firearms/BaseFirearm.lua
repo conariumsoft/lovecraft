@@ -1,7 +1,8 @@
 _G.using "Lovecraft.Networking"
 _G.using "RBX.Debris"
 _G.using "Lovecraft.ItemInstances"
-
+_G.using "Lovecraft.Math3D"
+_G.using "RBX.RunService"
 
 local BaseItem = require(script.Parent.Parent.BaseItem)
 local Cartridges = require(script.Parent.Parent.Parent.Cartridges)
@@ -15,7 +16,7 @@ local BF = BaseItem:subclass("BaseFirearm") do
     BF.BoltComponent = nil
     BF.MagazineType = nil
     BF.Automatic = false
-    BF.MagazineSize = 20
+    BF.MagazineSize = RunService:IsStudio() and 999999 or 30
     BF.Recoil = {
         XMoveMax = 0.05,
         XMoveMin = -0.05,
@@ -74,14 +75,10 @@ end
 function BF:HandleOnRelease(hand) end
 
 function BF:ChargingHandleOnGrab(hand) 
-
     self.BoltGrabbed = true 
 end
 
 function BF:ChargingHandleOnRelease(hand)
-
-
-
     if self.MagazineInserted and self.RoundInChamber == false then
         self.RoundInChamber = true
         self.MagazineRoundCount = self.MagazineRoundCount - 1
@@ -91,52 +88,57 @@ function BF:ChargingHandleOnRelease(hand)
     end
 end
 
-function BF:BloodSplatter(hit)
+function BF:BloodSplatter(hit, dir)
+    local dt = dir.Unit.Direction
     local bloodpart = Instance.new("Part")
-    bloodpart.Color = Color3.new(1, 0.5, 0)
+    bloodpart.Color = Color3.new(0, 1, 0)
     bloodpart.Anchored = false
     bloodpart.CanCollide = false
+    bloodpart.Material = Enum.Material.Neon
     bloodpart.Size = Vector3.new(0.1, 0.1, 0.1)
     bloodpart.Transparency = 0.25
     bloodpart.Position = hit.Position
     bloodpart.Parent = game.Workspace
+    bloodpart.Massless = true
     -- Math3D.RandomVec3
-    bloodpart.Velocity = Vector3.new(math.random(-15, 15), math.random(-15, 15), math.random(-15, 15))
-    Debris:AddItem(bloodpart, 0.5)
+
+    bloodpart.Velocity = (dt*20) + Math3D.RandomVec3(2)
+
+    Debris:AddItem(bloodpart, 1)
 end
 --------------------------------------------------------------
 
-function BF:FireProjectile()
-    local barrel = self.Model[self.BarrelComponent]
-    local coach_ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
+local function calc_damage(cartridge, hit_body_part)
+    -- TODO: bullet penetration and damage dropoff
+    local resultant_damage = cartridge.Damage
 
+    if _G.matches(hit_body_part.Name, {"Head", "HeadJ"}) then
+        resultant_damage = resultant_damage * cartridge.HeadMul        
+    end
+    if _G.matches(hit_body_part.Name, {"LeftUpperArm", "LeftLowerArm", "RightUpperArm", "RightLowerArm"}) then
+        resultant_damage = resultant_damage * cartridge.ArmMul
+    end
+    return resultant_damage
+end
+
+function BF:HitTest(ray)
     local cartridge = Cartridges[self.Cartridge]
-
-    local hit, pos = game.Workspace:FindPartOnRay(coach_ray, self.Model)
+    local hit, pos = game.Workspace:FindPartOnRay(ray, self.Model)
 
     if not hit then return end
-
+    
     -- gotta hit
     if hit.Parent:FindFirstChild("Humanoid") then
-        local resultant_damage = cartridge.Damage
-        if hit.Name == "Head" or hit.Name == "HeadJ" then
-            print("Headshot!")
-            resultant_damage = resultant_damage * cartridge.HeadMul
-        end
 
-        if hit.Name == "LeftUpperArm" or hit.Name == "LeftLowerArm" or hit.Name == "RightUpperArm" or hit.Name == "RightLowerArm" then
-            resultant_damage = resultant_damage * cartridge.ArmMul
-        end
+        local resultant_damage = calc_damage(cartridge, hit)
 
         for i = 1, resultant_damage/2 do
-            self:BloodSplatter(hit)
+            self:BloodSplatter(hit, ray)
         end
 
         local hit_reflect = Networking.GetNetHook("ClientHit")
         hit_reflect:FireServer(hit.Parent, resultant_damage)
         hit.Parent.Humanoid:TakeDamage(resultant_damage)
-
-        -- TODO: hitreg?
     end
 
     if hit.Anchored then
@@ -157,6 +159,14 @@ function BF:FireProjectile()
     end
 end
 
+function BF:FireProjectile()
+    local barrel = self.Model[self.BarrelComponent]
+    -- TODO: push ray back a little bit to help with hitreg missing at point-blank
+    local ray = Ray.new(barrel.CFrame.p, barrel.CFrame.rightVector*200)
+
+    self:HitTest(ray)
+end
+
 local GunshotEffect = require(script.Parent.Parent.Parent.GunshotEffect)
 
 function BF:Fire(hand, grip_point)
@@ -175,7 +185,7 @@ function BF:Fire(hand, grip_point)
 
     self:BoltCycle()
     self:ApplyRecoilImpulse(hand, grip_point)
-    self:FireProjectile(hand, grip_point)
+    self:FireProjectile()
 
     barrel.BillboardGui.Enabled = true
     barrel.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
@@ -306,7 +316,6 @@ function BF:HandleStep(handinst, dt, handlepart)
 end
 
 function BF:BoltStep(handinst, dt, boltpart) end
-
 
 function BF:OnSimulationStep(hand, dt, grip_point)
 

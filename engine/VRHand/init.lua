@@ -84,7 +84,6 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self.HighlightPart = highlight
 end
 
-
 function VRHand:_LoadAnimationTracks()
 	for _, anim in pairs(ReplicatedStorage.Animations[self.Handedness]:GetChildren()) do
 		local track = self.Animator:LoadAnimation(anim)
@@ -134,11 +133,6 @@ function VRHand:SetAnimTimeScale(anim_name, timescale)
 	if anim then
 		anim.TimePosition = anim.Length * math.min(timescale, .99) --! do not let reach 1, it will break
 	end
-end
-
-
-function VRHand:PickupItem(item)
-
 end
 
 function VRHand:Grab()
