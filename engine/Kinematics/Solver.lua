@@ -7,6 +7,38 @@
 
 local Solver = {}
 
+function Solver.SolveArm(og_cf, target, l1, l2)
+
+	local localized = og_cf:pointToObjectSpace(target)
+	local localized_unit = localized.unit
+	local l3 = localized.magnitude
+
+	local axis = Vector3.new(0, 0, -1):Cross(localized)
+
+	local angle = math.acos(-localized_unit.Z)
+	local plane_cf = og_cf * CFrame.fromAxisAngle(axis, angle)
+
+	local lim = math.max(l2, l1) - math.min(l2, l1)
+
+	-- point is too close
+	-- push it back, compress angles
+	if l3 < lim then
+		return plane_cf * CFrame.new(0, 0, lim-l3), -math.pi/2, math.pi 
+	-- point is too far away
+	-- so we shall EXPAND DONG
+	elseif l3 > l1 + l2 then
+		return plane_cf * CFrame.new(0, 0, l1 + l2 - l3), math.pi/2, 0
+
+	-- point is reachable
+	-- plane is fine, solve angles of triangle
+	else
+		local a1 = -math.acos((-(l2 * l2) + (l1 * l1) + (l3 * l3)) / (2*l1*l3))
+		local a2 = math.acos(((l2 * l2) - (l1 * l1) + (l3 * l3)) / (2*l2*l3))
+
+		return plane_cf, a1+math.pi/2, a2 - a1
+	end
+end
+
 
 -- this is the hardest part of the code so I super commented it!
 function Solver.Constrain(jt, calc_vec, line, cf)
