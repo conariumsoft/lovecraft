@@ -1,12 +1,9 @@
 --[[
 	StarterPlayer/StarterPlayerScripts/Main
-	Client game loop.
-	Local UI
-	Kinematics
-	Input
-	Profiling
+	Provide description of script.
 ]]--
 require(game.ReplicatedStorage.Lovecraft.Lovecraft)
+
 
 -- Initialize Lovecraft API
 -- Grab nessecary components
@@ -22,7 +19,9 @@ _G.using "Lovecraft.Networking"
 _G.using "Lovecraft.Kinematics"
 _G.using "Game.Data.ItemMetadata"
 
-local ui = require(script.ui)
+
+local ui = require(script:WaitForChild("ui"))
+
 
 -- debugging tools
 local DEV_skipintro = true
@@ -31,6 +30,8 @@ local DEV_nokinematics = false -- skip IK calculations
 local DEV_lockstate = false    -- press 9 in-game to lock hand states
 local DEV_override_mouse_lookspeed = 0.125 -- if using vrkeyboard, we need control with mouse...
 local DEV_override_mouse = Vector2.new(0, 0)
+
+
 
 -- TODO: various hardware support
 local headset_list = {
@@ -43,10 +44,8 @@ local headset_list = {
 ---------------------------------------------------------------------------------
 local is_vr_mode = UserInputService.VREnabled
 
--- later on: make non-vr players go into spectator mode for deathmatch
--- if doing game testing, start in keyboard mode
--- when game is live, make so this will error & kick the playe
--- (at least until/if non-VR support is working)
+
+
 if is_vr_mode then
 	ui.DisableDefaultRobloxCrap()
 else
@@ -71,13 +70,39 @@ end
 ]]
 ---------------------------------------------------------------------------------
 -- Local Client objects and data -- 
+
+local dead_mode = false
 local camera_follow_speed = 0.8
 local cl_camera = Workspace.CurrentCamera
 local cl_player = game.Players.LocalPlayer
 local cl_manual_rotation = 0
 local cl_manual_translation = CFrame.new(0,0,0)
-
 local cl_character = cl_player.Character or cl_player.CharacterAdded:wait()
+
+-- idk 
+if cl_camera:FindFirstChild("Blur") then
+	cl_camera.Blur:Destroy()
+	cl_camera.ColorCorrection:Destroy()
+end
+
+
+-- character dies
+cl_character:WaitForChild("Humanoid").Died:Connect(function()
+	dead_mode = true
+	print("FUCK")
+
+	local blur = Instance.new("BlurEffect")
+	blur.Size = 15
+	blur.Parent = cl_camera
+
+	local color = Instance.new("ColorCorrectionEffect")
+	color.Saturation = 1
+	color.TintColor = Color3.new(1, 0.5, 0.5)
+	color.Parent = cl_camera
+end)
+
+
+
 
 -- client is ready to start
 -- send request for server-side init
@@ -118,7 +143,6 @@ local rhand = VRHand:new{
 
 lhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)) -- Bring models to player 
 rhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0,  2))
-
 -----------------------------------------------------------
 -- Input Actions --
 -- Define Actions that can be invoked in various ways
@@ -232,11 +256,20 @@ local function calculate_camera_cframe()
 	end
 end
 
+local last_pos = CFrame.new(0, 0, 0)
+
+local function dead_mode_renderstep(delta)
+
+end
+
 ------------------------------------------------------------------------------------------------
 -- RENDERSTEP --
 local function on_renderstep(delta)
+	if dead_mode then return end
+	-- don't update camera pos if client is dead
 
 	cl_manual_translation = CFrame.new(cl_character.HumanoidRootPart.CFrame.Position)
+
 
 	local cam_cf = calculate_camera_cframe()
 
@@ -252,6 +285,7 @@ local function on_renderstep(delta)
 	-- set hand goals to constrained position
 	lhand.SolvedGoalCFrame = lhand.GoalCFrame
 	rhand.SolvedGoalCFrame = rhand.GoalCFrame
+
 
 	if not DEV_nokinematics then ik.RenderStep(head_world_cf) end
 
@@ -298,9 +332,17 @@ local function stop_parts_floating_away()
 	cl_character.LeftUpperArm.Velocity  = Vector3.new(0, 0, 0)
 	cl_character.RightLowerArm.Velocity = Vector3.new(0, 0, 0)
 	cl_character.RightUpperArm.Velocity = Vector3.new(0, 0, 0)
+	cl_character.LeftLowerLeg.Velocity = Vector3.new(0, 0, 0)
+	cl_character.RightLowerLeg.Velocity = Vector3.new(0, 0, 0)
+	cl_character.LeftUpperLeg.Velocity = Vector3.new(0, 0, 0)
+	cl_character.RightUpperLeg.Velocity = Vector3.new(0, 0, 0)
 end
 
 local function on_physicsstep(total, delta)
+	stop_parts_floating_away()
+
+	if dead_mode then return end
+
 	if DEV_vrkeyboard then kb_hand_controls() end
 
 	lhand:Update(delta)
@@ -308,8 +350,6 @@ local function on_physicsstep(total, delta)
 
 	-- TODO: spine IK
 	cl_character.TorsoJ.CFrame = cl_character.HeadJ.CFrame * CFrame.new(0, -2, 0)
-
-	stop_parts_floating_away()
 end
 
 
@@ -399,11 +439,16 @@ end
 ------------------------------------------------------------------------
 local GunshotEffect = require(game.ReplicatedStorage.Data.GunshotEffect)
 
-local client_gunshot = Networking.GetNetHook("ClientShoot")
-client_gunshot.OnClientEvent:Connect(function(player, gun)
+Networking.GetNetHook("ClientShoot").OnClientEvent:Connect(function(player, gun)
 	if player ~= cl_player then
 		GunshotEffect(gun)
 	end
+end)
+
+Networking.GetNetHook("ReplicateEntityState").OnClientEvent:Connect(function(player, gun)
+
+
+
 end)
 -----------------------
 RunService.RenderStepped:Connect(        on_renderstep   )

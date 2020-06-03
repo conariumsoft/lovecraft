@@ -191,7 +191,7 @@ function drawline(key, a, v)
 	if not parts[key] then parts[key] = part:Clone(); parts[key].Parent = model; end;
 	parts[key].Size = Vector3.new(.2, .2, v.magnitude);
 	parts[key].CFrame = CFrame.new(a + v/2, a + v);	
-	return parts[key];
+	return parts[key
 end;
 
 -- fabrik chain class

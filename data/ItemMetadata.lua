@@ -6,36 +6,7 @@ _G.using "RBX.Debris"
 --[[
 All of these describe information about how bodymovers are applied to the hands+grabbed object
 All values will be applied local-coordinates from the center of the grabbed part.
-```
-GripBase
-	PullStrength
-	HandFollows
-	HandAnimation
 
-GripPoint -- hand is locked to a point
-  Offset CFrame
-  AllowRotation bool -- whether hand can rotate freely around the point
-
-GripPointAligned -- ditto, but rotation is locked to specific orientation
-  Orientation CFrame
-  Offset CFrame
-
-GripLine -- hand is locked to a line, centere
-  bool AllowPerpendicularRotation -- can hand rotate along opposite axis
-  bool AllowMovement -- can the hand slide up and down the gripline
-  bool HandSlidesOff -- if hand will disconnect when slid off the end
-  CFrame LineCenter
-  CFrame LineOrientation
-  CFrame LineLength
-
-GripLineCurve -- ditto, but i'll use a formula to describe a curved shape (MAY NOT IMPLEMENT)
-
-GripSurface -- hand can grab anywhere on the object
-	-- perhaps work in corner checking on rectangular objects
-	-- and play a corner grab anim on the hand.
-	-- won't be perfect, but could look quite decent at a glance
-	-- also should probably have a sphere animation.
-```
 ]]
 
 ----------------------------------------------------------------------
@@ -89,8 +60,6 @@ local Glock18  = require(script.Parent.ItemClasses.Firearms.Glock18)
 local Magazine = require(script.Parent.ItemClasses.Magazine)
 
 
-
-
 -- setup code finished. --
 local ItemMetadata = {
 	---------------------------------------------------------------------
@@ -109,7 +78,7 @@ local ItemMetadata = {
 				-- GripPoint:new(anim, offset+rotation, pullforce, rotforce, applyrotation)
 			Handle         = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 			--Magazine       = GripPoint:new(nil, CFrame.Angles(0, math.rad(180), 0)),
-			--ChargingHandle = GripPoint:new(nil), 
+			ChargingHandle = GripPoint:new(nil), 
 		},
 		class = Skorpion,
 	},
@@ -120,7 +89,7 @@ local ItemMetadata = {
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)*CFrame.Angles(0, -math.rad(90), -math.rad(90))),
 			--Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
-			--ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			ChargingHandle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 		},
 	},
 	["Glock17"] = {
@@ -128,7 +97,7 @@ local ItemMetadata = {
 		grip_type = "GripPoint",
 		grip_data = {
 			Handle = GripPoint:new(nil, CFrame.new(0, 0, 0)),
-			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			MagRelease = GripPoint:new(nil, CFrame.new(0, 0, 0)),
 			Slide = GripSurface:new(nil, CFrame.new(0, 0, 0)),
 		},
 		class = Glock17,

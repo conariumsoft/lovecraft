@@ -46,7 +46,6 @@ function interact.FindNearestObj(thing)
     else
         error("Use the right type dumbass!")
     end
-end
         local closest_part = nil
         local closest_dist = math.huge
         min_distance = min_distance or 3

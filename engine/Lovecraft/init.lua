@@ -1,7 +1,19 @@
--- 
---
---
---
+--[[
+    Lovecraft Team:
+        Owen
+        Josh
+        Anthony []
+        Racoon
+
+    Roadmap:
+        Some form of cheat-prevention
+        Fullbody IK
+        Force Grab
+        Ragdoll module
+        Inventory system
+        Punching (and blunt force)
+        Knife and Stabbing mechanic
+]]
 local using = require(script.using)
 local baseclass = require(script.class)
 

@@ -79,6 +79,7 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	local highlight = Instance.new("SelectionSphere") do
 		highlight.SurfaceTransparency = 0.75
 		highlight.Transparency = 1
+		highlight.SurfaceColor3 = Color3.new(1,1,1)
 	end
 
 	self.HighlightPart = highlight
@@ -172,9 +173,9 @@ function VRHand:GetClosestInteractive(min_distance)
 
 	for _, part in pairs(Workspace.Physical:GetDescendants()) do
 		if part:FindFirstChild("GripPoint") then
+			
 			local dist = (part.Position - self.HandModel.PrimaryPart.Position).magnitude
 			if dist < min_distance and dist < closest_dist then
-
 				-- vector must be flipped for right hand
 				local flip = (self.Handedness == "Left") and 1 or -1
 

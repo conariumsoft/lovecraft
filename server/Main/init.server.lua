@@ -20,11 +20,18 @@ Networking.Initialize()
 local on_client_request_vr_state = Networking.GenerateNetHook     ("ClientRequestVRState")
 local on_client_grab_object      = Networking.GenerateAsyncNetHook("ClientGrab")
 local on_client_release_object   = Networking.GenerateAsyncNetHook("ClientRelease")
-
-
 local on_client_request_inst  = Networking.GenerateNetHook     ("ClientRequestNewInst")
 
 local dev_gravity_control        = Networking.GenerateAsyncNetHook("SetServerGravity")
+
+local contentrepl = require(script.contentreplication)
+
+
+for _, inst in pairs(Workspace.Physical:GetChildren()) do
+    if _G.matches(inst.Name, {"Tec9", "Skorpion", "Glock17"}) then
+        contentrepl.GodLoadGun(inst)
+    end
+end
 
 -------------------------------------------------------------------
 -- Physically interactive objects are set into appropriate collision group
@@ -87,6 +94,13 @@ local function on_player_join(player)
 
     player.CharacterAdded:Connect(function(char)
         char.HeadJ.BillboardGui.TextLabel.Text = player.Name
+
+
+        char.Humanoid.Died:Connect(function()
+        
+        
+        end)
+
     end)
 end
 
@@ -94,6 +108,10 @@ local function on_player_leave(player)
     if not testing_mode then
         session_db:SetAsync("plr"..player.UserId, PlayerSessionStats[player])
     end
+end
+
+local function drop_all_player_objects(player)
+    
 end
 
 local function on_plr_grab_object(player, object, grabbed, handstr)
