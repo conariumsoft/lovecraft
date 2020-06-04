@@ -9,7 +9,39 @@ _G.using "RBX.ReplicatedStorage"
 _G.using "RBX.Workspace"
 _G.using "RBX.PhysicsService"
 _G.using "RBX.RunService"
-_G.using "RBX.DataStoreService"
+
+local skins = {
+    ["Glock17"] = {
+        ["Default"] = {
+            ["FrostCoat700"] = {
+
+            }
+        }
+    }
+}
+
+
+local GameModeClass = _G.newclass("Gamemode")
+
+function GameModeClass:Start()
+    self.LeaderboardConfiguration = {}
+end
+
+function GameModeClass:End()
+
+end
+
+local Loadout = _G.newclass("Loadout")
+
+function Loadout:__ctor()
+    self.PrimaryWeapon = {}
+    self.SecondaryWeapon = {}
+    self.PrimarySkin = nil
+    self.SecondarySkin = nil
+    self.PrimaryAttachments = {}
+    self.SecondaryAttachments = {}
+end
+
 
 local testing_mode = RunService:IsStudio()
 
@@ -17,15 +49,12 @@ Workspace.Gravity = 30-- default 196.2
 -------------------------------------------------------------------
 -- Create remotes
 Networking.Initialize()
-local on_client_request_vr_state = Networking.GenerateNetHook     ("ClientRequestVRState")
+local on_client_request_vr_state = Networking.GenerateNetHook     ("ClientDeploy")
 local on_client_grab_object      = Networking.GenerateAsyncNetHook("ClientGrab")
 local on_client_release_object   = Networking.GenerateAsyncNetHook("ClientRelease")
-local on_client_request_inst  = Networking.GenerateNetHook     ("ClientRequestNewInst")
-
 local dev_gravity_control        = Networking.GenerateAsyncNetHook("SetServerGravity")
 
 local contentrepl = require(script.contentreplication)
-
 
 for _, inst in pairs(Workspace.Physical:GetChildren()) do
     if _G.matches(inst.Name, {"Tec9", "Skorpion", "Glock17"}) then
@@ -52,67 +81,34 @@ require(script.combat) -- combat manager
 -- server modules
 local itemownerlist = require(script.itemownerlist)
 
--- Session Stats Collection --
--- Please note, this should not be used to store information the player sees or has access to.
--- This is intended for collecting information relevant to the developers to help make the game better.
-local session_db
-if not testing_mode then
-session_db = DataStoreService:GetDataStore("SessionStats", "A")
+
+local PlayerSessionStats = {}
+
+local StatsProfile = require(script.StatsProfile)
+
+local function drop_all_player_objects(player)
+    itemownerlist.ClearEntriesOfPlayer(player)
 end
 
 
-local Defaults = {
-    PlayTime = 0,
-    TimesJoined = 0,
-    TimesDied = 0,
-    TimesShot = 0,
-    TimesHit = 0,
-    TimesGotShot = 0,
-    TimesGotShotHead = 0,
-    TimesGotShotBody = 0,
-    TimesGotShotArm = 0,
-}
-
-local PlayerSessionStats = {
-
-}
-
-
 local function on_player_join(player)
-    if not testing_mode then -- don't bother if we're in studio
-        local session_stats = {}
-        local success, errmsg = pcall(function()
-            session_stats = session_db:GetAsync("plr"..player.UserId)
-        end)
+    local player_stats = StatsProfile:new(player)
+    PlayerSessionStats[player] = player_stats
 
-        for i, v in pairs(Defaults) do
-            if session_stats[i] == nil then session_stats[i] = Defaults[i] end
-        end
-        PlayerSessionStats[player] = session_stats
-        PlayerSessionStats[player].TimesJoined = PlayerSessionStats[player].TimesJoined + 1
-    end
-
+    player_stats:Increment("TimesJoined", 1)
     player.CharacterAdded:Connect(function(char)
         char.HeadJ.BillboardGui.TextLabel.Text = player.Name
-
-
         char.Humanoid.Died:Connect(function()
-        
-        
+            drop_all_player_objects(player)
         end)
-
     end)
 end
 
 local function on_player_leave(player)
-    if not testing_mode then
-        session_db:SetAsync("plr"..player.UserId, PlayerSessionStats[player])
-    end
+    PlayerSessionStats[player]:Save()
+    PlayerSessionStats[player] = nil
 end
 
-local function drop_all_player_objects(player)
-    
-end
 
 local function on_plr_grab_object(player, object, grabbed, handstr)
     if not object then
@@ -227,8 +223,8 @@ end
 
 
 local function server_update(server_run_time, tick_dt)
-    for player, data in pairs(PlayerSessionStats) do
-        data.PlayTime = data.PlayTime + tick_dt
+    for player, statsprofile in pairs(PlayerSessionStats) do
+        statsprofile:Increment("PlayTime", tick_dt)
     end
 end
 

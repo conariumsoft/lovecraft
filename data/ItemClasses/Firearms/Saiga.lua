@@ -36,7 +36,7 @@ Saiga.Recoil = {
     MaxKick = 1,
 }
 Saiga.RecoilRecoverySpeed = 8
-Saiga.BarrelComponent = "Rifling"
+Saiga.BarrelComponent = "Muzzle"
 Saiga.MagazineComponent = "Magazine"
 Saiga.BoltComponent = "ChargingHandle"
 Saiga.Timer = 1

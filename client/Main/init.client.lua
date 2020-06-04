@@ -19,9 +19,7 @@ _G.using "Lovecraft.Networking"
 _G.using "Lovecraft.Kinematics"
 _G.using "Game.Data.ItemMetadata"
 
-
 local ui = require(script:WaitForChild("ui"))
-
 
 -- debugging tools
 local DEV_skipintro = true
@@ -31,8 +29,6 @@ local DEV_lockstate = false    -- press 9 in-game to lock hand states
 local DEV_override_mouse_lookspeed = 0.125 -- if using vrkeyboard, we need control with mouse...
 local DEV_override_mouse = Vector2.new(0, 0)
 
-
-
 -- TODO: various hardware support
 local headset_list = {
 	"WindowsMixedReality",
@@ -40,11 +36,8 @@ local headset_list = {
 	"OculusRift",
 	"Vive"
 }
-
 ---------------------------------------------------------------------------------
 local is_vr_mode = UserInputService.VREnabled
-
-
 
 if is_vr_mode then
 	ui.DisableDefaultRobloxCrap()
@@ -52,15 +45,11 @@ else
 	DEV_vrkeyboard = true
 	_G.log("VR is not enabled, assuming Keyboard mode...")
 end
-
 --[[
 	TODO:
 	Items able to communicate data.
-
 	At least a basic nonintrusive anticheat.
-
 	More robust IK & fullbody IK.
-
 	3d Math Utility Module(s) Done
 	Allow the 2-point directional grip system. Done
 	Attachment (support) system for guns.
@@ -101,12 +90,9 @@ cl_character:WaitForChild("Humanoid").Died:Connect(function()
 	color.Parent = cl_camera
 end)
 
-
-
-
 -- client is ready to start
 -- send request for server-side init
-local vr_state_hook = Networking.GetNetHook("ClientRequestVRState")
+local vr_state_hook = Networking.GetNetHook("ClientDeploy")
 vr_state_hook:InvokeServer()
 
 -- wanna be able to notify hands of state changes
@@ -428,12 +414,25 @@ local function on_input_changed(input)
 end
 
 local function on_input_begin(input)
+	if input.KeyCode == Enum.KeyCode.ButtonA then act_jump() end
 	kb_key_pressed(input)
+	if input.KeyCode == Enum.KeyCode.Thumbstick2 then -- left joystick
+		right_joystick_state(input.Position)
+	end
+	if input.KeyCode == Enum.KeyCode.Thumbstick1 then -- right joystick
+		left_joystick_state(input.Position)
+	end
 end
 
 local function on_input_end(input)
 	if DEV_lockstate then return end
 	kb_key_release(input)
+	if input.KeyCode == Enum.KeyCode.Thumbstick2 then -- left joystick
+		right_joystick_state(input.Position)
+	end
+	if input.KeyCode == Enum.KeyCode.Thumbstick1 then -- right joystick
+		left_joystick_state(input.Position)
+	end
 end
 
 ------------------------------------------------------------------------

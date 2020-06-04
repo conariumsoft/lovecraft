@@ -169,7 +169,7 @@ end
 function VRHand:GetClosestInteractive(min_distance)
 	local closest_part = nil
 	local closest_dist = math.huge
-	min_distance = min_distance or 3
+	min_distance = min_distance or 10
 
 	for _, part in pairs(Workspace.Physical:GetDescendants()) do
 		if part:FindFirstChild("GripPoint") then
@@ -235,9 +235,9 @@ function VRHand:ItemGrab()
 
 	self.HandModel.PrimaryPart.CFrame = CFrame.new(pos)*(self.HandModel.PrimaryPart.CFrame - self.HandModel.PrimaryPart.CFrame.Position)
 
-	if obj_meta and obj_meta.grip_data then
+	if obj_meta and obj_meta.grips then
 		-- look for custom cframe
-		local gripinformation = obj_meta.grip_data[part.Name]
+		local gripinformation = obj_meta.grips[part.Name]
 
 		if gripinformation and gripinformation:isA("GripPoint") and gripinformation.Offset then
 			self.HandModel.PrimaryPart.CFrame = part.CFrame * gripinformation.Offset

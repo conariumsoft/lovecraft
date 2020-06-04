@@ -33,7 +33,7 @@ Glock17.Recoil = {
 }
 Glock17.Cartridge = "9mm Parabellum"
 Glock17.RecoilRecoverySpeed = 6
-Glock17.BarrelComponent = "Rifling" -- MUST now be muzzle
+Glock17.BarrelComponent = "Muzzle" -- MUST now be muzzle
 Glock17.MagazineComponent = "Magazine"
 Glock17.BoltComponent = "Slide"
 Glock17.MagazineType = "GlockMag"

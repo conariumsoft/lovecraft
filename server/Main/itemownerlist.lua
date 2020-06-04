@@ -32,6 +32,16 @@ function Module.SetEntryOwner(model, player)
     entry.owner = player
 end
 
+function Module.ClearEntriesOfPlayer(player)
+    for inst, data in pairs(items) do
+        if data.owner == player then
+            data.owner = nil
+            data.Left = false
+            data.Right = false
+        end
+    end
+end
+
 function Module.SetEntryState(model, hand, value)
     local entry = Module.GetEntry(model, false)
     entry[hand] = value

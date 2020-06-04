@@ -1,13 +1,6 @@
 _G.using "RBX.UserInputService"
 _G.using "RBX.Workspace"
 _G.using "RBX.Debris"
-----------------------------------------------------------------------
-
---[[
-All of these describe information about how bodymovers are applied to the hands+grabbed object
-All values will be applied local-coordinates from the center of the grabbed part.
-
-]]
 
 ----------------------------------------------------------------------
 -- Grip Information Abstract Class -- 
@@ -22,8 +15,6 @@ function GripPoint:__ctor(Animation, Offset)
 	self.Offset = Offset or nil
 	self.AnimationForHand = Animation or nil
 end
-
-
 
 local GripLine = GripInformation:subclass("GripLine")
 
@@ -57,8 +48,11 @@ local Saiga    = require(script.Parent.ItemClasses.Firearms.Saiga)
 local Glock17  = require(script.Parent.ItemClasses.Firearms.Glock17)
 local Tec9	   = require(script.Parent.ItemClasses.Firearms.Tec9)
 local Glock18  = require(script.Parent.ItemClasses.Firearms.Glock18)
+local Vector   = require(script.Parent.ItemClasses.Firearms.Vector)
 local Magazine = require(script.Parent.ItemClasses.Magazine)
 
+-- TODO: discard GripPoint system. no longer nessecary.
+-- TODO: pack in data about animations, grip limitations, hierarchy, etc
 
 -- setup code finished. --
 local ItemMetadata = {
@@ -101,6 +95,15 @@ local ItemMetadata = {
 			Slide = GripSurface:new(nil, CFrame.new(0, 0, 0)),
 		},
 		class = Glock17,
+	},
+	["Vector"] = {
+		Name = "Vector",
+		grip_data = {
+			Handle = GripPoint:new(nil, CFrame.Angles(math.rad(89), 0, 0)),
+			Magazine = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+			Slide = GripPoint:new(nil, CFrame.new(0, 0, 0)),
+		},
+		class = Vector
 	},
 	["Glock18"] = {
 		name = "Glock18",

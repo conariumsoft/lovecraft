@@ -39,7 +39,7 @@ Skorpion.Recoil = {
 
 Skorpion.RecoilRecoverySpeed = 12
 Skorpion.Cartridge = "9mm Parabellum"
-Skorpion.BarrelComponent = "Rifling"
+Skorpion.BarrelComponent = "Muzzle"
 Skorpion.MagazineComponent = "Magazine"
 Skorpion.BoltComponent = "ChargingHandle"
 Skorpion.MagazineType = "SkorpionMagazine"

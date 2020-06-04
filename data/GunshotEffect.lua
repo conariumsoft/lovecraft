@@ -1,16 +1,16 @@
 return function (gun)
-	gun.Rifling.Fire:Stop()
-	gun.Rifling.Fire.TimePosition = 0.1
-	gun.Rifling.Fire:Play()
+	gun.Muzzle.Fire:Stop()
+	gun.Muzzle.Fire.TimePosition = 0.1
+	gun.Muzzle.Fire:Play()
 
-    gun.Rifling.PointLight.Enabled = true
-	gun.Rifling.BillboardGui.Enabled = true
-	gun.Rifling.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
+    gun.Muzzle.PointLight.Enabled = true
+	gun.Muzzle.BillboardGui.Enabled = true
+	gun.Muzzle.BillboardGui.ImageLabel.Rotation = math.random(0, 360)
 	delay(1/20, function()
-		gun.Rifling.BillboardGui.Enabled = false
+		gun.Muzzle.BillboardGui.Enabled = false
     end)
     
     delay(1/10, function()
-        gun.Rifling.PointLight.Enabled = false
+        gun.Muzzle.PointLight.Enabled = false
     end)
 end

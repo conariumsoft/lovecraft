@@ -1,67 +1,22 @@
-Current Codebase Problems:
-The gripping system is a monolith. I want to make it easy to add, remove, or modify a variety of grip locking types.
-No facility for communication between item scripts.
-Reading Metadata is too ugly
-ItemInstance system sucks. (<- Elaborate)
-Need MUCH more possible information for items.
+At least a basic nonintrusive anticheat.
+Legs and Spine IK
+Handle grip Priority
+Force Grab
+Attachment (support) system for guns.
+Knife (Stabbing things in general)
+Blood (Matches player's color)
+Inventory system (?)
+Punching (and blunt force) mechanic
 
-BaseItem functionality is vauge and unhelpful.
-CollisionMasks are not obvious, no helpful info...
-Item Ownership still sucks
+server sends equipment data to client 
+Ragdolls
+Proper handling of death
+    Force player to drop gun & ragdoll them.
+    Put them into ghost mode.
 
-Things I want to add:
-	NO Thumb Joint Control
-	Reflection of effects and shit.
-	ECS for items? (Fully represent items as data, and just have system implementations)
-	Synchronization for guns and magazines (chamber state, round count)
-	Proper Hitreg.
-	Items able to communicate data.
-	At least a basic nonintrusive anticheat.
-	More robust IK & fullbody IK.
-	3d Math Utility Module(s)
-	Allow the 2-point directional grip system.
-	Attachment (support) system for guns.
-	Inventory system (?)
-	Gesture system?
-	VRClient class?
-
-    Camera wrapper class?
-    Controller wrapper class?
-    Hardware Relevant shit
-        Currently no way to detect. We're just gonna have to ask the player the first time they join.
-        Along with calibrating floor level and body height. (I'll be able to datamine manlets LUL)
-    
-
-Things I want to remove:
-
-start -> grab by barrel (normal grip)
-next -> grab the handle (direction grip)
-next -> release the barrel (back to normal grip)
-next -> release the handle ()
-
-handle = {
-    priority = true,
-}
-
-Questions:
-	Use Humanoid at all? (Don't like it that much!)
+Changes to how grip system works...
 
 
-Essentials of client main:
-    Kinematics on body
-    Input (Both keyboard and VRController buttons)
-    Camera
-
-Essentials of VRHand:
-    Reads UserCFrame for hand controller
-    Handles object grabbing and releasing
-        Object highlighting
-        Object grab search
-        Obj metadata parsing
-        Weld creation and maintenance
-    Runs animations on hand model to match IRL
-    Provides haptic feedback (rumble)
-
-
-TODO:
-    Client taking damage indicator
+Some objects need no indicator
+Some objects need indicators on secondary grips.
+Some objects 
