@@ -3,6 +3,10 @@ local engine_root = game.ReplicatedStorage.Lovecraft
 ----------------------------------------------------------------
 
 local module_database = {
+    ["Lovecraft.Adornment"] = {
+        identifier = "Adornment",
+        reference = engine_root.Adornment,
+    },
     ["Lovecraft.Kinematics"] = {
         identifier = "Kinematics",
         reference = engine_root.Kinematics,

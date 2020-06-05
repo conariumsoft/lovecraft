@@ -4,7 +4,6 @@
 ]]--
 require(game.ReplicatedStorage.Lovecraft.Lovecraft)
 
-
 -- Initialize Lovecraft API
 -- Grab nessecary components
 _G.log("Initializing VR client.")
@@ -23,19 +22,13 @@ local ui = require(script:WaitForChild("ui"))
 
 -- debugging tools
 local DEV_skipintro = true
+local DEV_freecam = false
 local DEV_vrkeyboard = false   -- josh's keyboard testbed
 local DEV_nokinematics = false -- skip IK calculations
 local DEV_lockstate = false    -- press 9 in-game to lock hand states
 local DEV_override_mouse_lookspeed = 0.125 -- if using vrkeyboard, we need control with mouse...
 local DEV_override_mouse = Vector2.new(0, 0)
 
--- TODO: various hardware support
-local headset_list = {
-	"WindowsMixedReality",
-	"ValveIndex",
-	"OculusRift",
-	"Vive"
-}
 ---------------------------------------------------------------------------------
 local is_vr_mode = UserInputService.VREnabled
 
@@ -60,6 +53,7 @@ end
 ---------------------------------------------------------------------------------
 -- Local Client objects and data -- 
 
+local freecamcf = CFrame.new(0, 60, -100)
 local dead_mode = false
 local camera_follow_speed = 0.8
 local cl_camera = Workspace.CurrentCamera
@@ -68,12 +62,14 @@ local cl_manual_rotation = 0
 local cl_manual_translation = CFrame.new(0,0,0)
 local cl_character = cl_player.Character or cl_player.CharacterAdded:wait()
 
+
+
+
 -- idk 
 if cl_camera:FindFirstChild("Blur") then
 	cl_camera.Blur:Destroy()
 	cl_camera.ColorCorrection:Destroy()
 end
-
 
 -- character dies
 cl_character:WaitForChild("Humanoid").Died:Connect(function()
@@ -81,13 +77,12 @@ cl_character:WaitForChild("Humanoid").Died:Connect(function()
 	print("FUCK")
 
 	local blur = Instance.new("BlurEffect")
-	blur.Size = 15
-	blur.Parent = cl_camera
-
+		blur.Size = 15
+		blur.Parent = cl_camera
 	local color = Instance.new("ColorCorrectionEffect")
-	color.Saturation = 1
-	color.TintColor = Color3.new(1, 0.5, 0.5)
-	color.Parent = cl_camera
+		color.Saturation = 1
+		color.TintColor = Color3.new(1, 0.5, 0.5)
+		color.Parent = cl_camera
 end)
 
 -- client is ready to start
@@ -117,7 +112,7 @@ local lhand = VRHand:new{
 	Handedness = "Left",
 	VREnum = Enum.UserCFrame.LeftHand,
 	HapticMotorList = { Enum.VibrationMotor.LeftTrigger, Enum.VibrationMotor.LeftHand },
-	Model = lhand_model,
+	Model = lhand_model
 }
 
 local rhand = VRHand:new{
@@ -178,12 +173,17 @@ local function kb_key_pressed(input)
 
 	-- vr controllers that don't pass input.Position
 	-- AKA INDEX REEEEEEEEE
+
+
+	
 	if input.KeyCode == r_grip_sensor then act_hand_grab(rhand) end
 	if input.KeyCode == l_grip_sensor then act_hand_grab(lhand) end
 	if input.KeyCode == r_indx_sensor then rhand.PointerState = 1 end
 	if input.KeyCode == l_indx_sensor then lhand.PointerState = 1 end
 	
 	-- keyboard
+	if input.KeyCode == Enum.KeyCode.Zero 		then DEV_freecam = not DEV_freecam end
+
 	if input.KeyCode == Enum.KeyCode.Nine       then act_toggle_grip_lock()  end
 	if input.KeyCode == Enum.KeyCode.Space      then act_toggle_mouse_lock() end
 	if input.KeyCode == Enum.KeyCode.KeypadFive then act_jump()              end
@@ -259,7 +259,13 @@ local function on_renderstep(delta)
 
 	local cam_cf = calculate_camera_cframe()
 
-	cl_camera.CFrame = cl_camera.CFrame:Lerp(cam_cf, camera_follow_speed)
+	if DEV_freecam then
+		cl_camera.CFrame = freecamcf * 
+		CFrame.Angles(0, -DEV_override_mouse.X, 0) *
+		CFrame.Angles(-DEV_override_mouse.Y, 0, 0) 
+	else
+		cl_camera.CFrame = cl_camera.CFrame:Lerp(cam_cf, camera_follow_speed)
+	end
 
 	local headset_relative_cf = VRService:GetUserCFrame(Enum.UserCFrame.Head)
 
@@ -367,8 +373,14 @@ end
 
 -------------------------------------------------------
 
+
 local function on_input_changed(input)
 	
+	if input.UserInputType == Enum.UserInputType.MouseWheel and DEV_freecam then
+		freecamcf = freecamcf:Lerp(freecamcf + (CFrame.Angles(0, -DEV_override_mouse.X, 0) *
+		CFrame.Angles(-DEV_override_mouse.Y, 0, 0)).LookVector * input.Position.Z*4, 0.5)
+	end
+
 	-- Joystick flicking
 	if input.UserInputType == Enum.UserInputType.Gamepad1 then
 		if input.KeyCode == Enum.KeyCode.Thumbstick2 then -- left joystick

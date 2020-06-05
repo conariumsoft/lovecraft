@@ -1,5 +1,7 @@
 _G.using "Lovecraft.Math3D"
 _G.using "Lovecraft.Kinematics"
+_G.using "Lovecraft.Adornment"
+
 local module = {}
 
 
@@ -20,6 +22,31 @@ local ch_rleg_b = character.RightLowerLeg
 local lhand = character.LHand
 local rhand = character.RHand
 
+local cfg = Instance.new("Folder")
+cfg.Name = "IKConfig"
+cfg.Parent = game.ReplicatedStorage
+
+    local stepsize = Instance.new("NumberValue")
+    stepsize.Name = "StepSize"
+    stepsize.Value = 2
+    stepsize.Parent = cfg
+
+    local stepforward = Instance.new("NumberValue")
+    stepforward.Name = "StepForward"
+    stepforward.Value = 0
+    stepforward.Parent = cfg
+
+    local stepside = Instance.new("NumberValue")
+    stepside.Name = "StepSide"
+    stepside.Value = 0
+    stepside.Parent = cfg
+
+    local footplant = Instance.new("NumberValue")
+    footplant.Name = "FootPlantSearchDistance"
+    footplant.Value = -2.8
+    footplant.Parent = cfg
+
+
 ----------------------------------------------------------------------------------------
 -- ? BODY KINEMATICS DATA --
 local ik_upper_arm_bone_len = 1
@@ -34,14 +61,11 @@ local ik_hip_width = 0.4
 -- these are torso-relative offsets...
 local left_shoulder_offset  = CFrame.new( -ik_shoulder_width, -ik_shoulder_height, 0)
 local right_shoulder_offset =  CFrame.new(ik_shoulder_width,  -ik_shoulder_height, 0)
-local left_hip_offset = CFrame.new(-ik_hip_width, -ik_hip_level, -0.2)
-local right_hip_offset = CFrame.new(ik_hip_width, -ik_hip_level, -0.2)
+local left_hip_offset = CFrame.new(ik_hip_width, -ik_hip_level, 0)
+local right_hip_offset = CFrame.new(-ik_hip_width, -ik_hip_level, 0)
 
 local VECTOR3_UP = Vector3.new(0, 1, 0)
 local VECTOR3_DOWN = Vector3.new(0, -1, 0)
-
-local goal_lfoot_pos = character.HumanoidRootPart.Position
-local goal_rfoot_pos = character.HumanoidRootPart.Position
 
 local intermediate_lfoot = character.HumanoidRootPart.Position
 local intermediate_rfoot = character.HumanoidRootPart.Position
@@ -57,6 +81,13 @@ local lastrpos = character.HumanoidRootPart.Position
 
 local lastrhold =  character.HumanoidRootPart.Position
 local lastlhold =  character.HumanoidRootPart.Position
+
+local last_pos
+
+
+local leftadr = Adornment:new()
+local rightadr = Adornment:new()
+
 
 function module.RenderStep(base_cf)
     do
@@ -94,19 +125,30 @@ function module.RenderStep(base_cf)
         local r_hip_origin = base_cf * right_hip_offset
 
 
-        local lleg_ray = Ray.new(l_hip_origin.Position, Vector3.new(0, -3, 0))
-        local rleg_ray = Ray.new(r_hip_origin.Position, Vector3.new(0, -3, 0))
+        
+        
+
+
+        local lleg_ray = Ray.new(r_hip_origin.Position, Vector3.new(stepside.Value, footplant.Value, stepforward.Value))
+        local rleg_ray = Ray.new(l_hip_origin.Position, Vector3.new(stepside.Value, footplant.Value, stepforward.Value))
 
         local lhit, lpos, lsurfacenormal, lmaterial = Workspace:FindPartOnRayWithWhitelist(lleg_ray, {Workspace.Map})
         local rhit, rpos, rsurfacenormal, rmaterial = Workspace:FindPartOnRayWithWhitelist(rleg_ray, {Workspace.Map})
 
-        lpos = lpos or l_hip_origin.Position * Vector3.new(0, -3, 0)
-        rpos = rpos or r_hip_origin.Position * Vector3.new(0, -3, 0)
+        local lleg_walkcycle = (lpos~=nil)
+        local rleg_walkcycle = (rpos~=nil)
+
+        lpos = lpos or l_hip_origin.Position * Vector3.new(0, footplant.Value, 0)
+        rpos = rpos or r_hip_origin.Position * Vector3.new(0, footplant.Value, 0)
+
+
+        leftadr:SetCFrame(CFrame.new(lpos))
+        rightadr:SetCFrame(CFrame.new(rpos))
 
         
-        if left then
+        if left and lleg_walkcycle then
             dist = dist + (rpos-lastrpos).magnitude
-        else
+        elseif rleg_walkcycle then
             dist = dist + (lpos-lastlpos).magnitude
         end
 
@@ -118,7 +160,21 @@ function module.RenderStep(base_cf)
             intermediate_lfoot = lastlhold
         end
 
-        if dist > 2 then
+        if false then
+            if (last_pos - base_cf.Position).magnitude < 0.1 then
+                if dist > 1 then
+                    if left then
+                        lastlhold = lpos
+                    else
+                        lastrhold = rpos
+                    end
+                    left = not left
+                    dist = 0
+                end
+            end
+        end
+
+        if dist > stepsize.Value then
             if left then
                 lastlhold = lpos
             else
@@ -141,10 +197,10 @@ function module.RenderStep(base_cf)
         local r_goal = intermediate_lfoot + Vector3.new(0, math.sin(rdist), 0)
         local lplanecf,
             lhip_theta,
-            lknee_theta = Kinematics.Solver.SolveArm(l_hip_origin, l_goal, up_vec3.Y, lo_vec3.Y)
+            lknee_theta = Kinematics.Solver.SolveLeg(l_hip_origin, l_goal, up_vec3.Y, lo_vec3.Y)
         local rplanecf,
             rhip_theta,
-            rknee_theta = Kinematics.Solver.SolveArm(r_hip_origin, r_goal, up_vec3.Y, lo_vec3.Y)
+            rknee_theta = Kinematics.Solver.SolveLeg(r_hip_origin, r_goal, up_vec3.Y, lo_vec3.Y)
             --rknee_theta = Kinematics.Solver.SolveArm(CFrame.new(r_goal), r_hip_origin.Position, up_vec3.Y, lo_vec3.Y)
 
         local l_hip_angle_cf = CFrame.Angles(lhip_theta, 0, 0)
@@ -152,10 +208,10 @@ function module.RenderStep(base_cf)
         local r_hip_angle_cf = CFrame.Angles(rhip_theta, 0, 0)
         local r_knee_angle_cf = CFrame.Angles(rknee_theta, 0, 0)
 
-        ch_lleg_a.CFrame = lplanecf * l_hip_angle_cf * CFrame.new(-up_vec3 * 0.5)
-        ch_rleg_a.CFrame = rplanecf * r_hip_angle_cf * CFrame.new(-up_vec3 * 0.5)
-        ch_lleg_b.CFrame = ch_lleg_a.CFrame * CFrame.new(-up_vec3 * 0.5) * l_knee_angle_cf * CFrame.new(-lo_vec3 * 0.5)
-        ch_rleg_b.CFrame = ch_rleg_a.CFrame * CFrame.new(-up_vec3 * 0.5) * r_knee_angle_cf * CFrame.new(-lo_vec3 * 0.5)
+        ch_lleg_a.CFrame = lplanecf * l_hip_angle_cf * CFrame.new(up_vec3 * 0.5)
+        ch_rleg_a.CFrame = rplanecf * r_hip_angle_cf * CFrame.new(up_vec3 * 0.5)
+        ch_lleg_b.CFrame = ch_lleg_a.CFrame * CFrame.new(up_vec3 * 0.5) * l_knee_angle_cf * CFrame.new(lo_vec3 * 0.5)
+        ch_rleg_b.CFrame = ch_rleg_a.CFrame * CFrame.new(up_vec3 * 0.5) * r_knee_angle_cf * CFrame.new(lo_vec3 * 0.5)
     end
 
 
@@ -182,6 +238,7 @@ function module.RenderStep(base_cf)
     ch_rarm_a.CFrame = Math3D.LineToCFrame(ik_rightarm_chain.joints[3].vec, ik_rightarm_chain.joints[2].vec) * CFrame.Angles(math.rad(90), 0, 0)
     ch_rarm_b.CFrame = Math3D.LineToCFrame(ik_rightarm_chain.joints[2].vec, ik_rightarm_chain.joints[1].vec) * CFrame.Angles(math.rad(90), 0, 0)]]
 
+    last_pos = base_cf.Position
 
 end
 

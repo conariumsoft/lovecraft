@@ -10,6 +10,7 @@ _G.using "Lovecraft.Networking"
 _G.using "Game.Data.ItemMetadata"
 _G.using "Lovecraft.ItemInstances"
 _G.using "RBX.RunService"
+_G.using "Lovecraft.Adornment"
 
 
 local function hand_attachment_part()
@@ -63,6 +64,7 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 
 	self.HandGoalPart = hgp
 	
+	local adorn = Adornment:new(self.HandGoalPart)
 	-- glue weld that binds hand to correct position and orientation, while still respecting physical limits
 	self._HandModelSoftWeld = Physics.PointSolver:new(hgp_attachment, self.HandModel.PrimaryPart.Attachment, {
 		pos_responsiveness = 100,
@@ -235,9 +237,9 @@ function VRHand:ItemGrab()
 
 	self.HandModel.PrimaryPart.CFrame = CFrame.new(pos)*(self.HandModel.PrimaryPart.CFrame - self.HandModel.PrimaryPart.CFrame.Position)
 
-	if obj_meta and obj_meta.grips then
+	if obj_meta and obj_meta.grip_data then
 		-- look for custom cframe
-		local gripinformation = obj_meta.grips[part.Name]
+		local gripinformation = obj_meta.grip_data[part.Name]
 
 		if gripinformation and gripinformation:isA("GripPoint") and gripinformation.Offset then
 			self.HandModel.PrimaryPart.CFrame = part.CFrame * gripinformation.Offset

@@ -1,3 +1,110 @@
+--[[
+    Bullet Penetration calculations:
+    get material
+    get thickness of material on collided face
+    if hit X , then size X
+    if object has any size axis less than 1
+    recoil based on material.
+]]
+
+-- HitPoint reduction per stud
+local MATERIALS_DENSITIES = {
+    CorrodedMetal = 1,
+    Concrete = 1,
+    Wood = 1,
+    WoodPlanks = 1,
+    Plastic = 1,
+    SmoothPlastic = 1,
+    Neon = 1,
+    Slate = 1,
+    Grass = 1,
+    Brick = 1,
+    Fabric = 1,
+    DiamondPlate = 1,
+    Sand = 1,
+    Foil = 1,
+    ForceField = 1,
+}
+
+local max_steps = 50
+local bullet_step = 0.05
+
+local adornment_part_parent = Instance.new("Part")
+adornment_part_parent.Anchored = true
+adornment_part_parent.CanCollide = false
+adornment_part_parent.Size = Vector3.new(1,1,1)
+adornment_part_parent.Transparency = 1
+adornment_part_parent.Parent = game.Workspace
+adornment_part_parent.Name = "LocalAdornment"
+
+local function bullet_penetration(part, intersection, direction_vec)
+    local vis_head_cf = CFrame.new(intersection, intersection+direction_vec.Unit)
+
+    local vis_head = Instance.new("ConeHandleAdornment")
+    vis_head.Radius = 0.03
+    vis_head.ZIndex = 2
+    vis_head.AlwaysOnTop = true
+    vis_head.Adornee = adornment_part_parent
+    vis_head.CFrame = vis_head_cf
+    vis_head.Parent = adornment_part_parent
+    vis_head.Height = 0.3
+    vis_head.Color3 = Color3.new(0, 0, 1)
+
+    local step
+    local material_covered = 0
+    for i = 0, 3, bullet_step do
+        step = intersection + (direction_vec.Unit * i)
+
+       if Math3D.PartIntersectsPoint(part, step) then
+            local material_multiplier = 1
+            material_covered = material_covered + bullet_step
+       else
+
+            local vis_line = Instance.new("CylinderHandleAdornment")
+            vis_line.Radius = 0.01
+            vis_line.AlwaysOnTop = true
+            vis_line.ZIndex = 2
+            vis_line.Color3 = Color3.new(1, 1, 1)
+            vis_line.Height = (intersection - step).magnitude
+            vis_line.CFrame = CFrame.new(intersection:Lerp(step, 0.5), step+direction_vec)
+            vis_line.Adornee = adornment_part_parent
+            vis_line.Parent = adornment_part_parent
+
+            local vis_end = Instance.new("ConeHandleAdornment")
+            vis_end.Radius = 0.03
+            vis_end.ZIndex = 2
+            vis_end.AlwaysOnTop = true
+            vis_end.CFrame = CFrame.new(step, step+direction_vec)
+            vis_end.Parent = adornment_part_parent
+            vis_end.Adornee = adornment_part_parent
+            vis_end.Height = 0.3
+            vis_end.Color3 = Color3.new(0, 1, 0)
+            return material_covered
+        end
+    end
+    local vis_line = Instance.new("CylinderHandleAdornment")
+            vis_line.Radius = 0.01
+            vis_line.AlwaysOnTop = true
+            vis_line.ZIndex = 2
+            vis_line.Color3 = Color3.new(0.5, 0.5, 0.5)
+            vis_line.Height = (intersection - step).magnitude
+            vis_line.CFrame = CFrame.new(intersection:Lerp(step, 0.5), step+direction_vec)
+            vis_line.Adornee = adornment_part_parent
+            vis_line.Parent = adornment_part_parent
+
+            local vis_end = Instance.new("ConeHandleAdornment")
+            vis_end.Radius = 0.03
+            vis_end.ZIndex = 2
+            vis_end.AlwaysOnTop = true
+            vis_end.CFrame = CFrame.new(step, step+direction_vec)
+            vis_end.Parent = adornment_part_parent
+            vis_end.Adornee = adornment_part_parent
+            vis_end.Height = 0.3
+            vis_end.Color3 = Color3.new(1, 1, 0)
+
+    return material_covered
+end
+
 _G.using "Lovecraft.Networking"
 _G.using "RBX.Debris"
 _G.using "Lovecraft.ItemInstances"
@@ -101,7 +208,6 @@ function BF:BloodSplatter(hit, dir)
     bloodpart.Parent = game.Workspace
     bloodpart.Massless = true
     -- Math3D.RandomVec3
-
     bloodpart.Velocity = (dt*20) + Math3D.RandomVec3(2)
 
     Debris:AddItem(bloodpart, 1)
@@ -121,12 +227,23 @@ local function calc_damage(cartridge, hit_body_part)
     return resultant_damage
 end
 
+local shatter = require(script.Parent.Parent.Parent.Shatter)
+
 function BF:HitTest(ray)
     local cartridge = Cartridges[self.Cartridge]
     local hit, pos = game.Workspace:FindPartOnRay(ray, self.Model)
 
     if not hit then return end
+
+    local reslt = bullet_penetration(hit, pos, ray.Unit.Direction)
+
+    print("Shoot:"..reslt)
     
+    if hit.Name == "BreakableGlass" then
+        shatter(hit, pos)
+        return
+    end
+
     -- gotta hit
     if hit.Parent:FindFirstChild("Humanoid") then
 
