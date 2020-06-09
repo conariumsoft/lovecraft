@@ -11,6 +11,7 @@ local comm = ReplicatedStorage.Common
 local Utils            = require(comm.Utils)
 local CollisionMasking = require(comm.CollisionMasking)
 local Ownership        = require(comm.Ownership)
+local Shatter          = require(comm.Shatter)
 
 local StatsProfile  = require(script.StatsProfile)
 local LoadAnims     = require(script.LoadAnims) -- download and setup all animations
@@ -25,7 +26,7 @@ LoadAnims()
 
 for _, inst in pairs(Workspace.Physical:GetChildren()) do
     if Utils.Matches(inst.Name, {"Tec9", "Skorpion", "Glock17"}) then
-        contentrepl.GodLoadGun(inst)
+        --contentrepl.GodLoadGun(inst)
     end
 end
 --
@@ -192,10 +193,20 @@ local function server_update(server_run_time, tick_dt)
     end
 end
 
+local function shatter(client, part, pos)
+    if part.Name == "BreakableGlass" then
+        spawn(function()
+            Shatter(part, pos)
+        end)
+        
+    end
+end
+
 local Networking = ReplicatedStorage.Networking
 
 Networking.ClientGrab.OnServerEvent:Connect(on_plr_grab_object)
 Networking.ClientRelease.OnServerEvent:Connect(on_plr_drop_object)
+Networking.Shatter.OnServerEvent:Connect(shatter)
 Networking.Deploy.OnServerInvoke = OnClientRequestVRState
 
 RunService.Stepped:Connect(server_update)

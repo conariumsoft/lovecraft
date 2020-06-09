@@ -9,6 +9,7 @@ local ItemMetadata  = require(ReplicatedStorage.Data.ItemMetadata)
 local ItemInstances = require(ReplicatedStorage.Common.ItemInstances)
 local Class         = require(ReplicatedStorage.Common.Class)
 local Physics       = require(ReplicatedStorage.Common.PhysicsSolvers)
+local PartVelocity    = require(ReplicatedStorage.Common.PartVelocity)
 
 local Networking = ReplicatedStorage.Networking
 
@@ -57,13 +58,13 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	self.GripState = 0
 	self.Grabbing = false
 
-	local hgp = hand_attachment_part()
 	local hgp_attachment = Instance.new("Attachment")
-	hgp_attachment.Parent = hgp
+	hgp_attachment.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
 
-	self.HandGoalPart = hgp
+	self.HandGoalAttachment = hgp_attachment
 	
-	local adorn = Adornments.Axis:new(self.HandGoalPart)
+	local adorn = Adornments.Axis:new(self.HandModel.PrimaryPart)
+
 	-- glue weld that binds hand to correct position and orientation, while still respecting physical limits
 	self._HandModelSoftWeld = Physics.PointSolver:new(hgp_attachment, self.HandModel.PrimaryPart.Attachment, {
 		pos_responsiveness = 100,
@@ -84,6 +85,18 @@ function VRHand:__ctor(data) --player, vr_head, handedness, hand_model)
 	end
 
 	self.HighlightPart = highlight
+
+	PartVelocity.Track(self.HandModel.Collisions)
+	self.HandModel.Collisions.Touched:Connect(function(other)
+		if other.Name == "BreakableGlass" then
+			local velocity = PartVelocity.GetAverageVelocity(self.HandModel.Collisions)
+			print("velocity at collision:", velocity)
+			if velocity > 0.5 then
+				ReplicatedStorage.Networking.Shatter:FireServer(other, self.HandModel.Collisions.Position)
+				other:Destroy()
+			end
+		end
+	end)
 end
 
 function VRHand:_LoadAnimationTracks()
@@ -192,6 +205,15 @@ function VRHand:GetClosestInteractive(min_distance)
 	return closest_part
 end
 
+function VRHand:CreateCollisionFilter(other)
+	local collision_filter  = Instance.new("NoCollisionConstraint")
+	collision_filter.Parent = self.HandModel.PrimaryPart
+	collision_filter.Part0  = self.HandModel.PrimaryPart
+	collision_filter.Part1  = other
+
+	self._CollisionMask = collision_filter
+end
+
 function VRHand:ItemGrab()
 	local part = self:GetClosestInteractive()
 
@@ -212,12 +234,7 @@ function VRHand:ItemGrab()
 	self.HoldingObject = item_model
 	self.GripPoint = part
 
-	local collision_filter  = Instance.new("NoCollisionConstraint")
-	collision_filter.Parent = self.HandModel.PrimaryPart
-	collision_filter.Part0  = self.HandModel.PrimaryPart
-	collision_filter.Part1  = part
-
-	self._CollisionMask = collision_filter
+	self:CreateCollisionFilter(part)
 	
 	-- object's Model.Name is used to search.
 	-- using metadata to configure how hand welds to model
@@ -232,17 +249,16 @@ function VRHand:ItemGrab()
 		self.ItemInstance = inst
 		inst:OnGrab(self, part)
 
-		-- Special condition for foregrip guns
 	end
 
 	self.HandModel.PrimaryPart.CFrame = CFrame.new(pos)*(self.HandModel.PrimaryPart.CFrame - self.HandModel.PrimaryPart.CFrame.Position)
 
-	if obj_meta and obj_meta.grip_data then
+	if obj_meta and obj_meta.grips then
 		-- look for custom cframe
-		local gripinformation = obj_meta.grip_data[part.Name]
+		local gripinformation = obj_meta.grips[part.Name]
 
-		if gripinformation and gripinformation:isA("GripPoint") and gripinformation.Offset then
-			self.HandModel.PrimaryPart.CFrame = part.CFrame * gripinformation.Offset
+		if gripinformation and gripinformation.offset then
+			self.HandModel.PrimaryPart.CFrame = part.CFrame * gripinformation.offset
 		end
 	end
 	
@@ -279,7 +295,7 @@ function VRHand:Update(dt)
 	if self.Grabbing == true and self.HoldingObject == nil then
 		self:ItemGrab()
 	end
-	self.HandGoalPart.CFrame = self.SolvedGoalCFrame
+	self.HandGoalAttachment.WorldCFrame = self.SolvedGoalCFrame
 	local vrhand_goal_cframe = self.SolvedGoalCFrame
 
 	-- TODO: optimize

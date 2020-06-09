@@ -1,10 +1,9 @@
 local Debris = game:GetService("Debris")
 
 
-
-local GLASS_NORMAL_DISTRIBUTION = 0.5
-local GLASS_POINT_COUNT = 20
-local MIN_SHARD_SIZE = 0.5
+local GLASS_NORMAL_DISTRIBUTION = 0.25
+local GLASS_POINT_COUNT = 30
+local MIN_SHARD_SIZE = 0.1
 
 local Delaunay = require(script.Parent.Delaunay)
 
@@ -62,7 +61,15 @@ return function(window_part, impact_pos)
 	local sx = window_part.Size.X
 	local sy = window_part.Size.Y
 
-	table.insert(points, Delaunay.Point(px - (sx/2), py - (sy/2)) )
+	-- generate random points
+    for i = 1, GLASS_POINT_COUNT do
+        local x = gaussian(0, GLASS_NORMAL_DISTRIBUTION)
+        local y = gaussian(0, GLASS_NORMAL_DISTRIBUTION)
+        points[i] = Delaunay.Point(impact_pos.X + x, impact_pos.Y + y)
+        
+	end
+
+    table.insert(points, Delaunay.Point(px - (sx/2), py - (sy/2)) )
     table.insert(points, Delaunay.Point(
         window_part.Position.X+ (window_part.Size.X/2),
         window_part.Position.Y+ (window_part.Size.Y/2)
@@ -75,16 +82,6 @@ return function(window_part, impact_pos)
         window_part.Position.X- (window_part.Size.X/2),
         window_part.Position.Y+ (window_part.Size.Y/2)
 	))
-
-	-- generate random points
-    for i = 1, GLASS_POINT_COUNT do
-        local x = gaussian(0, GLASS_NORMAL_DISTRIBUTION)
-        local y = gaussian(0, GLASS_NORMAL_DISTRIBUTION)
-        points[i] = Delaunay.Point(impact_pos.X + x, impact_pos.Y + y)
-        
-	end
-
-
     
 	
     local tris = Delaunay.triangulate(unpack(points))
@@ -109,7 +106,7 @@ return function(window_part, impact_pos)
                 Vector3.new(tri.p3.x, tri.p3.y, window_part.Position.Z),
             w1, w2)
             
-            if tri:getArea() > 5 then
+            if tri:getArea() > 3.5 then
                 w1.Name = "BreakableGlass"
                 w2.Name = "BreakableGlass"
                 w1.Anchored = true

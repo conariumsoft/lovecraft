@@ -1,10 +1,6 @@
-
-
 local SINGLEPLAYER_MODE = false
 
-
 print("Lovecraft Client init.")
-
 
 local UserInputService  = game:GetService("UserInputService")
 local RunService 	    = game:GetService("RunService")
@@ -17,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VRHand        = require(script.VRHand)
 local DebugBoard    = require(script.DebugBoard)
 local UserInterface = require(script.UserInterface)
+local ItemMetadata  = require(ReplicatedStorage.Data.ItemMetadata)
 
 local Networking  = ReplicatedStorage.Networking
 
@@ -33,7 +30,7 @@ local DEV_override_mouse = Vector2.new(0, 0)
 local is_vr_mode = UserInputService.VREnabled
 
 if is_vr_mode then
-	ui.DisableDefaultRobloxCrap()
+	UserInterface.DisableDefaultRobloxCrap()
 else
 	DEV_vrkeyboard = true
 	print("VR is not enabled, assuming Keyboard mode...")
@@ -120,6 +117,107 @@ local rhand = VRHand:new{
 
 lhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)) -- Bring models to player 
 rhand:Teleport(cl_character.HumanoidRootPart.CFrame * CFrame.new(0, 0,  2))
+
+local handstate = "normal"
+local primaryhand = rhand
+
+local function tablecontains(t, val)
+
+	for i, v in pairs(t) do
+		if v == val then
+			return true
+		end
+	end
+	return false
+end
+
+local function tablesmatch(t1, t2)
+	if #t1 ~= #t2 then return false end
+	for i, v in pairs(t1) do
+		if tablecontains(t2, v) == false then
+			return false
+		end
+	end
+	return true
+end
+
+local function getcontext(metadata, context)
+	for criteria, searched in pairs(metadata.grip_contexts) do
+		if tablesmatch(criteria, context) then
+			return searched
+		end
+	end
+end
+
+local function hand_grab_contextcheck(hand)
+	local otherhand = (hand == rhand) and lhand or rhand
+	local obj = hand:GetClosestInteractive()
+	if not obj then return true end
+	local item = obj.Parent
+	local obj_meta = ItemMetadata[item.Name]
+	if not obj_meta then return true end
+	if obj_meta.primary_grip and obj_meta.primary_grip == obj.Name then
+		primaryhand = hand
+	end
+	if obj_meta.contextual_grips ~= true then return true end
+	if otherhand.HoldingObject == nil then
+		local context = getcontext(obj_meta, {})
+
+		if not context then return true end
+		if context.allows then
+			if tablecontains(context.allows, obj.Name) then
+				return true
+			end
+		end
+		return false
+	end
+
+	local context = getcontext(obj_meta, {otherhand.GripPoint.Name})
+	if not context then return true end
+	if not context.allows then return false end
+	if tablecontains(context.allows, obj.Name) then
+		for t2, val2 in pairs(obj_meta.grip_contexts) do
+			if tablesmatch({otherhand.GripPoint.Name, obj.Name}, t2) then
+				return true, val2.stance
+			end
+		end
+		return true
+	end
+end
+
+local function act_hand_grab(hand)
+	local pass, stance = hand_grab_contextcheck(hand)
+
+	if pass then
+		if stance then
+			handstate = stance
+		end
+		hand:Grab()
+	end
+	hand.GripState = 0.99
+end
+
+local function hand_release(hand)
+	hand.Grabbing = false
+	if not hand.HoldingObject then return end
+	delay(0.5, function() hand._CollisionMask:Destroy() end) -- delay a bit so physics dont spaz
+	if hand.ItemInstance then
+		hand.ItemInstance:OnRelease(hand, hand.GripPoint)
+		hand.ItemInstance = nil
+	end
+	if hand._GrabbedObjectWeld then
+		hand._GrabbedObjectWeld:Destroy()
+		hand._GrabbedObjectWeld = nil
+	end
+	local crelease = Networking.ClientRelease
+	crelease:FireServer(hand.HoldingObject, hand.GripPoint, hand.Handedness)
+	hand.HoldingObject = nil
+	hand.GripPoint = nil
+
+
+	handstate = nil
+end
+
 -----------------------------------------------------------
 -- Input Actions --
 -- Define Actions that can be invoked in various ways
@@ -145,12 +243,9 @@ local function act_jump()
 	cl_character.Humanoid.Jump = true
 end
 
-local function act_hand_grab(hand)
-	hand:Grab()
-	hand.GripState = 0.99
-end
+
 local function act_hand_drop(hand)
-	hand:Release()
+	hand_release(hand)
 	hand.GripState = 0
 end
 
@@ -170,10 +265,8 @@ local function kb_key_pressed(input)
 	-- vr controllers that don't pass input.Position
 	-- AKA INDEX REEEEEEEEE
 
-
-	
-	if input.KeyCode == r_grip_sensor then act_hand_grab(rhand) end
-	if input.KeyCode == l_grip_sensor then act_hand_grab(lhand) end
+	if input.KeyCode == r_grip_sensor then act_hand_grab(rhand)end
+	if input.KeyCode == l_grip_sensor then act_hand_grab(lhand)end
 	if input.KeyCode == r_indx_sensor then rhand.PointerState = 1 end
 	if input.KeyCode == l_indx_sensor then lhand.PointerState = 1 end
 	
@@ -188,9 +281,9 @@ local function kb_key_pressed(input)
 
 	if DEV_lockstate then return end -- Testing Tool : Hand Lock State
 
-	if input.KeyCode == Enum.KeyCode.LeftShift    then act_hand_grab(lhand)   end
+	if input.KeyCode == Enum.KeyCode.LeftShift    then act_hand_grab(lhand) end
 	if input.KeyCode == Enum.KeyCode.LeftControl  then lhand.PointerState = 1 end
-	if input.KeyCode == Enum.KeyCode.RightShift   then act_hand_grab(rhand)   end
+	if input.KeyCode == Enum.KeyCode.RightShift   then act_hand_grab(rhand) end
 	if input.KeyCode == Enum.KeyCode.RightControl then rhand.PointerState = 1 end
 end
 
@@ -285,30 +378,23 @@ local function on_renderstep(delta)
 	local rcf = (DEV_vrkeyboard) and rhand.DebugCFrame or rhand.RelativeCFrame
 	local lcf = (DEV_vrkeyboard) and lhand.DebugCFrame or lhand.RelativeCFrame
 
-	local lobj = lhand.HoldingObject
-	local linst = lhand.ItemInstance
-	local robj = rhand.HoldingObject
-	local rinst = rhand.ItemInstance
-	if robj and lobj then
-		-- TODO: make hand-agnostic
-		-- TODO: code as data so I don't have to hardcode it
-		if (robj.Name == "Tec9" and lobj.Name == "Tec9Mag") or 
-		   (robj.Name == "Skorpion" and lobj.Name == "SkorpionMagazine") or
-		   (robj.Name == "Glock17" and lobj.Name == "GlockMag") or
-		   (robj.Name == "Tec9" and lobj.Name == "Tec9" and linst ~= rinst) or 
-		   (robj.Name == "Skorpion" and lobj.Name == "Skorpion" and linst ~= rinst)or
-		   (robj.Name == "Glock17" and lobj.Name == "Glock17" and linst ~= rinst) then
+	if handstate == "PrimaryPointsToSecondary" then
 
-				rhand.GoalCFrame = cam_cf * CFrame.new(rcf.Position, lcf.Position) * rhand.RecoilCorrectionCFrame
-				lhand._HandModelSoftWeld:Disable()
-				return
-		end
-	end	
-	
-	lhand._HandModelSoftWeld:Enable()
+		-- TODO: investigate CFrame.fromMatrix for rotation
+		local secondary = (primaryhand == lhand) and rhand or lhand
 
-	lhand.GoalCFrame = cam_cf * lcf * lhand.RecoilCorrectionCFrame
-	rhand.GoalCFrame = cam_cf * rcf * rhand.RecoilCorrectionCFrame
+		local pcf = (DEV_vrkeyboard) and primaryhand.DebugCFrame or primaryhand.RelativeCFrame
+		local scf = (DEV_vrkeyboard) and secondary.DebugCFrame or secondary.RelativeCFrame
+
+		primaryhand.GoalCFrame = cam_cf * CFrame.new(pcf.Position, scf.Position) * primaryhand.RecoilCorrectionCFrame
+		secondary._HandModelSoftWeld:Disable()
+		primaryhand._HandModelSoftWeld:Enable()
+	else	
+		lhand._HandModelSoftWeld:Enable()
+		rhand._HandModelSoftWeld:Enable()
+		lhand.GoalCFrame = cam_cf * lcf * lhand.RecoilCorrectionCFrame
+		rhand.GoalCFrame = cam_cf * rcf * rhand.RecoilCorrectionCFrame
+	end
 end
 
 local function stop_parts_floating_away()
@@ -392,21 +478,20 @@ local function on_input_changed(input)
 		rhand.GripState = input.Position.Z
 
 		if input.Position.Z < 0.95 then
-			rhand:Release()
+			hand_release(rhand)
 		end
 		if input.Position.Z > 0.75 then
-
-			rhand:Grab()
+			act_hand_grab(rhand)
 		end
 	end	
 	if input.KeyCode == l_grip_sensor then 
 		lhand.GripState = input.Position.Z
 
 		if input.Position.Z < 0.95 then
-			lhand:Release()
+			hand_release(lhand)
 		end
 		if input.Position.Z > 0.75 then
-			lhand:Grab()
+			act_hand_grab(lhand)
 		end
 	end
 	

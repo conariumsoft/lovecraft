@@ -3,7 +3,6 @@ local Replicated = game:GetService("ReplicatedStorage")
 
 local Kinematics = require(Replicated.Common.Kinematics)
 local Math3D     = require(Replicated.Common.Math3D)
-
 local Adornments  = require(script.Parent.Adornments)
 
 local module = {}
@@ -11,7 +10,6 @@ local module = {}
 
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:wait()
-
 
 -- BODY PARTS --
 local ch_larm_a = character.LeftUpperArm
@@ -127,11 +125,6 @@ function module.RenderStep(base_cf)
     do
         local l_hip_origin = base_cf * left_hip_offset
         local r_hip_origin = base_cf * right_hip_offset
-
-
-        
-        
-
 
         local lleg_ray = Ray.new(r_hip_origin.Position, Vector3.new(stepside.Value, footplant.Value, stepforward.Value))
         local rleg_ray = Ray.new(l_hip_origin.Position, Vector3.new(stepside.Value, footplant.Value, stepforward.Value))

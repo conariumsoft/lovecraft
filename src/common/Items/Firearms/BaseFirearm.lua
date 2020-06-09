@@ -4,11 +4,11 @@ local RunService        = game:GetService("RunService")
 
 
 local comm = ReplicatedStorage.Common
-
+local Shatter       = require(comm.Shatter)
 local Utils         = require(comm.Utils)
 local Math3D        = require(comm.Math3D)
 local ItemInstances = require(comm.ItemInstances)
-local Shatter       = require(comm.Shatter)
+
 
 local BaseItem = require(comm.Items.BaseItem)
 local Cartridges = require(ReplicatedStorage.Data.Cartridges)
@@ -162,7 +162,7 @@ function BF:__ctor(...) -- TODO pass in the model?
     self.HandleStepDebounce = false
     self.BoltForward = true
 
-    self:SummonMag()
+    --self:SummonMag()
 end
 
 -- will get a mag from replicated storage and auto-chamber first round
@@ -293,7 +293,7 @@ end
 local GunshotEffect = require(script.Parent.Parent.Parent.GunshotEffect)
 
 function BF:Fire(hand, grip_point)
-    local cf_reflect = Networking.GetNetHook("ClientShoot")
+    local cf_reflect = Networking.ClientShoot
     cf_reflect:FireServer(self.Model)
     local barrel = self.Model[self.BarrelComponent]
     local bolt = self.Model[self.BoltComponent]
@@ -447,7 +447,7 @@ function BF:OnSimulationStep(hand, dt, grip_point)
     local model = self.Model
     for _, part in pairs(model.MagazineCorrect:GetTouchingParts()) do
         if part.Parent.Name == self.MagazineType then
-            self:OnMagazineInsert(part.Parent)
+            --self:OnMagazineInsert(part.Parent)
         end
     end
 

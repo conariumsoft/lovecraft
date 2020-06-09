@@ -1,34 +1,15 @@
---[[
-	Metadata Help:
-
-	Valid stance tags:
-		"PrimaryControl" (Default if not provided)
-		"SecondaryControl"
-		"PrimaryPointsToSecondary"
-]]
-
---[[
-	-- thanks to DevLuke
-	transform.rotation = rotOffset * Quaternion.LookRotation(reverseSecondaryAim ? 
-	(primaryGrip.EquippedHand.lastControllerPos - (secondaryGrip.EquippedHand.lastControllerPos)) : 
-	((secondaryGrip.EquippedHand.lastControllerPos) - primaryGrip.EquippedHand.lastControllerPos), 
-	primaryGrip.EquippedHand.lastControllerRot * Vector3.forward) * recoilOffset;
-]]
-
 --------------------------------------------------------------------------
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local items = ReplicatedStorage.Common.Items
 
 local Skorpion = require(items.Firearms.Skorpion)
-local Hecate   = require(items.Firearms.Hecate)
-local Saiga    = require(items.Firearms.Saiga)
 local Glock17  = require(items.Firearms.Glock17)
 local Tec9	   = require(items.Firearms.Tec9)
 local Glock18  = require(items.Firearms.Glock18)
 local Vector   = require(items.Firearms.Vector)
+local AK       = require(items.Firearms.AK)
 local Magazine = require(items.Magazine)
-
 
 return {
 	["Default"] = {
